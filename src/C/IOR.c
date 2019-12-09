@@ -79,6 +79,7 @@
 #include <string.h>
 #include <sys/stat.h>                                 /* struct stat */
 #include <time.h>
+#include "ec.h"                                       /* ec header */
 #ifndef _WIN32
 #   include <sys/time.h>                              /* gettimeofday() */
 #   include <sys/utsname.h>                           /* uname() */
@@ -799,6 +800,31 @@ FillBuffer(void               * buffer,
     }
 } /* FillBuffer() */
 
+void FillBuffer_ec(void *buffer,
+                IOR_param_t *test,
+                unsigned long long offset,
+                int fillrank)
+{
+    size_t i;
+    unsigned long long hi, lo;
+    unsigned long long *buf = (unsigned long long *)buffer;
+
+    hi = ((unsigned long long)fillrank) << 32;
+    lo = (unsigned long long)test->timeStampSignatureValue;
+    for (i = 0; i < test->transferSize / sizeof(unsigned long long)/ K; i++)
+    {
+        if ((i % 2) == 0)
+        {
+            /* evens contain MPI rank and time in seconds */
+            buf[i] = hi | lo;
+        }
+        else
+        {
+            /* odds contain offset */
+            buf[i] = offset + (i * sizeof(unsigned long long));
+        }
+    }
+} /* FillBuffer_ec() */
 
 /******************************************************************************//*
  * Free transfer buffers.
@@ -1852,10 +1878,23 @@ TestIoSys(IOR_param_t *test)
     int            i,
                    rep,
                    maxTimeDuration;
-    void         * fd;
+    //void         * fd;//origin mark
+    /*ec fd*/
+    FdList ec_fds;
+    /*ec fd*/
+
     MPI_Group      orig_group, new_group;
     int            range[3];
     IOR_offset_t   dataMoved;             /* for data rate calculation */
+
+    /*ec dataMoved*/
+    // IOR_offset_t ec_dataMoved1;
+    // IOR_offset_t ec_dataMoved2;
+    // IOR_offset_t ec_dataMoved3;
+    // IOR_offset_t ec_dataMoved4;
+    /*space for ec-structrue*/
+    ec_info my_ec_info = (ec_info)malloc(sizeof(ec_info));
+    /*space for ec-structrue*/
 
     /* set up communicator for test */
     if (test->numTasks > numTasksWorld) {
@@ -1899,7 +1938,16 @@ TestIoSys(IOR_param_t *test)
         if (timer[i] == NULL) ERR("out of memory");
     }
     for (i = 0; i < 2; i++) 
-    {
+    {   
+    /*ec_timer*/
+    my_ec_info->writeVal[i] = (double *)malloc(test->repetitions * sizeof(double));
+    if (test->writeVal[i] == NULL)
+        ERR("ec:out of memory");
+    my_ec_info->readVal[i] = (double *)malloc(test->repetitions * sizeof(double));
+    if (test->readVal[i] == NULL)
+        ERR("ec:out of memory");
+    /*ec_timer*/
+
     test->writeVal[i] = (double *)malloc(test->repetitions * sizeof(double));
     if (test->writeVal[i] == NULL) ERR("out of memory");
     test->readVal[i] = (double *)malloc(test->repetitions * sizeof(double));
@@ -1990,19 +2038,43 @@ TestIoSys(IOR_param_t *test)
 #endif /* USE_UNDOC_OPT - multiReRead */
           && (maxTimeDuration
               ? (GetTimeStamp() - startTime < maxTimeDuration) : 1)) {
-            GetTestFileName(testFileName, test);
+            //GetTestFileName(testFileName, test);//origin_mark
+
+            /*initialize ec target files*/
+            FileList ec_files;
+            fprintf(stdout, "task %d writing %s, %s, %s, %s\n", rank, 
+            ec_files.file1, ec_files.file2,
+            ec_files.file3, ec_files.file4);
+            /*initialize ec target files*/
+
             if (verbose >= VERBOSE_3) {
                 fprintf(stdout, "task %d writing %s\n", rank, testFileName);
             }
             DelaySecs(test->interTestDelay);
             if (test->useExistingTestFile == FALSE) {
-                RemoveFile(testFileName, test->filePerProc, test);
+            //RemoveFile(testFileName, test->filePerProc, test);//origin_mark
+                /*delete ec files*/
+                IOR_Delete(ec_files.file1, test);
+                IOR_Delete(ec_files.file2, test);
+                IOR_Delete(ec_files.file3, test);
+                IOR_Delete(ec_files.file4, test);
+                /*delete ec files*/
             }
             MPI_CHECK(MPI_Barrier(testComm), "barrier error");
             test->open = WRITE;
             timer[0][rep] = GetTimeStamp();
-            fd = IOR_Create(testFileName, test);
-            timer[1][rep] = GetTimeStamp();
+            //fd = IOR_Create(testFileName, test);//origin_mark
+
+            /*create ec fds*/
+            ec_fds.fd1 = IOR_Create(ec_files.file1, test);
+            ec_fds.fd2 = IOR_Create(ec_files.file2, test);
+            ec_fds.fd3 = IOR_Create(ec_files.file3, test);
+            ec_fds.fd4 = IOR_Create(ec_files.file4, test);
+            if (ec_fds.fd1 == NULL || ec_fds.fd2 == NULL || ec_fds.fd3 == NULL || ec_fds.fd4 == NULL)
+                ERR("open ec fds failed");
+            /*create ec fds*/
+
+                timer[1][rep] = GetTimeStamp();
             if (test->intraTestBarriers)
                 MPI_CHECK(MPI_Barrier(testComm), "barrier error");
             if (rank == 0 && verbose >= VERBOSE_1) {
@@ -2010,12 +2082,19 @@ TestIoSys(IOR_param_t *test)
                 fprintf(stdout, "%s\n", CurrentTimeString());
             }
             timer[2][rep] = GetTimeStamp();
-            dataMoved = WriteOrRead(test, fd, WRITE);
+            //dataMoved = WriteOrRead(test, fd, WRITE); //origin_mark
+            dataMoved = WriteOrRead_ec(test, &ec_fds, WRITE);//ec_version
             timer[3][rep] = GetTimeStamp();
             if (test->intraTestBarriers)
                 MPI_CHECK(MPI_Barrier(testComm), "barrier error");
             timer[4][rep] = GetTimeStamp();
-            IOR_Close(fd, test);
+            //IOR_Close(ec_fds.fd1, test);//origin_mark
+            /*ec close*/
+            IOR_Close(ec_fds.fd1, test);
+            IOR_Close(ec_fds.fd2, test);
+            IOR_Close(ec_fds.fd3, test);
+            IOR_Close(ec_fds.fd4, test);
+            /*ec close*/
 
 #if USE_UNDOC_OPT /* includeDeleteTime */
             if (test->includeDeleteTime) {
@@ -2641,6 +2720,127 @@ WriteOrRead(IOR_param_t * test,
     return(dataMoved);
 } /* WriteOrRead() */
 
+IOR_offset_t
+WriteOrRead_ec(IOR_param_t *test,
+            FdList *ec_fds,
+            int access)
+{
+    int errors = 0;
+    IOR_offset_t amtXferred,
+        transfer,
+        transferCount = 0,
+        pairCnt = 0,
+        *offsetArray;
+    int pretendRank;
+    void *buffer = NULL;
+    void *checkBuffer = NULL;
+    void *readCheckBuffer = NULL;
+    IOR_offset_t dataMoved = 0; /* for data rate calculation */
+    double startForStonewall;
+    int hitStonewall;
+
+    /*ec params*/
+    IOR_offset_t amtXferred1,
+        amtXferred2,
+        amtXferred3,
+        amtXferred4,
+        ec_transfer;
+    /*ec params*/
+
+    /* initialize values */
+    pretendRank = (rank + rankOffset) % test->numTasks;
+
+    if (test->randomOffset)
+    {
+        offsetArray = GetOffsetArrayRandom(test, pretendRank, access);
+    }
+    else
+    {
+        offsetArray = GetOffsetArraySequential(test, pretendRank);
+    }
+
+    SetupXferBuffers(&buffer, &checkBuffer, &readCheckBuffer,
+                     test, pretendRank, access);
+
+    /* check for stonewall */
+    startForStonewall = GetTimeStamp();
+    hitStonewall = ((test->deadlineForStonewalling != 0) && ((GetTimeStamp() - startForStonewall) > test->deadlineForStonewalling));
+
+    /* loop over offsets to access */
+    while ((offsetArray[pairCnt] != -1) && !hitStonewall)
+    {
+        test->offset = offsetArray[pairCnt];
+        /*
+         * fills each transfer with a unique pattern
+         * containing the offset into the file
+         */
+        if (test->storeFileOffset == TRUE)
+        {
+            FillBuffer(buffer, test, test->offset, pretendRank);
+        }
+        transfer = test->transferSize;
+        if (access == WRITE)
+        {
+            ec_transfer = transfer/K;
+            /*ec buffers*/
+            void *ec_buffer1 = CreateBuffer(ec_transfer);
+            void *ec_buffer2 = CreateBuffer(ec_transfer);
+            void *ec_buffer3 = CreateBuffer(ec_transfer);
+            void *ec_buffer4 = CreateBuffer(ec_transfer);
+            /*encode original buffer & fill the ec_buffers*/
+            FillBuffer_ec(*ec_buffer1, test, 0, pretendRank);
+            FillBuffer_ec(*ec_buffer2, test, 0, pretendRank);
+            FillBuffer_ec(*ec_buffer3, test, 0, pretendRank);
+            FillBuffer_ec(*ec_buffer4, test, 0, pretendRank);
+            /*ec buffers*/
+            /*ec transfer*/
+            amtXferred1 = IOR_Xfer(access, ec_fds->fd1, ec_buffer1, ec_transfer, test);
+            amtXferred2 = IOR_Xfer(access, ec_fds->fd2, ec_buffer2, ec_transfer, test);
+            amtXferred3 = IOR_Xfer(access, ec_fds->fd3, ec_buffer3, ec_transfer, test);
+            amtXferred4 = IOR_Xfer(access, ec_fds->fd4, ec_buffer4, ec_transfer, test);
+            /*ec transfer*/
+            //amtXferred = IOR_Xfer(access, fd, buffer, transfer, test); //origin_mark
+            if (amtXferred1 != ec_transfer ||amtXferred2 != ec_transfer||amtXferred3 != ec_transfer||amtXferred4 != ec_transfer)
+                ERR("cannot write to file");
+        }
+        else if (access == READ)
+        {
+            amtXferred = IOR_Xfer(access, fd, buffer, transfer, test);
+            if (amtXferred != transfer)
+                ERR("cannot read from file");
+        }
+        else if (access == WRITECHECK)
+        {
+            memset(checkBuffer, 'a', transfer);
+            amtXferred = IOR_Xfer(access, fd, checkBuffer, transfer, test);
+            if (amtXferred != transfer)
+                ERR("cannot read from file write check");
+            transferCount++;
+            errors += CompareBuffers(buffer, checkBuffer, transfer,
+                                     transferCount, test, WRITECHECK);
+        }
+        else if (access == READCHECK)
+        {
+            ReadCheck(fd, buffer, checkBuffer, readCheckBuffer, test,
+                      transfer, test->blockSize, &amtXferred,
+                      &transferCount, access, &errors);
+        }
+        dataMoved += amtXferred;
+        pairCnt++;
+
+        hitStonewall = ((test->deadlineForStonewalling != 0) && ((GetTimeStamp() - startForStonewall) > test->deadlineForStonewalling));
+    }
+
+    totalErrorCount += CountErrors(test, access, errors);
+
+    FreeBuffers(access, checkBuffer, readCheckBuffer, buffer, offsetArray);
+
+    if (access == WRITE && test->fsync == TRUE)
+    {
+        IOR_Fsync(fd, test); /*fsync after all accesses*/
+    }
+    return (dataMoved);
+} /* WriteOrRead() */
 
 /******************************************************************************/
 /*
