@@ -2828,8 +2828,7 @@ WriteOrRead_ec(IOR_param_t *test,
                 one_flag = 0;
                 /*for test*/
                 fprintf(stdout,
-                    "ec_blocksize : %lld.\n
-                     transfer : %lld.\n",
+                    "ec_blocksize : %lld.\ntransfer : %lld.\n",
                      ec_blocksize, transfer);
                 /*for test*/
                 switch (method)
