@@ -2042,6 +2042,10 @@ TestIoSys(IOR_param_t *test)
 
             /*initialize ec target files*/
             FileList ec_files;
+            ec_files.file1 = "/data/data1/ec_testfile.part1";
+            ec_files.file2 = "/data/data2/ec_testfile.part2";
+            ec_files.file3 = "/data/data3/ec_testfile.parity1";
+            ec_files.file4 = "/data/data4/ec_testfile.parity2";
             fprintf(stdout, "task %d writing %s, %s, %s, %s\n", rank, 
             ec_files.file1, ec_files.file2,
             ec_files.file3, ec_files.file4);
