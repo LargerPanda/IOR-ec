@@ -58,10 +58,10 @@ char *Methods[N] = {"reed_sol_van", "reed_sol_r6_op", "cauchy_orig", "cauchy_goo
 typedef struct FileList
 {
     /* data */
-    char file1[MAX_STR];
-    char file2[MAX_STR];
-    char file3[MAX_STR];
-    char file4[MAX_STR];
+    char *file1;
+    char *file2;
+    char *file3;
+    char *file4;
 }FileList;
 
 typedef struct FdList
