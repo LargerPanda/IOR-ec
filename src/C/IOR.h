@@ -22,7 +22,7 @@
 
 #include "aiori.h"                                 /* abstract IOR interfaces */
 #include "iordef.h"                                /* IOR Definitions */
-
+#include "ec.h"
 
 /*************************** D E F I N I T I O N S ****************************/
 
@@ -85,7 +85,7 @@ void           TestIoSys        (IOR_param_t *);
 double         TimeDeviation    (void);
 void           ValidTests       (IOR_param_t *);
 IOR_offset_t   WriteOrRead      (IOR_param_t *, void *, int);
-IOR_offset_t   WriteOrRead_ec   (IOR_param_t *, void *, int);
+IOR_offset_t WriteOrRead_ec     (IOR_param_t *, FdList *, int);
 void           WriteTimes       (IOR_param_t *, double **, int, int);
 
 

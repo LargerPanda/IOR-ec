@@ -1878,7 +1878,7 @@ TestIoSys(IOR_param_t *test)
     int            i,
                    rep,
                    maxTimeDuration;
-    //void         * fd;//origin mark
+    void         * fd;//origin mark
     /*ec fd*/
     FdList ec_fds;
     /*ec fd*/
@@ -2067,7 +2067,7 @@ TestIoSys(IOR_param_t *test)
             MPI_CHECK(MPI_Barrier(testComm), "barrier error");
             test->open = WRITE;
             timer[0][rep] = GetTimeStamp();
-            //fd = IOR_Create(testFileName, test);//origin_mark
+            fd = IOR_Create(testFileName, test);//origin_mark
 
             /*create ec fds*/
             ec_fds.fd1 = IOR_Create(ec_files.file1, test);
@@ -2765,6 +2765,7 @@ WriteOrRead_ec(IOR_param_t *test,
     int **ec_schedule = NULL;
 
     int one_flag = 1;
+    int i;
     /*ec params*/
 
     /* initialize values */
@@ -2858,11 +2859,11 @@ WriteOrRead_ec(IOR_param_t *test,
                 }
             }
 
-            for (int i = 0; i < k; i++)
+            for (i = 0; i < k; i++)
             {
                 ec_data[i] = buffer + (i * ec_blocksize);
             }
-            switch (tech)
+            switch (method)
             {
             case No_Coding:
                 break;
@@ -2913,25 +2914,25 @@ WriteOrRead_ec(IOR_param_t *test,
         }
         else if (access == READ)
         {
-            amtXferred = IOR_Xfer(access, fd, buffer, transfer, test);
-            if (amtXferred != transfer)
-                ERR("cannot read from file");
+            // amtXferred = IOR_Xfer(access, fd, buffer, transfer, test);
+            // if (amtXferred != transfer)
+            //     ERR("cannot read from file");
         }
         else if (access == WRITECHECK)
         {
-            memset(checkBuffer, 'a', transfer);
-            amtXferred = IOR_Xfer(access, fd, checkBuffer, transfer, test);
-            if (amtXferred != transfer)
-                ERR("cannot read from file write check");
-            transferCount++;
-            errors += CompareBuffers(buffer, checkBuffer, transfer,
-                                     transferCount, test, WRITECHECK);
+            // memset(checkBuffer, 'a', transfer);
+            // amtXferred = IOR_Xfer(access, fd, checkBuffer, transfer, test);
+            // if (amtXferred != transfer)
+            //     ERR("cannot read from file write check");
+            // transferCount++;
+            // errors += CompareBuffers(buffer, checkBuffer, transfer,
+            //                          transferCount, test, WRITECHECK);
         }
         else if (access == READCHECK)
         {
-            ReadCheck(fd, buffer, checkBuffer, readCheckBuffer, test,
-                      transfer, test->blockSize, &amtXferred,
-                      &transferCount, access, &errors);
+            // ReadCheck(fd, buffer, checkBuffer, readCheckBuffer, test,
+            //           transfer, test->blockSize, &amtXferred,
+            //           &transferCount, access, &errors);
         }
         dataMoved += amtXferred;
         pairCnt++;
