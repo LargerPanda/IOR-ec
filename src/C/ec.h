@@ -50,7 +50,7 @@ enum Coding_Technique
     No_Coding
 };
 
-char *Methods[N] = {"reed_sol_van", "reed_sol_r6_op", "cauchy_orig", "cauchy_good", "liberation", "blaum_roth", "liber8tion", "no_coding"};
+//char *Methods[N] = {"reed_sol_van", "reed_sol_r6_op", "cauchy_orig", "cauchy_good", "liberation", "blaum_roth", "liber8tion", "no_coding"};
 
 // enum Coding_Technique ec_method = Cauchy_Good; //here to point the coding method
 
