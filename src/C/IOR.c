@@ -2769,6 +2769,7 @@ WriteOrRead_ec(IOR_param_t *test,
     int **ec_schedule = NULL;
 
     int one_flag = 1;
+    int test_flag = 1;
     int i;
     /*ec params*/
 
@@ -2920,6 +2921,10 @@ WriteOrRead_ec(IOR_param_t *test,
             if (amtXferred1 !=  ec_blocksize ||amtXferred2 != ec_blocksize||amtXferred3 != ec_blocksize||amtXferred4 != ec_blocksize)
                 ERR("write to file failed!");
             
+            if(test_flag){
+                test_flag = 0;
+                fprintf(stdout,"per transfer size: %lld\n", amtXferred1);
+            }
             free(ec_data);
             free(ec_coding);
         }
