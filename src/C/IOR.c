@@ -1893,7 +1893,7 @@ TestIoSys(IOR_param_t *test)
     // IOR_offset_t ec_dataMoved3;
     // IOR_offset_t ec_dataMoved4;
     /*space for ec-structrue*/
-    ec_info my_ec_info = (ec_info)malloc(sizeof(ec_info));
+    ec_info my_ec_info;
     /*space for ec-structrue*/
 
     /* set up communicator for test */
@@ -1940,11 +1940,11 @@ TestIoSys(IOR_param_t *test)
     for (i = 0; i < 2; i++) 
     {   
     /*ec_timer*/
-    my_ec_info->writeVal[i] = (double *)malloc(test->repetitions * sizeof(double));
-    if (my_ec_info->writeVal[i] == NULL)
+    my_ec_info.writeVal[i] = (double *)malloc(test->repetitions * sizeof(double));
+    if (my_ec_info.writeVal[i] == NULL)
         ERR("ec:out of memory");
-    my_ec_info->readVal[i] = (double *)malloc(test->repetitions * sizeof(double));
-    if (my_ec_info->readVal[i] == NULL)
+    my_ec_info.readVal[i] = (double *)malloc(test->repetitions * sizeof(double));
+    if (my_ec_info.readVal[i] == NULL)
         ERR("ec:out of memory");
     /*ec_timer*/
 

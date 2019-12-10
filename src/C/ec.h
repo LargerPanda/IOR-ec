@@ -80,7 +80,7 @@ typedef struct ec_info
     /* data */
     double *writeVal[2];/* array to write results */
     double *readVal[2];
-}*ec_info;
+}ec_info;
 
 
 
