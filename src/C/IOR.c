@@ -2056,7 +2056,7 @@ TestIoSys(IOR_param_t *test)
             }
             DelaySecs(test->interTestDelay);
             if (test->useExistingTestFile == FALSE) {
-            RemoveFile(testFileName, test->filePerProc, test);//origin_mark
+                RemoveFile(testFileName, test->filePerProc, test);//origin_mark
                 /*delete ec files*/
                 if (access(ec_files.file1, F_OK) == 0)
                     IOR_Delete(ec_files.file1, test);

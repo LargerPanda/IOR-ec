@@ -243,6 +243,7 @@ IOR_Xfer_MPIIO(int            access,
      * 'useFileView' uses derived datatypes and individual file pointers
      */
     if (param->useFileView) {
+        fprintf(stdout, "useFileView=1\n");
         /* find offset in file */
         if (SeekOffset_MPIIO(*(MPI_File *)fd, param->offset, param) < 0) {
             /* if unsuccessful */
@@ -261,6 +262,7 @@ IOR_Xfer_MPIIO(int            access,
             }
             if (param->collective) {
                 /* individual, collective call */
+                fprintf(stdout, "collective=1\n");
                 MPI_CHECK(Access_all(*(MPI_File *)fd, buffer, length,
                                      param->transferType, &status),
                           "cannot access collective");
