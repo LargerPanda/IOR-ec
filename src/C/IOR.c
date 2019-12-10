@@ -2046,7 +2046,7 @@ TestIoSys(IOR_param_t *test)
             ec_files.file2 = "/data/data2/ec_testfile.part2";
             ec_files.file3 = "/data/data3/ec_testfile.parity1";
             ec_files.file4 = "/data/data4/ec_testfile.parity2";
-            fprintf(stdout, "task %d writing %s, %s, %s, %s\n", rank, 
+            fprintf(stdout, "task %d writing:\n%s\n%s\n%s\n%s\n", rank, 
             ec_files.file1, ec_files.file2,
             ec_files.file3, ec_files.file4);
             /*initialize ec target files*/
@@ -2058,10 +2058,14 @@ TestIoSys(IOR_param_t *test)
             if (test->useExistingTestFile == FALSE) {
             //RemoveFile(testFileName, test->filePerProc, test);//origin_mark
                 /*delete ec files*/
-                IOR_Delete(ec_files.file1, test);
-                IOR_Delete(ec_files.file2, test);
-                IOR_Delete(ec_files.file3, test);
-                IOR_Delete(ec_files.file4, test);
+                if (access(ec_files.file1, F_OK) == 0)
+                    IOR_Delete(ec_files.file1, test);
+                if (access(ec_files.file2, F_OK) == 0)
+                    IOR_Delete(ec_files.file2, test);
+                if (access(ec_files.file3, F_OK) == 0)    
+                    IOR_Delete(ec_files.file3, test);
+                if (access(ec_files.file4, F_OK) == 0)
+                    IOR_Delete(ec_files.file4, test);
                 /*delete ec files*/
             }
             MPI_CHECK(MPI_Barrier(testComm), "barrier error");
