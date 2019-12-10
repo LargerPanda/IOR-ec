@@ -2826,6 +2826,12 @@ WriteOrRead_ec(IOR_param_t *test,
             }
             if(one_flag){
                 one_flag = 0;
+                /*for test*/
+                fprintf(stdout,
+                    "ec_blocksize : %lld.\n
+                     transfer : %lld.\n",
+                     ec_blocksize, transfer);
+                /*for test*/
                 switch (method)
                 {
                 case No_Coding:
@@ -2957,7 +2963,7 @@ WriteOrRead_ec(IOR_param_t *test,
         IOR_Fsync(ec_fds->fd4, test);
     }
     return (dataMoved);
-} /* WriteOrRead() */
+} /* WriteOrRead_ec() */
 
 /******************************************************************************/
 /*
