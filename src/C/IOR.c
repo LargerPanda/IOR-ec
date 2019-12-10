@@ -2744,7 +2744,23 @@ WriteOrRead_ec(IOR_param_t *test,
         amtXferred2,
         amtXferred3,
         amtXferred4,
-        ec_transfer;
+        ec_blocksize,
+        ec_buffersize;
+
+    enum Coding_Technique method = Cauchy_Good; // coding technique (parameter)
+    int k = 2, m = 2, w = 8, ec_packetsize = 8;    // parameters
+    //int ec_size = 524288; //equal to  ec_blocksize
+    int total;
+    int extra;
+    int readins = 1;
+    /* Jerasure Arguments */
+    char **ec_data = NULL;
+    char **ec_coding = NULL;
+    int *ec_matrix = NULL;
+    int *ec_bitmatrix = NULL;
+    int **ec_schedule = NULL;
+
+    int one_flag = 1;
     /*ec params*/
 
     /* initialize values */
@@ -2781,27 +2797,115 @@ WriteOrRead_ec(IOR_param_t *test,
         transfer = test->transferSize;
         if (access == WRITE)
         {
-            ec_transfer = transfer/K;
+            ec_blocksize = transfer/k;
+            ec_buffersize = transfer;
             /*ec buffers*/
-            void *ec_buffer1 = CreateBuffer(ec_transfer);
-            void *ec_buffer2 = CreateBuffer(ec_transfer);
-            void *ec_buffer3 = CreateBuffer(ec_transfer);
-            void *ec_buffer4 = CreateBuffer(ec_transfer);
+            // void *ec_buffer1 = CreateBuffer(ec_blocksize);
+            // void *ec_buffer2 = CreateBuffer(ec_blocksize);
+            // void *ec_buffer3 = CreateBuffer(ec_blocksize);
+            // void *ec_buffer4 = CreateBuffer(ec_blocksize);
             /*encode original buffer & fill the ec_buffers*/
-            FillBuffer_ec(*ec_buffer1, test, 0, pretendRank);
-            FillBuffer_ec(*ec_buffer2, test, 0, pretendRank);
-            FillBuffer_ec(*ec_buffer3, test, 0, pretendRank);
-            FillBuffer_ec(*ec_buffer4, test, 0, pretendRank);
+            ec_data = (char **)malloc(sizeof(char *) * k);
+            ec_coding = (char **)malloc(sizeof(char *) * m);
+            for (i = 0; i < m; i++)
+            {
+                ec_coding[i] = (char *)malloc(sizeof(char) * ec_blocksize);
+                if (ec_coding[i] == NULL)
+                {
+                    ERR("malloc coding fail");
+                }
+            }
+            if(one_flag){
+                one_flag = 0;
+                switch (method)
+                {
+                case No_Coding:
+                    break;
+                case Reed_Sol_Van:
+                    ec_matrix = reed_sol_vandermonde_coding_matrix(k, m, w);
+                    break;
+                case Reed_Sol_R6_Op:
+                    break;
+                case Cauchy_Orig:
+                    ec_matrix = cauchy_original_coding_matrix(k, m, w);
+                    ec_bitmatrix = jerasure_matrix_to_bitmatrix(k, m, w, ec_matrix);
+                    ec_schedule = jerasure_smart_bitmatrix_to_schedule(k, m, w, ec_bitmatrix);
+                    break;
+                case Cauchy_Good:
+                    ec_matrix = cauchy_good_general_coding_matrix(k, m, w);
+                    ec_bitmatrix = jerasure_matrix_to_bitmatrix(k, m, w, ec_matrix);
+                    ec_schedule = jerasure_smart_bitmatrix_to_schedule(k, m, w, ec_bitmatrix);
+                    break;
+                case Liberation:
+                    ec_bitmatrix = liberation_coding_bitmatrix(k, w);
+                    ec_schedule = jerasure_smart_bitmatrix_to_schedule(k, m, w, ec_bitmatrix);
+                    break;
+                case Blaum_Roth:
+                    ec_bitmatrix = blaum_roth_coding_bitmatrix(k, w);
+                    ec_schedule = jerasure_smart_bitmatrix_to_schedule(k, m, w, ec_bitmatrix);
+                    break;
+                case Liber8tion:
+                    ec_bitmatrix = liber8tion_coding_bitmatrix(k);
+                    ec_schedule = jerasure_smart_bitmatrix_to_schedule(k, m, w, ec_bitmatrix);
+                    break;
+                case RDP:
+                case EVENODD:
+                    assert(0);
+                }
+            }
+
+            for (int i = 0; i < k; i++)
+            {
+                ec_data[i] = buffer + (i * ec_blocksize);
+            }
+            switch (tech)
+            {
+            case No_Coding:
+                break;
+            case Reed_Sol_Van:
+                jerasure_matrix_encode(k, m, w, ec_matrix, ec_data, ec_coding, ec_blocksize);
+                break;
+            case Reed_Sol_R6_Op:
+                reed_sol_r6_encode(k, w, ec_data, ec_coding, ec_blocksize);
+                break;
+            case Cauchy_Orig:
+                jerasure_schedule_encode(k, m, w, ec_schedule, ec_data, ec_coding, ec_blocksize, ec_packetsize);
+                break;
+            case Cauchy_Good:
+                jerasure_schedule_encode(k, m, w, ec_schedule, ec_data, ec_coding, ec_blocksize, ec_packetsize);
+                break;
+            case Liberation:
+                jerasure_schedule_encode(k, m, w, ec_schedule, ec_data, ec_coding, ec_blocksize, ec_packetsize);
+                break;
+            case Blaum_Roth:
+                jerasure_schedule_encode(k, m, w, ec_schedule, ec_data, ec_coding, ec_blocksize, ec_packetsize);
+                break;
+            case Liber8tion:
+                jerasure_schedule_encode(k, m, w, ec_schedule, ec_data, ec_coding, ec_blocksize, ec_packetsize);
+                break;
+            case RDP:
+            case EVENODD:
+                assert(0);
+            }
+            /*encode original buffer & fill the ec_buffers*/
+            // FillBuffer_ec(*ec_buffer1, test, 0, pretendRank);
+            // FillBuffer_ec(*ec_buffer2, test, 0, pretendRank);
+            // FillBuffer_ec(*ec_buffer3, test, 0, pretendRank);
+            // FillBuffer_ec(*ec_buffer4, test, 0, pretendRank);
             /*ec buffers*/
             /*ec transfer*/
-            amtXferred1 = IOR_Xfer(access, ec_fds->fd1, ec_buffer1, ec_transfer, test);
-            amtXferred2 = IOR_Xfer(access, ec_fds->fd2, ec_buffer2, ec_transfer, test);
-            amtXferred3 = IOR_Xfer(access, ec_fds->fd3, ec_buffer3, ec_transfer, test);
-            amtXferred4 = IOR_Xfer(access, ec_fds->fd4, ec_buffer4, ec_transfer, test);
+            amtXferred1 = IOR_Xfer(access, ec_fds->fd1, ec_data[0], ec_blocksize, test);
+            amtXferred2 = IOR_Xfer(access, ec_fds->fd2, ec_data[1], ec_blocksize, test);
+            amtXferred3 = IOR_Xfer(access, ec_fds->fd3, ec_coding[0], ec_blocksize, test);
+            amtXferred4 = IOR_Xfer(access, ec_fds->fd4, ec_coding[1], ec_blocksize, test);
             /*ec transfer*/
             //amtXferred = IOR_Xfer(access, fd, buffer, transfer, test); //origin_mark
-            if (amtXferred1 != ec_transfer ||amtXferred2 != ec_transfer||amtXferred3 != ec_transfer||amtXferred4 != ec_transfer)
-                ERR("cannot write to file");
+            amtXferred = ec_blocksize*k;
+            if (amtXferred1 !=  ec_blocksize ||amtXferred2 != ec_blocksize||amtXferred3 != ec_blocksize||amtXferred4 != ec_blocksize)
+                ERR("write to file failed!");
+            
+            free(ec_data);
+            free(ec_coding);
         }
         else if (access == READ)
         {
@@ -2837,7 +2941,11 @@ WriteOrRead_ec(IOR_param_t *test,
 
     if (access == WRITE && test->fsync == TRUE)
     {
-        IOR_Fsync(fd, test); /*fsync after all accesses*/
+        //IOR_Fsync(fd, test); /*fsync after all accesses*/
+        IOR_Fsync(ec_fds->fd1, test);
+        IOR_Fsync(ec_fds->fd2, test);
+        IOR_Fsync(ec_fds->fd3, test);
+        IOR_Fsync(ec_fds->fd4, test);
     }
     return (dataMoved);
 } /* WriteOrRead() */
