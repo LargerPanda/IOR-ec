@@ -2795,7 +2795,7 @@ WriteOrRead_ec(IOR_param_t *test,
     IOR_offset_t ec_count = 0;
     while ((offsetArray[pairCnt] != -1) && !hitStonewall)
     {
-        ec_count++；
+        ec_count++;
         test->offset = offsetArray[pairCnt];
         /*
          * fills each transfer with a unique pattern
