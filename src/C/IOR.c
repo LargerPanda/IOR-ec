@@ -2792,8 +2792,10 @@ WriteOrRead_ec(IOR_param_t *test,
     hitStonewall = ((test->deadlineForStonewalling != 0) && ((GetTimeStamp() - startForStonewall) > test->deadlineForStonewalling));
 
     /* loop over offsets to access */
+    IOR_offset_t ec_count = 0;
     while ((offsetArray[pairCnt] != -1) && !hitStonewall)
     {
+        ec_count++；
         test->offset = offsetArray[pairCnt];
         /*
          * fills each transfer with a unique pattern
@@ -2961,6 +2963,7 @@ WriteOrRead_ec(IOR_param_t *test,
         IOR_Fsync(ec_fds->fd3, test);
         IOR_Fsync(ec_fds->fd4, test);
     }
+    fprintf(stdout,"total count: %lld.\n", ec_count);
     return (dataMoved);
 } /* WriteOrRead_ec() */
 
