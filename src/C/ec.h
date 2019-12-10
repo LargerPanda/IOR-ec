@@ -20,7 +20,7 @@
 #include <reed_sol.h>
 #include <cauchy.h>
 #include <liberation.h>
-#include <timing.h>
+//#include <timing.h>
 
 #define N 10
 //define k*m
