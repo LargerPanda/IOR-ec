@@ -298,11 +298,13 @@ IOR_Xfer_MPIIO(int            access,
         } else {
             if (param->collective) {
                 /* explicit, collective call */
+                fprintf(stdout,"collective=1\n");
                 MPI_CHECK(Access_at_all(*(MPI_File *)fd, param->offset,
                                         buffer, length, MPI_BYTE, &status),
                           "cannot access explicit, collective");
             } else {
                 /* explicit, noncollective call */
+                fprintf(stdout, "collective!=1\n");
                 MPI_CHECK(Access_at(*(MPI_File *)fd, param->offset, buffer,
                                     length, MPI_BYTE, &status),
                           "cannot access explicit, noncollective");
