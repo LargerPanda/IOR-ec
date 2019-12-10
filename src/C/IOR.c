@@ -1941,10 +1941,10 @@ TestIoSys(IOR_param_t *test)
     {   
     /*ec_timer*/
     my_ec_info->writeVal[i] = (double *)malloc(test->repetitions * sizeof(double));
-    if (test->writeVal[i] == NULL)
+    if (my_ec_info->writeVal[i] == NULL)
         ERR("ec:out of memory");
     my_ec_info->readVal[i] = (double *)malloc(test->repetitions * sizeof(double));
-    if (test->readVal[i] == NULL)
+    if (my_ec_info->readVal[i] == NULL)
         ERR("ec:out of memory");
     /*ec_timer*/
 
