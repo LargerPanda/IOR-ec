@@ -2798,6 +2798,8 @@ WriteOrRead_ec(IOR_param_t *test,
     {
         ec_count++;
         test->offset = offsetArray[pairCnt];
+        //ec_offset
+        test->offset = test->offset/k;
         /*
          * fills each transfer with a unique pattern
          * containing the offset into the file
