@@ -305,7 +305,7 @@ IOR_Xfer_MPIIO(int            access,
             } else {
                 /* explicit, noncollective call */
                 //fprintf(stdout, "collective!=1\n");
-                fprintf(stdout, "offset = %lld\n", param->offset);
+                //fprintf(stdout, "offset = %lld\n", param->offset);
                 MPI_CHECK(Access_at(*(MPI_File *)fd, param->offset, buffer,
                                     length, MPI_BYTE, &status),
                           "cannot access explicit, noncollective");
