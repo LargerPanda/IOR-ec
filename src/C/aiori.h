@@ -201,7 +201,7 @@ IOR_offset_t IOR_GetFileSize_POSIX (IOR_param_t *, MPI_Comm, char *);
 /* MPIIO-specific functions */
 void *       IOR_Create_MPIIO      (char *, IOR_param_t *);
 void *       IOR_Open_MPIIO        (char *, IOR_param_t *);
-IOR_offset_t IOR_Xfer_MPIIO        (int, void *, IOR_size_t *,
+IOR_offset_t IOR_Xfer_MPIIO        (int, void *, void *,
                                     IOR_offset_t, IOR_param_t *);
 void         IOR_Close_MPIIO       (void *, IOR_param_t *);
 void         IOR_Delete_MPIIO      (char *, IOR_param_t *);
