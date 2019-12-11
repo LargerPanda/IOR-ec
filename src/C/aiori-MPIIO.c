@@ -196,7 +196,7 @@ IOR_Open_MPIIO(char        * testFileName,
 IOR_offset_t
 IOR_Xfer_MPIIO(int            access,
                void         * fd,
-               IOR_size_t   * buffer,
+               void         * buffer,
                IOR_offset_t   length,
                IOR_param_t  * param)
 {
