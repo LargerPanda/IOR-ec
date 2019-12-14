@@ -3013,6 +3013,7 @@ WriteOrRead_ec(IOR_param_t *test,
         }
         else if (access == READCHECK)
         {
+            fprintf(stdout, "in READCHECK");
             // ReadCheck(fd, buffer, checkBuffer, readCheckBuffer, test,
             //           transfer, test->blockSize, &amtXferred,
             //           &transferCount, access, &errors);
