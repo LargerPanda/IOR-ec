@@ -2074,10 +2074,10 @@ TestIoSys(IOR_param_t *test)
             fd = IOR_Create(testFileName, test);//origin_mark
 
             /*create ec fds*/
-            ec_fds.fd[0] = IOR_Create(ec_files.file[1], test);
-            ec_fds.fd[1] = IOR_Create(ec_files.file[2], test);
-            ec_fds.fd[2] = IOR_Create(ec_files.file[3], test);
-            ec_fds.fd[3] = IOR_Create(ec_files.file[4], test);
+            ec_fds.fd[0] = IOR_Create(ec_files.file[0], test);
+            ec_fds.fd[1] = IOR_Create(ec_files.file[1], test);
+            ec_fds.fd[2] = IOR_Create(ec_files.file[2], test);
+            ec_fds.fd[3] = IOR_Create(ec_files.file[3], test);
             if (ec_fds.fd[0] == NULL || ec_fds.fd[1] == NULL || ec_fds.fd[2] == NULL || ec_fds.fd[3] == NULL)
                 ERR("open ec fds failed");
             /*create ec fds*/
