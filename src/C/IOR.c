@@ -2952,6 +2952,8 @@ WriteOrRead_ec(IOR_param_t *test,
         else if (access == READ)
         {
             /*************************ec multi-thread read*************************/
+            fprintf(stdout, "in READ!\n");
+            
             ec_blocksize = transfer/k;
             ec_buffersize = transfer;
             
