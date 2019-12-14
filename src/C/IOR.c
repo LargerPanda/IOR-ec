@@ -2280,7 +2280,7 @@ TestIoSys(IOR_param_t *test)
             }
             timer[8][rep] = GetTimeStamp();
             //dataMoved = WriteOrRead(test, fd, READ);
-            dataMoved = WriteOrRead_ec(test, ec_fds, READ);
+            dataMoved = WriteOrRead_ec(test, &ec_fds, READ);
             timer[9][rep] = GetTimeStamp();
             if (test->intraTestBarriers)
                 MPI_CHECK(MPI_Barrier(testComm), "barrier error");
