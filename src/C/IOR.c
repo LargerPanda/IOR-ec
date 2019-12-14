@@ -2739,10 +2739,10 @@ ec_read_thread(ec_read_thread_args* arg)
     //void *fd = arg->fds->fd[id];
     fprintf(stdout,"reading file%...\n",id);
     IOR_offset_t transferred_size = 0;
-    if(id<k){
+    if(id<K){
         transferred_size = IOR_Xfer(arg->access, arg->fds->fd[id], (arg->ec_data)[id], arg->transfer, arg->test);
     }else{
-        transferred_size = IOR_Xfer(arg->access, arg->fds->fd[id], (arg->ec_coding)[id - k], arg->transfer, arg->test);
+        transferred_size = IOR_Xfer(arg->access, arg->fds->fd[id], (arg->ec_coding)[id - K], arg->transfer, arg->test);
     }
     fprintf(stdout, "reading file%d complete, size: %lld\n", id, transferred_size);
 }

@@ -88,7 +88,7 @@ typedef struct ec_read_thread_args
 {
     /* data */
     int id;
-    IOR_param_t *test
+    IOR_param_t *test;
     FdList *fds;
     int access;
     ec_read_timer *ec_timer;
