@@ -2042,13 +2042,13 @@ TestIoSys(IOR_param_t *test)
 
             /*initialize ec target files*/
             FileList ec_files;
-            ec_files.file[1] = "/data/data1/ec_testfile.part1";
-            ec_files.file[2] = "/data/data2/ec_testfile.part2";
-            ec_files.file[3] = "/data/data3/ec_testfile.parity1";
-            ec_files.file[4] = "/data/data4/ec_testfile.parity2";
+            ec_files.file[0] = "/data/data1/ec_testfile.part1";
+            ec_files.file[1] = "/data/data2/ec_testfile.part2";
+            ec_files.file[2] = "/data/data3/ec_testfile.parity1";
+            ec_files.file[3] = "/data/data4/ec_testfile.parity2";
             fprintf(stdout, "task %d writing:\n%s\n%s\n%s\n%s\n", rank, 
-            ec_files.file[1], ec_files.file[2],
-            ec_files.file[3], ec_files.file[4]);
+            ec_files.file[0], ec_files.file[1],
+            ec_files.file[2], ec_files.file[3]);
             /*initialize ec target files*/
 
             if (verbose >= VERBOSE_3) {
@@ -2058,14 +2058,14 @@ TestIoSys(IOR_param_t *test)
             if (test->useExistingTestFile == FALSE) {
                 RemoveFile(testFileName, test->filePerProc, test);//origin_mark
                 /*delete ec files*/
+                if (access(ec_files.file[0], F_OK) == 0)
+                    IOR_Delete(ec_files.file[0], test);
                 if (access(ec_files.file[1], F_OK) == 0)
                     IOR_Delete(ec_files.file[1], test);
-                if (access(ec_files.file[2], F_OK) == 0)
+                if (access(ec_files.file[2], F_OK) == 0)    
                     IOR_Delete(ec_files.file[2], test);
-                if (access(ec_files.file[3], F_OK) == 0)    
+                if (access(ec_files.file[3], F_OK) == 0)
                     IOR_Delete(ec_files.file[3], test);
-                if (access(ec_files.file[4], F_OK) == 0)
-                    IOR_Delete(ec_files.file[4], test);
                 /*delete ec files*/
             }
             MPI_CHECK(MPI_Barrier(testComm), "barrier error");
@@ -2074,11 +2074,11 @@ TestIoSys(IOR_param_t *test)
             fd = IOR_Create(testFileName, test);//origin_mark
 
             /*create ec fds*/
-            ec_fds.fd[1] = IOR_Create(ec_files.file[1], test);
-            ec_fds.fd[2] = IOR_Create(ec_files.file[2], test);
-            ec_fds.fd[3] = IOR_Create(ec_files.file[3], test);
-            ec_fds.fd[4] = IOR_Create(ec_files.file[4], test);
-            if (ec_fds.fd[1] == NULL || ec_fds.fd[2] == NULL || ec_fds.fd[3] == NULL || ec_fds.fd[4] == NULL)
+            ec_fds.fd[0] = IOR_Create(ec_files.file[1], test);
+            ec_fds.fd[1] = IOR_Create(ec_files.file[2], test);
+            ec_fds.fd[2] = IOR_Create(ec_files.file[3], test);
+            ec_fds.fd[3] = IOR_Create(ec_files.file[4], test);
+            if (ec_fds.fd[0] == NULL || ec_fds.fd[1] == NULL || ec_fds.fd[2] == NULL || ec_fds.fd[3] == NULL)
                 ERR("open ec fds failed");
             /*create ec fds*/
 
@@ -2092,16 +2092,17 @@ TestIoSys(IOR_param_t *test)
             timer[2][rep] = GetTimeStamp();
             //dataMoved = WriteOrRead(test, fd, WRITE); //origin_mark
             dataMoved = WriteOrRead_ec(test, &ec_fds, WRITE);//ec_version
+            //fprintf(stdout, "datamoved=%lld\n", dataMoved);
             timer[3][rep] = GetTimeStamp();
             if (test->intraTestBarriers)
                 MPI_CHECK(MPI_Barrier(testComm), "barrier error");
             timer[4][rep] = GetTimeStamp();
             //IOR_Close(ec_fds.fd1, test);//origin_mark
             /*ec close*/
+            IOR_Close(ec_fds.fd[0], test);
             IOR_Close(ec_fds.fd[1], test);
             IOR_Close(ec_fds.fd[2], test);
             IOR_Close(ec_fds.fd[3], test);
-            IOR_Close(ec_fds.fd[4], test);
             /*ec close*/
 
 #if USE_UNDOC_OPT /* includeDeleteTime */
@@ -2238,6 +2239,17 @@ TestIoSys(IOR_param_t *test)
             /* Using globally passed rankOffset, following function generates testFileName to read */
             GetTestFileName(testFileName, test);
 
+            /*initialize ec target files*/
+            FileList ec_files;
+            ec_files.file[0] = "/data/data1/ec_testfile.part1";
+            ec_files.file[1] = "/data/data2/ec_testfile.part2";
+            ec_files.file[2] = "/data/data3/ec_testfile.parity1";
+            ec_files.file[3] = "/data/data4/ec_testfile.parity2";
+            fprintf(stdout, "task %d reading:\n%s\n%s\n%s\n%s\n", rank, 
+            ec_files.file[0], ec_files.file[1],
+            ec_files.file[2], ec_files.file[3]);
+            /*initialize ec target files*/
+
             if (verbose >= VERBOSE_3) {
                 fprintf(stdout, "task %d reading %s\n", rank, testFileName);
             }
@@ -2249,6 +2261,16 @@ TestIoSys(IOR_param_t *test)
             if (rank == 0 && verbose >= VERBOSE_2) {
                 fprintf(stdout, "[RANK %03d] open for reading file %s XXCEL\n", rank,testFileName);
             }
+
+            /*create ec fds*/
+            ec_fds.fd[0] = IOR_Open(ec_files.file[0], test);
+            ec_fds.fd[1] = IOR_Open(ec_files.file[1], test);
+            ec_fds.fd[2] = IOR_Open(ec_files.file[2], test);
+            ec_fds.fd[3] = IOR_Open(ec_files.file[3], test);
+            if (ec_fds.fd[0] == NULL || ec_fds.fd[1] == NULL || ec_fds.fd[2] == NULL || ec_fds.fd[3] == NULL)
+                ERR("open ec fds failed");
+            /*create ec fds*/
+
             timer[7][rep] = GetTimeStamp();
             if (test->intraTestBarriers)
                 MPI_CHECK(MPI_Barrier(testComm), "barrier error");
@@ -2257,12 +2279,21 @@ TestIoSys(IOR_param_t *test)
                 fprintf(stdout, "%s\n", CurrentTimeString());
             }
             timer[8][rep] = GetTimeStamp();
-            dataMoved = WriteOrRead(test, fd, READ);
+            //dataMoved = WriteOrRead(test, fd, READ);
+            dataMoved = WriteOrRead_ec(test, ec_fds, READ);
             timer[9][rep] = GetTimeStamp();
             if (test->intraTestBarriers)
                 MPI_CHECK(MPI_Barrier(testComm), "barrier error");
             timer[10][rep] = GetTimeStamp();
             IOR_Close(fd, test);
+
+            /*close ec fds*/
+            IOR_Close(ec_fds.fd[0], test);
+            IOR_Close(ec_fds.fd[1], test);
+            IOR_Close(ec_fds.fd[2], test);
+            IOR_Close(ec_fds.fd[3], test);
+            /*close ec fds*/
+
             timer[11][rep] = GetTimeStamp();
 
             /* get the size of the file just read */
@@ -2932,10 +2963,10 @@ WriteOrRead_ec(IOR_param_t *test,
             // FillBuffer_ec(*ec_buffer4, test, 0, pretendRank);
             /*ec buffers*/
             /*ec transfer*/
-            amtXferred1 = IOR_Xfer(access, ec_fds->fd[1], ec_data[0], ec_blocksize, test);
-            amtXferred2 = IOR_Xfer(access, ec_fds->fd[2], ec_data[1], ec_blocksize, test);
-            amtXferred3 = IOR_Xfer(access, ec_fds->fd[3], ec_coding[0], ec_blocksize, test);
-            amtXferred4 = IOR_Xfer(access, ec_fds->fd[4], ec_coding[1], ec_blocksize, test);
+            amtXferred1 = IOR_Xfer(access, ec_fds->fd[0], ec_data[0], ec_blocksize, test);
+            amtXferred2 = IOR_Xfer(access, ec_fds->fd[1], ec_data[1], ec_blocksize, test);
+            amtXferred3 = IOR_Xfer(access, ec_fds->fd[2], ec_coding[0], ec_blocksize, test);
+            amtXferred4 = IOR_Xfer(access, ec_fds->fd[3], ec_coding[1], ec_blocksize, test);
             /*ec transfer*/
             //amtXferred = IOR_Xfer(access, fd, buffer, transfer, test); //origin_mark
             amtXferred = ec_blocksize*k;
