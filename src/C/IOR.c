@@ -3026,6 +3026,8 @@ WriteOrRead_ec(IOR_param_t *test,
             for (i = 0; i < TOTAL_STRIPE_NUM; i++){
                 pthread_join(threads[i],NULL);
             }
+
+            amtXferred = ec_blocksize*k;
             /*************************ec multi-thread read*************************/
             
             // amtXferred = IOR_Xfer(access, fd, buffer, transfer, test);
