@@ -20,12 +20,14 @@
 #include <reed_sol.h>
 #include <cauchy.h>
 #include <liberation.h>
+#include <pthread.h>
 //#include <timing.h>
 
 #define N 10
 //define k*m
 #define K 2
 #define M 2
+#define TOTAL_STRIPE_NUM (K+M)
 //word count
 // #define W 8  
 // //0 means chosen adaptively 
@@ -58,19 +60,13 @@ enum Coding_Technique
 typedef struct FileList
 {
     /* data */
-    char *file1;
-    char *file2;
-    char *file3;
-    char *file4;
+    char *file[TOTAL_STRIPE_NUM];
 }FileList;
 
 typedef struct FdList
 {
     /* data */
-    void *fd1;
-    void *fd2;
-    void *fd3;
-    void *fd4;
+    void *fd[TOTAL_STRIPE_NUM];
 }FdList;
 
 
@@ -82,6 +78,24 @@ typedef struct ec_info
     double *readVal[2];
 }ec_info;
 
+typedef struct ec_read_timer
+{
+    /* data */
+    double readVal[2];
+}ec_read_timer;
 
+typedef struct ec_read_thread_args
+{
+    /* data */
+    int id;
+    IOR_param_t *test
+    FdList *fds;
+    int access;
+    ec_read_timer *ec_timer;
+    IOR_offset_t transfer;
+    char **ec_data;
+    char **ec_coding;
+
+} ec_read_thread_args;
 
 #endif // _EC_H

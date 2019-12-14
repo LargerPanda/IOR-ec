@@ -2042,13 +2042,13 @@ TestIoSys(IOR_param_t *test)
 
             /*initialize ec target files*/
             FileList ec_files;
-            ec_files.file1 = "/data/data1/ec_testfile.part1";
-            ec_files.file2 = "/data/data2/ec_testfile.part2";
-            ec_files.file3 = "/data/data3/ec_testfile.parity1";
-            ec_files.file4 = "/data/data4/ec_testfile.parity2";
+            ec_files.file[1] = "/data/data1/ec_testfile.part1";
+            ec_files.file[2] = "/data/data2/ec_testfile.part2";
+            ec_files.file[3] = "/data/data3/ec_testfile.parity1";
+            ec_files.file[4] = "/data/data4/ec_testfile.parity2";
             fprintf(stdout, "task %d writing:\n%s\n%s\n%s\n%s\n", rank, 
-            ec_files.file1, ec_files.file2,
-            ec_files.file3, ec_files.file4);
+            ec_files.file[1], ec_files.file[2],
+            ec_files.file[3], ec_files.file[4]);
             /*initialize ec target files*/
 
             if (verbose >= VERBOSE_3) {
@@ -2058,14 +2058,14 @@ TestIoSys(IOR_param_t *test)
             if (test->useExistingTestFile == FALSE) {
                 RemoveFile(testFileName, test->filePerProc, test);//origin_mark
                 /*delete ec files*/
-                if (access(ec_files.file1, F_OK) == 0)
-                    IOR_Delete(ec_files.file1, test);
-                if (access(ec_files.file2, F_OK) == 0)
-                    IOR_Delete(ec_files.file2, test);
-                if (access(ec_files.file3, F_OK) == 0)    
-                    IOR_Delete(ec_files.file3, test);
-                if (access(ec_files.file4, F_OK) == 0)
-                    IOR_Delete(ec_files.file4, test);
+                if (access(ec_files.file[1], F_OK) == 0)
+                    IOR_Delete(ec_files.file[1], test);
+                if (access(ec_files.file[2], F_OK) == 0)
+                    IOR_Delete(ec_files.file[2], test);
+                if (access(ec_files.file[3], F_OK) == 0)    
+                    IOR_Delete(ec_files.file[3], test);
+                if (access(ec_files.file[4], F_OK) == 0)
+                    IOR_Delete(ec_files.file[4], test);
                 /*delete ec files*/
             }
             MPI_CHECK(MPI_Barrier(testComm), "barrier error");
@@ -2074,11 +2074,11 @@ TestIoSys(IOR_param_t *test)
             fd = IOR_Create(testFileName, test);//origin_mark
 
             /*create ec fds*/
-            ec_fds.fd1 = IOR_Create(ec_files.file1, test);
-            ec_fds.fd2 = IOR_Create(ec_files.file2, test);
-            ec_fds.fd3 = IOR_Create(ec_files.file3, test);
-            ec_fds.fd4 = IOR_Create(ec_files.file4, test);
-            if (ec_fds.fd1 == NULL || ec_fds.fd2 == NULL || ec_fds.fd3 == NULL || ec_fds.fd4 == NULL)
+            ec_fds.fd[1] = IOR_Create(ec_files.file[1], test);
+            ec_fds.fd[2] = IOR_Create(ec_files.file[2], test);
+            ec_fds.fd[3] = IOR_Create(ec_files.file[3], test);
+            ec_fds.fd[4] = IOR_Create(ec_files.file[4], test);
+            if (ec_fds.fd[1] == NULL || ec_fds.fd[2] == NULL || ec_fds.fd[3] == NULL || ec_fds.fd[4] == NULL)
                 ERR("open ec fds failed");
             /*create ec fds*/
 
@@ -2098,10 +2098,10 @@ TestIoSys(IOR_param_t *test)
             timer[4][rep] = GetTimeStamp();
             //IOR_Close(ec_fds.fd1, test);//origin_mark
             /*ec close*/
-            IOR_Close(ec_fds.fd1, test);
-            IOR_Close(ec_fds.fd2, test);
-            IOR_Close(ec_fds.fd3, test);
-            IOR_Close(ec_fds.fd4, test);
+            IOR_Close(ec_fds.fd[1], test);
+            IOR_Close(ec_fds.fd[2], test);
+            IOR_Close(ec_fds.fd[3], test);
+            IOR_Close(ec_fds.fd[4], test);
             /*ec close*/
 
 #if USE_UNDOC_OPT /* includeDeleteTime */
@@ -2728,6 +2728,25 @@ WriteOrRead(IOR_param_t * test,
     return(dataMoved);
 } /* WriteOrRead() */
 
+/****************************ec functions*******************************************/
+
+
+
+void* 
+ec_read_thread(ec_read_thread_args* arg)
+{
+    int id = arg->id;
+    //void *fd = arg->fds->fd[id];
+    fprintf(stdout,"reading file%...\n",id);
+    IOR_offset_t transferred_size = 0;
+    if(id<k){
+        transferred_size = IOR_Xfer(arg->access, arg->fds->fd[id], (arg->ec_data)[id], arg->transfer, arg->test);
+    }else{
+        transferred_size = IOR_Xfer(arg->access, arg->fds->fd[id], (arg->ec_coding)[id - k], arg->transfer, arg->test);
+    }
+    fprintf(stdout, "reading file%d complete, size: %lld\n", id, transferred_size);
+}
+
 IOR_offset_t
 WriteOrRead_ec(IOR_param_t *test,
             FdList *ec_fds,
@@ -2747,7 +2766,7 @@ WriteOrRead_ec(IOR_param_t *test,
     double startForStonewall;
     int hitStonewall;
 
-    /*ec params*/
+    /********************************ec params******************************/
     IOR_offset_t amtXferred1,
         amtXferred2,
         amtXferred3,
@@ -2771,7 +2790,7 @@ WriteOrRead_ec(IOR_param_t *test,
     int one_flag = 1;
     int test_flag = 1;
     int i;
-    /*ec params*/
+    /********************************ec params******************************/
 
     /* initialize values */
     pretendRank = (rank + rankOffset) % test->numTasks;
@@ -2913,10 +2932,10 @@ WriteOrRead_ec(IOR_param_t *test,
             // FillBuffer_ec(*ec_buffer4, test, 0, pretendRank);
             /*ec buffers*/
             /*ec transfer*/
-            amtXferred1 = IOR_Xfer(access, ec_fds->fd1, ec_data[0], ec_blocksize, test);
-            amtXferred2 = IOR_Xfer(access, ec_fds->fd2, ec_data[1], ec_blocksize, test);
-            amtXferred3 = IOR_Xfer(access, ec_fds->fd3, ec_coding[0], ec_blocksize, test);
-            amtXferred4 = IOR_Xfer(access, ec_fds->fd4, ec_coding[1], ec_blocksize, test);
+            amtXferred1 = IOR_Xfer(access, ec_fds->fd[1], ec_data[0], ec_blocksize, test);
+            amtXferred2 = IOR_Xfer(access, ec_fds->fd[2], ec_data[1], ec_blocksize, test);
+            amtXferred3 = IOR_Xfer(access, ec_fds->fd[3], ec_coding[0], ec_blocksize, test);
+            amtXferred4 = IOR_Xfer(access, ec_fds->fd[4], ec_coding[1], ec_blocksize, test);
             /*ec transfer*/
             //amtXferred = IOR_Xfer(access, fd, buffer, transfer, test); //origin_mark
             amtXferred = ec_blocksize*k;
@@ -2932,6 +2951,50 @@ WriteOrRead_ec(IOR_param_t *test,
         }
         else if (access == READ)
         {
+            /*************************ec multi-thread read*************************/
+            ec_blocksize = transfer/k;
+            ec_buffersize = transfer;
+            
+            pthread_t threads[TOTAL_STRIPE_NUM];
+            ec_read_timer ec_timers[TOTAL_STRIPE_NUM];
+            ec_read_thread_args ec_read_args[TOTAL_STRIPE_NUM];
+            ec_data = (char **)malloc(sizeof(char *) * k);
+            ec_coding = (char **)malloc(sizeof(char *) * m);
+            
+            for(i=0;i<k;i++){
+                ec_data[i] = (char *)malloc(sizeof(char) * ec_blocksize);
+                if (ec_data[i] == NULL)
+                {
+                    ERR("malloc data fail");
+                }
+            }
+            
+            for(i=0;i<m;i++){
+                ec_coding[i] = (char *)malloc(sizeof(char) * ec_blocksize);
+                if (ec_coding[i] == NULL)
+                {
+                    ERR("malloc coding fail");
+                }
+            }
+            
+            
+            for (i = 0; i < TOTAL_STRIPE_NUM; i++)
+            {
+                ec_read_args[i].fds = ec_fds;
+                ec_read_args[i].id = i;
+                ec_read_args[i].ec_timer = &ec_timers[i];
+                ec_read_args[i].test = test;
+                ec_read_args[i].ec_data = ec_data;
+                ec_read_args[i].ec_coding = ec_coding;
+                ec_read_args[i].transfer = ec_blocksize;
+                pthread_create(&threads[i], NULL, ec_read_thread, &ec_read_args[i]);
+            }
+
+            for (i = 0; i < TOTAL_STRIPE_NUM; i++){
+                pthread_join(threads[i],NULL);
+            }
+            /*************************ec multi-thread read*************************/
+            
             // amtXferred = IOR_Xfer(access, fd, buffer, transfer, test);
             // if (amtXferred != transfer)
             //     ERR("cannot read from file");
@@ -2965,14 +3028,16 @@ WriteOrRead_ec(IOR_param_t *test,
     if (access == WRITE && test->fsync == TRUE)
     {
         //IOR_Fsync(fd, test); /*fsync after all accesses*/
-        IOR_Fsync(ec_fds->fd1, test);
-        IOR_Fsync(ec_fds->fd2, test);
-        IOR_Fsync(ec_fds->fd3, test);
-        IOR_Fsync(ec_fds->fd4, test);
+        IOR_Fsync(ec_fds->fd[1], test);
+        IOR_Fsync(ec_fds->fd[2], test);
+        IOR_Fsync(ec_fds->fd[3], test);
+        IOR_Fsync(ec_fds->fd[4], test);
     }
     fprintf(stdout,"total count: %lld.\n", ec_count);
     return (dataMoved);
 } /* WriteOrRead_ec() */
+
+/****************************ec functions*******************************************/
 
 /******************************************************************************/
 /*
