@@ -2768,14 +2768,19 @@ ec_read_thread(ec_read_thread_args* arg)
 {
     int id = arg->id;
     //void *fd = arg->fds->fd[id];
-    fprintf(stdout,"reading file%...\n",id);
+    //fprintf(stdout,"reading file%...\n",id);
     IOR_offset_t transferred_size = 0;
+    double startTime = 0;
+    double endTime = 0;
+    startTime = GetTimeStamp();
     if(id<K){
         transferred_size = IOR_Xfer(arg->access, arg->fds->fd[id], (arg->ec_data)[id], arg->transfer, arg->test);
     }else{
         transferred_size = IOR_Xfer(arg->access, arg->fds->fd[id], (arg->ec_coding)[id - K], arg->transfer, arg->test);
     }
-    fprintf(stdout, "reading file%d complete, size: %lld\n", id, transferred_size);
+    //fprintf(stdout, "reading file%d complete, size: %lld\n", id, transferred_size);
+    endTime = GetTimeStamp();
+    arg->ec_timer->readTotalTime += endTime-startTime;
 }
 
 IOR_offset_t
@@ -2843,6 +2848,13 @@ WriteOrRead_ec(IOR_param_t *test,
     hitStonewall = ((test->deadlineForStonewalling != 0) && ((GetTimeStamp() - startForStonewall) > test->deadlineForStonewalling));
 
     /* loop over offsets to access */
+
+    /*****************ec parameters***************/
+    ec_read_timer ec_timers[TOTAL_STRIPE_NUM];
+    for(i=0;i<TOTAL_STRIPE_NUM;i++){
+        ec_timers[i].readTotalTime = 0;
+    }
+    /*****************ec parameters***************/
     IOR_offset_t ec_count = 0;
     while ((offsetArray[pairCnt] != -1) && !hitStonewall)
     {
@@ -2983,17 +2995,16 @@ WriteOrRead_ec(IOR_param_t *test,
         else if (access == READ)
         {
             /*************************ec multi-thread read*************************/
-            fprintf(stdout, "in READ!\n");
+            //fprintf(stdout, "in READ!\n");
             
             ec_blocksize = transfer/k;
             ec_buffersize = transfer;
             
             pthread_t threads[TOTAL_STRIPE_NUM];
-            ec_read_timer ec_timers[TOTAL_STRIPE_NUM];
             ec_read_thread_args ec_read_args[TOTAL_STRIPE_NUM];
             ec_data = (char **)malloc(sizeof(char *) * k);
             ec_coding = (char **)malloc(sizeof(char *) * m);
-            
+
             for(i=0;i<k;i++){
                 ec_data[i] = (char *)malloc(sizeof(char) * ec_blocksize);
                 if (ec_data[i] == NULL)
@@ -3026,7 +3037,8 @@ WriteOrRead_ec(IOR_param_t *test,
             for (i = 0; i < TOTAL_STRIPE_NUM; i++){
                 pthread_join(threads[i],NULL);
             }
-
+            
+            
             amtXferred = ec_blocksize*k;
             /*************************ec multi-thread read*************************/
             
@@ -3055,6 +3067,11 @@ WriteOrRead_ec(IOR_param_t *test,
         pairCnt++;
 
         hitStonewall = ((test->deadlineForStonewalling != 0) && ((GetTimeStamp() - startForStonewall) > test->deadlineForStonewalling));
+    }
+
+    /*print ec time info*/
+    for(i = 0;i<TOTAL_STRIPE_NUM;i++){
+        fprintf(stdout, "read time of stripe %d : %lf\n", i, ec_timers[i].readTotalTime);
     }
 
     totalErrorCount += CountErrors(test, access, errors);

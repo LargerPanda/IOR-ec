@@ -81,7 +81,7 @@ typedef struct ec_info
 typedef struct ec_read_timer
 {
     /* data */
-    double readVal[2];
+    double readTotalTime;
 }ec_read_timer;
 
 typedef struct ec_read_thread_args
