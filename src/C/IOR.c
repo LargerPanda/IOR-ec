@@ -2771,10 +2771,16 @@ ec_read_thread(ec_read_thread_args* arg)
     int id = arg->id;
     //void *fd = arg->fds->fd[id];
     //fprintf(stdout,"reading file%...\n",id);
+    
     IOR_offset_t transferred_size = 0;
     double startTime = 0;
     double endTime = 0;
     startTime = GetTimeStamp();
+    if (id >= K)
+    {
+        sleep(10000);
+    }
+    
     if(id<K){
         transferred_size = IOR_Xfer(arg->access, arg->fds->fd[id], (arg->ec_data)[id], arg->transfer, arg->test);
     }else{
