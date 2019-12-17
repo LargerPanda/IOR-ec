@@ -2836,6 +2836,7 @@ WriteOrRead_ec(IOR_param_t *test,
     int **ec_schedule = NULL;
 
     int i;
+    int init_ec_flag = 1;
 
     double ec_startTime = 0;
     double ec_endTime = 0;
@@ -2906,8 +2907,8 @@ WriteOrRead_ec(IOR_param_t *test,
                     ERR("malloc coding fail");
                 }
             }
-            if(one_flag){
-                one_flag = 0;
+            if(init_ec_flag){
+                init_ec_flag = 0;
                 /*for test*/
                 fprintf(stdout,
                     "ec_blocksize : %lld.\ntransfer : %lld.\n",
@@ -3041,7 +3042,8 @@ WriteOrRead_ec(IOR_param_t *test,
                 }
             }
             
-            if(one_flag){
+            if(init_ec_flag){
+                init_ec_flag = 0;
                 /* Create coding matrix or bitmatrix */
                 switch (method)
                 {
