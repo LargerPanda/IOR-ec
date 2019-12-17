@@ -3114,7 +3114,7 @@ WriteOrRead_ec(IOR_param_t *test,
                                 canceled = pthread_cancel(threads[K+i]);
                                 if(canceled==0 && info_flag){
                                     fprintf(stdout, "cenceled thread %d due to oringin stripes received\n", threads[K+i]);
-                                }else{
+                                }else if(canceled != 0 && info_flag){
                                     fprintf(stdout, "cenceled thread %d failed (origin received)\n", threads[K+i]);
                                 }
                             }
@@ -3131,7 +3131,7 @@ WriteOrRead_ec(IOR_param_t *test,
                                 {
                                     fprintf(stdout, "cenceled thread %d due to latency\n", threads[K+i]);
                                 }
-                                else
+                                else if(canceled != 0 && info_flag)
                                 {
                                     fprintf(stdout, "cenceled thread %d failed (latency)\n", threads[K+i]);
                                 }
