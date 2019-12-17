@@ -3160,8 +3160,9 @@ WriteOrRead_ec(IOR_param_t *test,
                                 fprintf(stdout, "decode success!\n");
                             }
                         }
-                        break;
                         pthread_mutex_unlock(&lockOfNT);
+                        break;
+                        
                     }
                     pthread_mutex_unlock(&lockOfNT);
                 }
