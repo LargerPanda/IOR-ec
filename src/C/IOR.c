@@ -2761,7 +2761,9 @@ WriteOrRead(IOR_param_t * test,
 
 /****************************ec functions*******************************************/
 
-
+int tranferDone[TOTAL_STRIPE_NUM];
+volatile int numTransferred;
+pthread_mutex_t lockOfNT = PTHREAD_MUTEX_INITIALIZER;
 
 void* 
 ec_read_thread(ec_read_thread_args* arg)
@@ -2779,6 +2781,10 @@ ec_read_thread(ec_read_thread_args* arg)
         transferred_size = IOR_Xfer(arg->access, arg->fds->fd[id], (arg->ec_coding)[id - K], arg->transfer, arg->test);
     }
     //fprintf(stdout, "reading file%d complete, size: %lld\n", id, transferred_size);
+    tranferDone[i] = 1;
+    pthread_mutex_lock(&lockOfNT);
+    numTransferred += 1;
+    pthread_mutex_unlock(&lockOfNT);
     endTime = GetTimeStamp();
     arg->ec_timer->readTotalTime += endTime-startTime;
 }
@@ -2826,6 +2832,9 @@ WriteOrRead_ec(IOR_param_t *test,
     int one_flag = 1;
     int test_flag = 1;
     int i;
+
+    double ec_startTime = 0;
+    double ec_endTime = 0;
     /********************************ec params******************************/
 
     /* initialize values */
@@ -2856,6 +2865,8 @@ WriteOrRead_ec(IOR_param_t *test,
     }
     /*****************ec parameters***************/
     IOR_offset_t ec_count = 0;
+    ec_startTime = GetTimeStamp();
+
     while ((offsetArray[pairCnt] != -1) && !hitStonewall)
     {
         ec_count++;
@@ -3005,6 +3016,11 @@ WriteOrRead_ec(IOR_param_t *test,
             ec_data = (char **)malloc(sizeof(char *) * k);
             ec_coding = (char **)malloc(sizeof(char *) * m);
 
+            for(i=0;i<TOTAL_STRIPE_NUM;i++){
+                TranferDone[i] = 0;
+            }
+            numTransferred = 0;
+
             for(i=0;i<k;i++){
                 ec_data[i] = (char *)malloc(sizeof(char) * ec_blocksize);
                 if (ec_data[i] == NULL)
@@ -3021,6 +3037,36 @@ WriteOrRead_ec(IOR_param_t *test,
                 }
             }
             
+            if(one_flag){
+                /* Create coding matrix or bitmatrix */
+                switch (method)
+                {
+                case No_Coding:
+                    break;
+                case Reed_Sol_Van:
+                    ec_matrix = reed_sol_vandermonde_coding_matrix(k, m, w);
+                    break;
+                case Reed_Sol_R6_Op:
+                    ec_matrix = reed_sol_r6_coding_matrix(k, w);
+                    break;
+                case Cauchy_Orig:
+                    ec_matrix = cauchy_original_coding_matrix(k, m, w);
+                    ec_bitmatrix = jerasure_matrix_to_bitmatrix(k, m, w, ec_matrix);
+                    break;
+                case Cauchy_Good:
+                    ec_matrix = cauchy_good_general_coding_matrix(k, m, w);
+                    ec_bitmatrix = jerasure_matrix_to_bitmatrix(k, m, w, ec_matrix);
+                    break;
+                case Liberation:
+                    ec_bitmatrix = liberation_coding_bitmatrix(k, w);
+                    break;
+                case Blaum_Roth:
+                    ec_bitmatrix = blaum_roth_coding_bitmatrix(k, w);
+                    break;
+                case Liber8tion:
+                    ec_bitmatrix = liber8tion_coding_bitmatrix(k);
+                }
+            }
             
             for (i = 0; i < TOTAL_STRIPE_NUM; i++)
             {
@@ -3031,14 +3077,89 @@ WriteOrRead_ec(IOR_param_t *test,
                 ec_read_args[i].ec_data = ec_data;
                 ec_read_args[i].ec_coding = ec_coding;
                 ec_read_args[i].transfer = ec_blocksize;
+                ec_read_args[i].method = method;
+                ec_read_args[i].ec_matrix = ec_matrix;
+                ec_read_args[i].ec_bitmatrix = ec_bitmatrix;
+            }
+
+            for(i=0;i<TOTAL_STRIPE_NUM;i++){
                 pthread_create(&threads[i], NULL, ec_read_thread, &ec_read_args[i]);
+            }
+
+            /*ec when k stripes arrive*/
+            if(IMIDIATE_EC){
+                while(1){
+                    pthread_mutex_lock(&lockOfNT);
+                    if(numTransferred == k){
+                        /*end unfinished jobs*/
+                        int canceled;
+                        /*end unfinished jobs*/
+                        int originReceived = 1;
+                        int erasures[TOTAL_STRIPE_NUM];
+                        for(i=0;i<K;i++){ //if original stripes received or not
+                            if(tranferDone[i]==0){
+                                originReceived = 0;
+                                break;
+                            }
+                        }
+                        if(originReceived){
+                            for(i=0;i<M;i++){
+                                canceled = pthread_cancel(threads[K+i]);
+                                if(canceled==0){
+                                    fprintf(stdout, "cenceled thread %d due to oringin stripes received\n", threads[K+i]);
+                                }else{
+                                    fprintf(stdout, "cenceled thread %d failed (origin received)\n", threads[K+i]);
+                                }
+                            }
+                            pthread_mutex_unlock(&lockOfNT);
+                            break;
+                        }
+                        
+                        /*recompute*/
+                        int numerased = 0;
+                        for(i=0;i<TOTAL_STRIPE_NUM;i++){
+                            if(tranferDone[i]==0){
+                                canceled = pthread_cancel(threads[i]);
+                                if (canceled == 0)
+                                {
+                                    fprintf(stdout, "cenceled thread %d due to latency\n", threads[K+i]);
+                                }
+                                else
+                                {
+                                    fprintf(stdout, "cenceled thread %d failed (latency)\n", threads[K+i]);
+                                }
+                                erasures[numerased] = i;
+                                numerased++;
+                            }   
+                        }
+                        erasures[numerased] = -1;
+
+                        if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
+                        {
+                            i = jerasure_matrix_decode(K, M, W, ec_matrix, 1, erasures, ec_data, ec_coding, ec_blocksize);
+                        }
+                        else if (tech == Cauchy_Orig || tech == Cauchy_Good || tech == Liberation || tech == Blaum_Roth || tech == Liber8tion)
+                        {
+                            i = jerasure_schedule_decode_lazy(K, M, W, ec_bitmatrix, erasures, ec_data, ec_coding, ec_blocksize, ec_packetsize, 1);
+                        }
+
+                        if (i == -1)
+                        {
+                            ERR("decode failed!");
+                        }
+                    }
+                    pthread_mutex_unlock(&lockOfNT);
+                }
             }
 
             for (i = 0; i < TOTAL_STRIPE_NUM; i++){
                 pthread_join(threads[i],NULL);
             }
-            
-            
+            /*ec when k stripes arrive*/
+
+
+            free(ec_data);
+            free(ec_coding);
             amtXferred = ec_blocksize*k;
             /*************************ec multi-thread read*************************/
             
@@ -3069,10 +3190,15 @@ WriteOrRead_ec(IOR_param_t *test,
         hitStonewall = ((test->deadlineForStonewalling != 0) && ((GetTimeStamp() - startForStonewall) > test->deadlineForStonewalling));
     }
 
+
     /*print ec time info*/
+    ec_endTime = GetTimeStamp();
+
     for(i = 0;i<TOTAL_STRIPE_NUM;i++){
         fprintf(stdout, "read time of stripe %d : %lf\n", i, ec_timers[i].readTotalTime);
     }
+    fprintf(stdout, "Total read time %d : %lf\n", i, ec_endTime-ec_startTime);
+
 
     totalErrorCount += CountErrors(test, access, errors);
 

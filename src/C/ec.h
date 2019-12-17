@@ -27,7 +27,10 @@
 //define k*m
 #define K 2
 #define M 2
+#define W 8
+#define P 8
 #define TOTAL_STRIPE_NUM (K+M)
+#define IMIDIATE_EC 1
 //word count
 // #define W 8  
 // //0 means chosen adaptively 
@@ -93,9 +96,15 @@ typedef struct ec_read_thread_args
     int access;
     ec_read_timer *ec_timer;
     IOR_offset_t transfer;
+    
+    /* ec decode parameters */
     char **ec_data;
     char **ec_coding;
+    int *ec_matrix;
+    int *ec_bitmatrix;
+    enum Coding_Technique method;
 
+    /*ec control parameters*/
 } ec_read_thread_args;
 
 #endif // _EC_H
