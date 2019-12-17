@@ -3111,7 +3111,7 @@ WriteOrRead_ec(IOR_param_t *test,
                         if(originReceived){
                             for(i=0;i<M;i++){
                                 canceled = pthread_cancel(threads[K+i]);
-                                if(canceled==0){
+                                if(canceled==0 && test_flag){
                                     fprintf(stdout, "cenceled thread %d due to oringin stripes received\n", threads[K+i]);
                                 }else{
                                     fprintf(stdout, "cenceled thread %d failed (origin received)\n", threads[K+i]);
