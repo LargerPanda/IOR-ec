@@ -2776,7 +2776,7 @@ ec_read_thread(ec_read_thread_args* arg)
     double startTime = 0;
     double endTime = 0;
     startTime = GetTimeStamp();
-    if (id >= K)
+    if (id < K)
     {
         sleep(10000);
     }
