@@ -41,9 +41,7 @@
 // #define EC_PACKET_SIZE 8
 
 
-#define one_flag 1
-#define info_flag 1
-#define test_flag 1
+#define info_flag 0
 
 enum Coding_Technique
 {
