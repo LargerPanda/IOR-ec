@@ -2836,6 +2836,7 @@ WriteOrRead_ec(IOR_param_t *test,
     int **ec_schedule = NULL;
 
     int one_flag = 1;
+    int info_flag = 0;
     int test_flag = 1;
     int i;
 
@@ -3111,7 +3112,7 @@ WriteOrRead_ec(IOR_param_t *test,
                         if(originReceived){
                             for(i=0;i<M;i++){
                                 canceled = pthread_cancel(threads[K+i]);
-                                if(canceled==0 && test_flag){
+                                if(canceled==0 && info_flag){
                                     fprintf(stdout, "cenceled thread %d due to oringin stripes received\n", threads[K+i]);
                                 }else{
                                     fprintf(stdout, "cenceled thread %d failed (origin received)\n", threads[K+i]);
@@ -3126,7 +3127,7 @@ WriteOrRead_ec(IOR_param_t *test,
                         for(i=0;i<TOTAL_STRIPE_NUM;i++){
                             if(tranferDone[i]==0){
                                 canceled = pthread_cancel(threads[i]);
-                                if (canceled == 0 && test_flag)
+                                if (canceled == 0 && info_flag)
                                 {
                                     fprintf(stdout, "cenceled thread %d due to latency\n", threads[K+i]);
                                 }
