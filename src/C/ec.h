@@ -38,8 +38,12 @@
 // //size of k+m files
 // #define EC_BLOCK_SIZE (1048576/K)
 // //ignore in reed_sol's
-// #define EC_PACKET_SIZE 8      
+// #define EC_PACKET_SIZE 8
 
+
+#define one_flag 1
+#define info_flag 1
+#define test_flag 1
 
 enum Coding_Technique
 {
