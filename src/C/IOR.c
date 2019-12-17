@@ -3126,7 +3126,7 @@ WriteOrRead_ec(IOR_param_t *test,
                         for(i=0;i<TOTAL_STRIPE_NUM;i++){
                             if(tranferDone[i]==0){
                                 canceled = pthread_cancel(threads[i]);
-                                if (canceled == 0)
+                                if (canceled == 0 && test_flag)
                                 {
                                     fprintf(stdout, "cenceled thread %d due to latency\n", threads[K+i]);
                                 }
