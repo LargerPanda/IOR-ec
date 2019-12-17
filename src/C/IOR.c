@@ -2837,6 +2837,7 @@ WriteOrRead_ec(IOR_param_t *test,
 
     int i;
     int init_ec_flag = 1;
+    int one_ec_flag = 1;
 
     double ec_startTime = 0;
     double ec_endTime = 0;
@@ -3153,7 +3154,8 @@ WriteOrRead_ec(IOR_param_t *test,
                         {
                             ERR("decode failed!");
                         }else{
-                            if(info_flag){
+                            if(one_ec_flag){
+                                one_ec_flag = 0;
                                 fprintf(stdout, "decode success!\n");
                             }
                         }
