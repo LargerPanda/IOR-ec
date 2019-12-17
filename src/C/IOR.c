@@ -2836,7 +2836,7 @@ WriteOrRead_ec(IOR_param_t *test,
     int **ec_schedule = NULL;
 
     int one_flag = 1;
-    int info_flag = 0;
+    int info_flag = 1;
     int test_flag = 1;
     int i;
 
