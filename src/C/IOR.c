@@ -2780,7 +2780,7 @@ ec_read_thread(ec_read_thread_args* arg)
     {
         sleep(10000);
     }
-    
+
     if(id<K){
         transferred_size = IOR_Xfer(arg->access, arg->fds->fd[id], (arg->ec_data)[id], arg->transfer, arg->test);
     }else{
@@ -3203,7 +3203,7 @@ WriteOrRead_ec(IOR_param_t *test,
     for(i = 0;i<TOTAL_STRIPE_NUM;i++){
         fprintf(stdout, "read time of stripe %d : %lf\n", i, ec_timers[i].readTotalTime);
     }
-    fprintf(stdout, "Total read time %d : %lf\n", i, ec_endTime-ec_startTime);
+    fprintf(stdout, "Total read time of %d stripes: %lf\n", TOTAL_STRIPE_NUM, ec_endTime-ec_startTime);
 
 
     totalErrorCount += CountErrors(test, access, errors);
