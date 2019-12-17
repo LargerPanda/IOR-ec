@@ -3152,6 +3152,7 @@ WriteOrRead_ec(IOR_param_t *test,
 
                         if (i == -1)
                         {
+                            pthread_mutex_unlock(&lockOfNT);
                             ERR("decode failed!");
                         }else{
                             if(one_ec_flag){
@@ -3159,6 +3160,8 @@ WriteOrRead_ec(IOR_param_t *test,
                                 fprintf(stdout, "decode success!\n");
                             }
                         }
+                        break;
+                        pthread_mutex_unlock(&lockOfNT);
                     }
                     pthread_mutex_unlock(&lockOfNT);
                 }
