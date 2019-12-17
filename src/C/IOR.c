@@ -3152,6 +3152,11 @@ WriteOrRead_ec(IOR_param_t *test,
                         if (i == -1)
                         {
                             ERR("decode failed!");
+                        }else{
+                            if(test_flag){
+                                test_flag = 0;
+                                fprintf(stdout, "decode success!\n");
+                            }
                         }
                     }
                     pthread_mutex_unlock(&lockOfNT);
