@@ -2781,7 +2781,7 @@ ec_read_thread(ec_read_thread_args* arg)
         transferred_size = IOR_Xfer(arg->access, arg->fds->fd[id], (arg->ec_coding)[id - K], arg->transfer, arg->test);
     }
     //fprintf(stdout, "reading file%d complete, size: %lld\n", id, transferred_size);
-    tranferDone[i] = 1;
+    tranferDone[id] = 1;
     pthread_mutex_lock(&lockOfNT);
     numTransferred += 1;
     pthread_mutex_unlock(&lockOfNT);
@@ -3017,7 +3017,7 @@ WriteOrRead_ec(IOR_param_t *test,
             ec_coding = (char **)malloc(sizeof(char *) * m);
 
             for(i=0;i<TOTAL_STRIPE_NUM;i++){
-                TranferDone[i] = 0;
+                tranferDone[i] = 0;
             }
             numTransferred = 0;
 
@@ -3138,7 +3138,7 @@ WriteOrRead_ec(IOR_param_t *test,
                         {
                             i = jerasure_matrix_decode(K, M, W, ec_matrix, 1, erasures, ec_data, ec_coding, ec_blocksize);
                         }
-                        else if (tech == Cauchy_Orig || tech == Cauchy_Good || tech == Liberation || tech == Blaum_Roth || tech == Liber8tion)
+                        else if (method == Cauchy_Orig || method == Cauchy_Good || method == Liberation || method == Blaum_Roth || method == Liber8tion)
                         {
                             i = jerasure_schedule_decode_lazy(K, M, W, ec_bitmatrix, erasures, ec_data, ec_coding, ec_blocksize, ec_packetsize, 1);
                         }
