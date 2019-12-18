@@ -79,7 +79,7 @@
  */
 
 /***********************ec_structures*******************************/
-typedef enum Coding_Technique
+typedef enum CodingTechnique
 {
     Reed_Sol_Van,
     Reed_Sol_R6_Op,
@@ -93,7 +93,7 @@ typedef enum Coding_Technique
     No_Coding
 }Coding_Technique;
 
-typedef enum EC_Strategy{
+typedef enum ECStrategy{
     Immediate
 }EC_Strategy;
 /***********************ec_structures*******************************/
@@ -202,14 +202,14 @@ typedef struct
     int intraTestBarriers;           /* barriers between open/op and op/close */
 
     /************************IOR-ec paramters************************/
-    int stripe_count;
-    int stripe_size;
+    int ec_stripe_count;
+    int ec_stripe_size;
     int ec_k;
     int ec_m;
     int ec_w;      //size fo word, default is 8
     int ec_packetsize;  //default is 8
-    Coding_Technique ec_method; //encode&decode method
-    EC_Strategy ec_strategy; //strategy for experiment
+    CodingTechnique ec_method; //encode&decode method
+    ECStrategy ec_strategy; //strategy for experiment
     /************************IOR-ec paramters************************/
 
 } IOR_param_t;
