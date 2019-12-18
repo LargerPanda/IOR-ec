@@ -144,6 +144,14 @@ IOR_param_t defaultParameters = {
 #endif /* USE_UNDOC_OPT */
 
     0,               /* test's unique ID */
-    0                /* intraTestBarriers */
+    0,               /* intraTestBarriers */
+    2,               /* stripe count */
+    524288,          /* stripe size */       
+    2,               /* ec_k */         
+    2,               /* ec_m */ 
+    8,               /* ec_w */
+    8,               /* ec_packetsize */
+    0,               /* ec_method */   
+    0                /* ec_strategy */
 };
 #endif /* not _IOR_DEFAULTS_H */

@@ -80,6 +80,22 @@ void DecodeDirective(char *line, IOR_param_t *test)
         strcpy(test->api, value);
     } else if (strcasecmp(option, "testnum") == 0) {
         test->TestNum = atoi(value);
+    } else if (strcasecmp(option, "ec_stripe_count") { //ec parameters start
+        test->ec_stripe_count = atoi(value);
+    } else if (strcasecmp(option, "ec_stripe_size") {
+        test->ec_stripe_size = StringToBytes(value);
+    } else if (strcasecmp(option, "ec_k") {
+        test->ec_k = atoi(value);
+    } else if (strcasecmp(option, "ec_m") {
+        test->ec_m = atoi(value);
+    } else if (strcasecmp(option, "ec_w") {
+        test->ec_w = atoi(value);
+    } else if (strcasecmp(option, "ec_packetsize") {
+        test->ec_packetsize = atoi(value);
+    } else if (strcasecmp(option, "ec_method") {
+        test->ec_method = atoi(value);
+    } else if (strcasecmp(option, "ec_strategy") { //ec parameters end
+        test->ec_strategy = atoi(value);
     } else if (strcasecmp(option, "debug") == 0) {
         strcpy(test->debug, value);
     } else if (strcasecmp(option, "platform") == 0) {
