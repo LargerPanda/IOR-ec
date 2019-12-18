@@ -38,7 +38,6 @@
 #endif /* not MPI_FILE_NULL */
 
 #include <string.h>
-#include "ec.h"
 
 /*************************** D E F I N I T I O N S ****************************/
 
@@ -79,6 +78,25 @@
  *         USER_GUIDE
  */
 
+/***********************ec_structures*******************************/
+typedef enum Coding_Technique
+{
+    Reed_Sol_Van,
+    Reed_Sol_R6_Op,
+    Cauchy_Orig,
+    Cauchy_Good,
+    Liberation,
+    Blaum_Roth,
+    Liber8tion,
+    RDP,
+    EVENODD,
+    No_Coding
+}Coding_Technique;
+
+typedef enum EC_Strategy{
+    Immediate
+}EC_Strategy;
+/***********************ec_structures*******************************/
 typedef struct
 {
     char debug[MAX_STR];             /* debug info string */
@@ -192,7 +210,6 @@ typedef struct
     int ec_packetsize;  //default is 8
     Coding_Technique ec_method; //encode&decode method
     EC_Strategy ec_strategy; //strategy for experiment
-
     /************************IOR-ec paramters************************/
 
 } IOR_param_t;
