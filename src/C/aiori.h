@@ -38,6 +38,7 @@
 #endif /* not MPI_FILE_NULL */
 
 #include <string.h>
+#include "ec.h"
 
 /*************************** D E F I N I T I O N S ****************************/
 
@@ -181,6 +182,19 @@ typedef struct
 
     int id;                          /* test's unique ID */
     int intraTestBarriers;           /* barriers between open/op and op/close */
+
+    /************************IOR-ec paramters************************/
+    int stripe_count;
+    int stripe_size;
+    int ec_k;
+    int ec_m;
+    int ec_w;      //size fo word, default is 8
+    int ec_packetsize;  //default is 8
+    Coding_Technique ec_method; //encode&decode method
+    EC_Strategy ec_strategy; //strategy for experiment
+
+    /************************IOR-ec paramters************************/
+
 } IOR_param_t;
 
 

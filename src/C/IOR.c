@@ -2822,7 +2822,7 @@ WriteOrRead_ec(IOR_param_t *test,
         ec_blocksize,
         ec_buffersize;
 
-    enum Coding_Technique method = Cauchy_Good; // coding technique (parameter)
+    Coding_Technique method = Cauchy_Good; // coding technique (parameter)
     int k = 2, m = 2, w = 8, ec_packetsize = 8;    // parameters
     //int ec_size = 524288; //equal to  ec_blocksize
     int total;
