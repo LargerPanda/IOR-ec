@@ -91,11 +91,11 @@ typedef enum CodingTechnique
     RDP,
     EVENODD,
     No_Coding
-}Coding_Technique;
+}CodingTechnique;
 
 typedef enum ECStrategy{
     Immediate
-}EC_Strategy;
+}ECStrategy;
 /***********************ec_structures*******************************/
 typedef struct
 {
