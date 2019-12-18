@@ -43,23 +43,23 @@
 
 #define info_flag 0
 
-typedef enum Coding_Technique
-{
-    Reed_Sol_Van,
-    Reed_Sol_R6_Op,
-    Cauchy_Orig,
-    Cauchy_Good,
-    Liberation,
-    Blaum_Roth,
-    Liber8tion,
-    RDP,
-    EVENODD,
-    No_Coding
-}Coding_Technique;
+// typedef enum Coding_Technique
+// {
+//     Reed_Sol_Van,
+//     Reed_Sol_R6_Op,
+//     Cauchy_Orig,
+//     Cauchy_Good,
+//     Liberation,
+//     Blaum_Roth,
+//     Liber8tion,
+//     RDP,
+//     EVENODD,
+//     No_Coding
+// }Coding_Technique;
 
-typedef enum EC_Strategy{
-    Immediate
-}EC_Strategy;
+// typedef enum EC_Strategy{
+//     Immediate
+// }EC_Strategy;
 
 //char *Methods[N] = {"reed_sol_van", "reed_sol_r6_op", "cauchy_orig", "cauchy_good", "liberation", "blaum_roth", "liber8tion", "no_coding"};
 

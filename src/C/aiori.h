@@ -79,7 +79,7 @@
  */
 
 /***********************ec_structures*******************************/
-typedef enum CodingTechnique
+typedef enum Coding_Technique
 {
     Reed_Sol_Van,
     Reed_Sol_R6_Op,
@@ -91,11 +91,11 @@ typedef enum CodingTechnique
     RDP,
     EVENODD,
     No_Coding
-}CodingTechnique;
+}Coding_Technique;
 
-typedef enum ECStrategy{
+typedef enum EC_Strategy{
     Immediate
-}ECStrategy;
+}EC_Strategy;
 /***********************ec_structures*******************************/
 typedef struct
 {
@@ -208,8 +208,8 @@ typedef struct
     int ec_m;
     int ec_w;      //size fo word, default is 8
     int ec_packetsize;  //default is 8
-    CodingTechnique ec_method; //encode&decode method
-    ECStrategy ec_strategy; //strategy for experiment
+    Coding_Technique ec_method; //encode&decode method
+    EC_Strategy ec_strategy; //strategy for experiment
     /************************IOR-ec paramters************************/
 
 } IOR_param_t;
