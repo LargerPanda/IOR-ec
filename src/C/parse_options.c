@@ -80,21 +80,21 @@ void DecodeDirective(char *line, IOR_param_t *test)
         strcpy(test->api, value);
     } else if (strcasecmp(option, "testnum") == 0) {
         test->TestNum = atoi(value);
-    } else if (strcasecmp(option, "ec_stripe_count") { //ec parameters start
+    } else if (strcasecmp(option, "ec_stripe_count") == 0) { //ec parameters start
         test->ec_stripe_count = atoi(value);
-    } else if (strcasecmp(option, "ec_stripe_size") {
+    } else if (strcasecmp(option, "ec_stripe_size") == 0) {
         test->ec_stripe_size = StringToBytes(value);
-    } else if (strcasecmp(option, "ec_k") {
+    } else if (strcasecmp(option, "ec_k") == 0) {
         test->ec_k = atoi(value);
-    } else if (strcasecmp(option, "ec_m") {
+    } else if (strcasecmp(option, "ec_m") == 0) {
         test->ec_m = atoi(value);
-    } else if (strcasecmp(option, "ec_w") {
+    } else if (strcasecmp(option, "ec_w") == 0) {
         test->ec_w = atoi(value);
-    } else if (strcasecmp(option, "ec_packetsize") {
+    }else if (strcasecmp(option, "ec_packetsize") == 0) {
         test->ec_packetsize = atoi(value);
-    } else if (strcasecmp(option, "ec_method") {
+    }else if (strcasecmp(option, "ec_method") == 0) {
         test->ec_method = atoi(value);
-    } else if (strcasecmp(option, "ec_strategy") { //ec parameters end
+    }else if (strcasecmp(option, "ec_strategy") == 0) { //ec parameters end
         test->ec_strategy = atoi(value);
     } else if (strcasecmp(option, "debug") == 0) {
         strcpy(test->debug, value);
