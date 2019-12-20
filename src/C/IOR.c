@@ -886,6 +886,9 @@ int ChooseStartOST(){
 void GetTestFileName_ec(char **ec_testFileNames, IOR_param_t *test)
 {
     //format is /data/data(ost#)/filename.process#.strip# or parity#
+    if(test->ec_verbose >= VERBOSE_3){
+        fprintf(stdout, "in GetTestFileName_ec\n");
+    }
     char initialTestFileName[MAX_STR],
          targetDirectoryRoot[MAX_STR] = "/data/data",
          bareFileName[MAX_STR];
@@ -2047,6 +2050,9 @@ TestIoSys(IOR_param_t *test)
             GetTestFileName(testFileName, test);//origin_mark
 
             /*****************ec_file_init*************************/
+            if(test->ec_verbose >= VERBOSE_3){
+                sprintf(stdout, "in ec_file_init\n");
+            }  
             int total_stripe_num = test->ec_k + test->ec_m;
             ec_testFileNames = (char **)malloc(sizeof(char *) * total_stripe_num);
             for(i = 0;i<total_stripe_num;i++){
@@ -2830,6 +2836,9 @@ WriteOrRead_ec(IOR_param_t *test,
             void **ec_fds,
             int access)
 {
+    if(test->ec_verbose >= VERBOSE_3){
+        fprintf(stdout, "in WriteOrRead_ec\n");
+    }
     int errors = 0;
     IOR_offset_t amtXferred,
         transfer,
@@ -2845,7 +2854,7 @@ WriteOrRead_ec(IOR_param_t *test,
     int hitStonewall;
 
     /********************************ec_parameters******************************/
-    int readins = 1;
+    //int readins = 1;
     int total_stripe_num = test->ec_k + test->ec_m;
 
     IOR_offset_t *ec_amtXferred = (IOR_offset_t *)malloc(sizeof(IOR_offset_t) * total_stripe_num);
