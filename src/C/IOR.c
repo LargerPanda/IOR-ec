@@ -3045,8 +3045,6 @@ WriteOrRead_ec(IOR_param_t *test,
         }
     }
     /*****************************init ec********************************/
-
-    ec_startTime = GetTimeStamp();
     while ((offsetArray[pairCnt] != -1) && !hitStonewall)
     {
         ec_count++;
@@ -3199,7 +3197,6 @@ WriteOrRead_ec(IOR_param_t *test,
 
 
     /*print ec time info*/
-    ec_endTime = GetTimeStamp();
 
     for(i = 0;i<total_stripe_num;i++){
         fprintf(stdout, "read time of stripe %d : %lf\n", i, ec_timers[i]);
