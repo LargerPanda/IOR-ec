@@ -1889,6 +1889,10 @@ SummarizeResults(IOR_param_t * test)
 void
 TestIoSys(IOR_param_t *test)
 {
+    if(test->ec_verbose >= VERBOSE_3){
+        fprintf(stdout, "in TestIoSys\n");
+    }
+    
     char           testFileName[MAX_STR];
     double       * timer[12];
     double         startTime;
