@@ -1438,9 +1438,9 @@ RemoveFile(char        * testFileName,
 IOR_queue_t *
 SetupTests(int argc, char ** argv)
 {
-    if(test->ec_verbose >= VERBOSE_3){
-        fprintf(stdout, "in SetupTests\n");
-    }
+    
+    fprintf(stdout, "in SetupTests\n");
+    
     
     IOR_queue_t * tests,
                 * testsHead;
