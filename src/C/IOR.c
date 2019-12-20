@@ -3085,7 +3085,7 @@ WriteOrRead_ec(IOR_param_t *test,
             }
 
             /*ec when k stripes arrive*/
-            if(test->EC_Strategy == IMMEDIATE_EC){
+            if(test->ec_strategy == IMMEDIATE_EC){
                 while(1){
                     pthread_mutex_lock(&lockOfNT);
                     if(numTransferred == k){
@@ -3093,20 +3093,20 @@ WriteOrRead_ec(IOR_param_t *test,
                         int canceled;
                         /*end unfinished jobs*/
                         int originReceived = 1;
-                        int erasures[TOTAL_STRIPE_NUM];
-                        for(i=0;i<K;i++){ //if original stripes received or not
+                        int *erasures = (int *)malloc(sizeof(int) * total_stripe_num);
+                        for(i=0;i<k;i++){ //if original stripes received or not
                             if(tranferDone[i]==0){
                                 originReceived = 0;
                                 break;
                             }
                         }
                         if(originReceived){
-                            for(i=0;i<M;i++){
-                                canceled = pthread_cancel(threads[K+i]);
-                                if(canceled==0 && info_flag){
-                                    fprintf(stdout, "cenceled thread %d due to oringin stripes received\n", threads[K+i]);
-                                }else if(canceled != 0 && info_flag){
-                                    fprintf(stdout, "cenceled thread %d failed (origin received)\n", threads[K+i]);
+                            for(i=0;i<m;i++){
+                                canceled = pthread_cancel(threads[k+i]);
+                                if(canceled==0 && test->ec_verbose >= VERBOSE_2){
+                                    fprintf(stdout, "cenceled thread %d due to oringin stripes received\n", threads[k+i]);
+                                }else if(canceled != 0 && test->ec_verbose >= VERBOSE_2){
+                                    fprintf(stdout, "cenceled thread %d failed (origin received)\n", threads[k+i]);
                                 }
                             }
                             pthread_mutex_unlock(&lockOfNT);
@@ -3115,16 +3115,16 @@ WriteOrRead_ec(IOR_param_t *test,
                         
                         /*recompute*/
                         int numerased = 0;
-                        for(i=0;i<TOTAL_STRIPE_NUM;i++){
+                        for(i=0;i<total_stripe_num;i++){
                             if(tranferDone[i]==0){
                                 canceled = pthread_cancel(threads[i]);
-                                if (canceled == 0 && info_flag)
+                                if (canceled == 0 && test->ec_verbose >= VERBOSE_2)
                                 {
-                                    fprintf(stdout, "cenceled thread %d due to latency\n", threads[K+i]);
+                                    fprintf(stdout, "cenceled thread %d due to latency\n", threads[k+i]);
                                 }
-                                else if(canceled != 0 && info_flag)
+                                else if(canceled != 0 && test->ec_verbose >= VERBOSE_2)
                                 {
-                                    fprintf(stdout, "cenceled thread %d failed (latency)\n", threads[K+i]);
+                                    fprintf(stdout, "cenceled thread %d failed (latency)\n", threads[k+i]);
                                 }
                                 erasures[numerased] = i;
                                 numerased++;
@@ -3134,11 +3134,11 @@ WriteOrRead_ec(IOR_param_t *test,
 
                         if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
                         {
-                            i = jerasure_matrix_decode(K, M, W, ec_matrix, 1, erasures, ec_data, ec_coding, ec_blocksize);
+                            i = jerasure_matrix_decode(k, m, w, ec_matrix, 1, erasures, ec_data, ec_coding, ec_blocksize);
                         }
                         else if (method == Cauchy_Orig || method == Cauchy_Good || method == Liberation || method == Blaum_Roth || method == Liber8tion)
                         {
-                            i = jerasure_schedule_decode_lazy(K, M, W, ec_bitmatrix, erasures, ec_data, ec_coding, ec_blocksize, ec_packetsize, 1);
+                            i = jerasure_schedule_decode_lazy(k, m, w, ec_bitmatrix, erasures, ec_data, ec_coding, ec_blocksize, ec_packetsize, 1);
                         }
 
                         if (i == -1)
@@ -3159,7 +3159,7 @@ WriteOrRead_ec(IOR_param_t *test,
                 }
             }
 
-            for (i = 0; i < TOTAL_STRIPE_NUM; i++){
+            for (i = 0; i < total_stripe_num; i++){
                 pthread_join(threads[i],NULL);
             }
             /*ec when k stripes arrive*/
