@@ -203,7 +203,7 @@ typedef struct
 
     /************************IOR-ec paramters************************/
     int ec_stripe_count;
-    int ec_stripe_size;
+    IOR_offset_t ec_stripe_size;
     int ec_k;
     int ec_m;
     int ec_w;      //size fo word, default is 8

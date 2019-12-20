@@ -67,6 +67,9 @@ void CheckRunSettings(IOR_queue_t *tests) {
 
 void DecodeDirective(char *line, IOR_param_t *test)
 {
+    
+    fprintf(stdout, "in DecodeDirective\n");
+    
     char option[MAX_STR];
     char value[MAX_STR];
     int rc;
@@ -82,24 +85,34 @@ void DecodeDirective(char *line, IOR_param_t *test)
         test->TestNum = atoi(value);
     } else if (strcasecmp(option, "ec_stripe_count") == 0) { //ec parameters start
         test->ec_stripe_count = atoi(value);
+        fprintf(stdout, "ec_stripe_count = %d\n",test->ec_stripe_count);
     } else if (strcasecmp(option, "ec_stripe_size") == 0) {
         test->ec_stripe_size = StringToBytes(value);
+        fprintf(stdout, "ec_stripe_size = %lld\n",test->ec_stripe_size);
     } else if (strcasecmp(option, "ec_k") == 0) {
         test->ec_k = atoi(value);
+        fprintf(stdout, "ec_k = %d\n",test->ec_k);
     } else if (strcasecmp(option, "ec_m") == 0) {
         test->ec_m = atoi(value);
+        fprintf(stdout, "ec_m = %d\n",test->ec_m);
     } else if (strcasecmp(option, "ec_w") == 0) {
         test->ec_w = atoi(value);
+        fprintf(stdout, "ec_w = %d\n",test->ec_w);
     } else if (strcasecmp(option, "ec_packetsize") == 0) {
         test->ec_packetsize = atoi(value);
+        fprintf(stdout, "ec_packetsize = %d\n",test->ec_packetsize);
     } else if (strcasecmp(option, "ec_verbose") == 0) {
         test->ec_verbose = atoi(value);
+        fprintf(stdout, "ec_verbose = %d\n",test->ec_verbose);
     } else if (strcasecmp(option, "ec_method") == 0) {
         test->ec_method = atoi(value);
+        fprintf(stdout, "ec_method = %d\n",test->ec_method);
     } else if (strcasecmp(option, "ec_num_ost") == 0) {
         test->ec_num_ost = atoi(value);
+        fprintf(stdout, "ec_num_ost = %d\n",test->ec_num_ost);
     } else if (strcasecmp(option, "ec_strategy") == 0) { //ec parameters end
         test->ec_strategy = atoi(value);
+        fprintf(stdout, "ec_strategy = %d\n",test->ec_strategy);
     } else if (strcasecmp(option, "debug") == 0) {
         strcpy(test->debug, value);
     } else if (strcasecmp(option, "platform") == 0) {
@@ -236,6 +249,9 @@ void DecodeDirective(char *line, IOR_param_t *test)
 void
 ParseLine(char *line, IOR_param_t *test)
 {
+  
+    fprintf(stdout, "in ParseLine\n");
+    
     char *start, *end;
 
     start = line;
@@ -292,6 +308,10 @@ contains_only(char *haystack, char *needle)
 IOR_queue_t *
 ReadConfigScript(char * scriptName)
 {
+    
+    fprintf(stdout, "in ReadConfigScript\n");
+    
+    
     int          test_num = 0;
     int          runflag = 0;
     char         linebuf[MAX_STR];
@@ -363,6 +383,7 @@ ReadConfigScript(char * scriptName)
 IOR_queue_t *
 ParseCommandLine(int argc, char ** argv)
 {
+    fprintf(stdout, "int ParseCommandLine\n");
     static const char * opts
         = "A:a:b:BcCQ:ZX:d:D:YeEf:FgG:hHi:j:J:IkKlmnN:o:O:pPqrRs:St:T:uU:vVwWxz";
     int                 c, i;
