@@ -890,29 +890,29 @@ void GetTestFileName_ec(char **ec_testFileNames, IOR_param_t *test)
          targetDirectoryRoot[MAX_STR] = "/data/data",
          bareFileName[MAX_STR];
 
-    int total_stripe_num = test->k+test->m;
+    int total_stripe_num = test->ec_k+test->ec_m;
     int start_ost = ChooseStartOST();
     strcpy(initialTestFileName, test->testFileName);
 
     int i;
     if(test->filePerProc){
         for(i=0;i<total_stripe_num;i++){
-            if(i<(test->k)){
+            if(i<(test->ec_k)){
                 sprintf(bareFileName, "%d/%s.process%d.stripe%d",start_ost+i,initialTestFileName, rank, i);
-                sprintf(ec_testFileNames[i], strcat(targetDirectoryRoot, baraFileName));
+                sprintf(ec_testFileNames[i], strcat(targetDirectoryRoot, bareFileName));
             }else{
-                sprintf(bareFileName, "%d/%s.process%d.parity%d",start_ost+i,initialTestFileName, rank, i-(test->k));
-                sprintf(ec_testFileNames[i], strcat(targetDirectoryRoot, baraFileName));
+                sprintf(bareFileName, "%d/%s.process%d.parity%d",start_ost+i,initialTestFileName, rank, i-(test->ec_k));
+                sprintf(ec_testFileNames[i], strcat(targetDirectoryRoot, bareFileName));
             }
         }
     }else{
         for(i=0;i<total_stripe_num;i++){
-            if(i<(test->k)){
+            if(i<(test->ec_k)){
                 sprintf(bareFileName, "%d/%s.stripe%d",start_ost+i,initialTestFileName, i);
-                sprintf(ec_testFileNames[i], strcat(targetDirectoryRoot, baraFileName));
+                sprintf(ec_testFileNames[i], strcat(targetDirectoryRoot, bareFileName));
             }else{
-                sprintf(bareFileName, "%d/%s.parity%d",start_ost+i,initialTestFileName, i-(test->k));
-                sprintf(ec_testFileNames[i], strcat(targetDirectoryRoot, baraFileName));
+                sprintf(bareFileName, "%d/%s.parity%d",start_ost+i,initialTestFileName, i-(test->ec_k));
+                sprintf(ec_testFileNames[i], strcat(targetDirectoryRoot, bareFileName));
             }
         }
     }
@@ -2049,7 +2049,7 @@ TestIoSys(IOR_param_t *test)
             /*****************ec_file_init*************************/
             int total_stripe_num = test->ec_k + test->ec_m;
             ec_testFileNames = (char **)malloc(sizeof(char *) * total_stripe_num);
-            for(i = 0;i<total_file_num;i++){
+            for(i = 0;i<total_stripe_num;i++){
                 ec_testFileNames[i] = (char *)malloc(sizeof(char) * MAX_STR);
             }
             GetTestFileName_ec(ec_testFileNames, test);
@@ -2782,9 +2782,9 @@ WriteOrRead(IOR_param_t * test,
 
 /*****************experiment timers***************/
 double *ec_timers;
-IOR_offset_t ec_count = 0;
-double ec_startTime = 0;
-double ec_endTime = 0;
+IOR_offset_t ec_count;
+double ec_startTime;
+double ec_endTime;
 /*****************experiment timerss***************/
 
 /*****************thread variables****************/
@@ -2812,9 +2812,9 @@ ec_read_thread(ec_read_thread_args* arg)
     }
 
     if(id<k){
-        transferred_size = IOR_Xfer(arg->access, (arg->fds)[i], (arg->ec_data)[id], arg->transfer, arg->test);
+        transferred_size = IOR_Xfer(arg->access, (arg->fds)[id], (arg->ec_data)[id], arg->test->ec_stripe_size, arg->test);
     }else{
-        transferred_size = IOR_Xfer(arg->access, (arg->fds)[id], (arg->ec_coding)[id - k], arg->transfer, arg->test);
+        transferred_size = IOR_Xfer(arg->access, (arg->fds)[id], (arg->ec_coding)[id - k], arg->test->ec_stripe_size, arg->test);
     }
     //fprintf(stdout, "reading file%d complete, size: %lld\n", id, transferred_size);
     tranferDone[id] = 1;
@@ -2849,7 +2849,7 @@ WriteOrRead_ec(IOR_param_t *test,
     int total_stripe_num = test->ec_k + test->ec_m;
 
     IOR_offset_t *ec_amtXferred = (IOR_offset_t *)malloc(sizeof(IOR_offset_t) * total_stripe_num);
-    IOR_offset_t ec_blocksize = test->ec_stripesize;
+    IOR_offset_t ec_blocksize = test->ec_stripe_size;
     ec_read_thread_args *ec_read_args;
 
     Coding_Technique method = test->ec_method;      // coding technique (parameter)
@@ -3036,9 +3036,9 @@ WriteOrRead_ec(IOR_param_t *test,
             ec_read_args[i].fds = ec_fds;
             ec_read_args[i].id = i;
             ec_read_args[i].test = test;
+            ec_read_args[i].access = access;
             ec_read_args[i].ec_data = ec_data;
             ec_read_args[i].ec_coding = ec_coding;
-            ec_read_args[i].transfer = ec_blocksize;
             ec_read_args[i].method = method;
             ec_read_args[i].ec_matrix = ec_matrix;
             ec_read_args[i].ec_bitmatrix = ec_bitmatrix;
@@ -3194,6 +3194,7 @@ WriteOrRead_ec(IOR_param_t *test,
         pairCnt++;
 
         hitStonewall = ((test->deadlineForStonewalling != 0) && ((GetTimeStamp() - startForStonewall) > test->deadlineForStonewalling));
+    
     }
 
 
