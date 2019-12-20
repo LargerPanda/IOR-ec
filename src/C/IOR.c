@@ -800,32 +800,6 @@ FillBuffer(void               * buffer,
     }
 } /* FillBuffer() */
 
-void FillBuffer_ec(void *buffer,
-                IOR_param_t *test,
-                unsigned long long offset,
-                int fillrank)
-{
-    size_t i;
-    unsigned long long hi, lo;
-    unsigned long long *buf = (unsigned long long *)buffer;
-
-    hi = ((unsigned long long)fillrank) << 32;
-    lo = (unsigned long long)test->timeStampSignatureValue;
-    for (i = 0; i < test->transferSize / sizeof(unsigned long long)/ K; i++)
-    {
-        if ((i % 2) == 0)
-        {
-            /* evens contain MPI rank and time in seconds */
-            buf[i] = hi | lo;
-        }
-        else
-        {
-            /* odds contain offset */
-            buf[i] = offset + (i * sizeof(unsigned long long));
-        }
-    }
-} /* FillBuffer_ec() */
-
 /******************************************************************************//*
  * Free transfer buffers.
  */
