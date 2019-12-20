@@ -210,6 +210,8 @@ typedef struct
     int ec_packetsize;  //default is 8
     Coding_Technique ec_method; //encode&decode method
     EC_Strategy ec_strategy; //strategy for experiment
+    int ec_verbose; //ec_verbose
+    int ec_num_ost; //number of ost
     /************************IOR-ec paramters************************/
 
 } IOR_param_t;

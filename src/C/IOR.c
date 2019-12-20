@@ -904,6 +904,46 @@ GetPlatformName(char * platformName)
  * Return test file name to access.
  * for single shared file, fileNames[0] is returned in testFileName
  */
+/*this is a function to choose the start ost#*/
+int ChooseStartOST(){
+    return 0;
+}
+
+void GetTestFileName_ec(char **ec_testFileNames, IOR_param_t *test)
+{
+    //format is /data/data(ost#)/filename.process#.strip# or parity#
+    char initialTestFileName[MAX_STR],
+         targetDirectoryRoot[MAX_STR] = "/data/data",
+         bareFileName[MAX_STR];
+
+    int total_stripe_num = test->k+test->m;
+    int start_ost = ChooseStartOST();
+    strcpy(initialTestFileName, test->testFileName);
+
+    int i;
+    if(test->filePerProc){
+        for(i=0;i<total_stripe_num;i++){
+            if(i<(test->k)){
+                sprintf(bareFileName, "%d/%s.process%d.stripe%d",start_ost+i,initialTestFileName, rank, i);
+                sprintf(ec_testFileNames[i], strcat(targetDirectoryRoot, baraFileName));
+            }else{
+                sprintf(bareFileName, "%d/%s.process%d.parity%d",start_ost+i,initialTestFileName, rank, i-(test->k));
+                sprintf(ec_testFileNames[i], strcat(targetDirectoryRoot, baraFileName));
+            }
+        }
+    }else{
+        for(i=0;i<total_stripe_num;i++){
+            if(i<(test->k)){
+                sprintf(bareFileName, "%d/%s.stripe%d",start_ost+i,initialTestFileName, i);
+                sprintf(ec_testFileNames[i], strcat(targetDirectoryRoot, baraFileName));
+            }else{
+                sprintf(bareFileName, "%d/%s.parity%d",start_ost+i,initialTestFileName, i-(test->k));
+                sprintf(ec_testFileNames[i], strcat(targetDirectoryRoot, baraFileName));
+            }
+        }
+    }
+    
+} /* GetTestFileName() */
 
 void
 GetTestFileName(char * testFileName, IOR_param_t * test)
@@ -1879,9 +1919,10 @@ TestIoSys(IOR_param_t *test)
                    rep,
                    maxTimeDuration;
     void         * fd;//origin mark
-    /*ec fd*/
-    FdList ec_fds;
-    /*ec fd*/
+    /********************ec fd*******************/
+    char        ** ec_testFileNames;
+    void        ** ec_fds;
+    /********************ec fd*******************/
 
     MPI_Group      orig_group, new_group;
     int            range[3];
@@ -1893,7 +1934,7 @@ TestIoSys(IOR_param_t *test)
     // IOR_offset_t ec_dataMoved3;
     // IOR_offset_t ec_dataMoved4;
     /*space for ec-structrue*/
-    ec_info my_ec_info;
+    //ec_info my_ec_info;
     /*space for ec-structrue*/
 
     /* set up communicator for test */
@@ -1939,15 +1980,6 @@ TestIoSys(IOR_param_t *test)
     }
     for (i = 0; i < 2; i++) 
     {   
-    /*ec_timer*/
-    my_ec_info.writeVal[i] = (double *)malloc(test->repetitions * sizeof(double));
-    if (my_ec_info.writeVal[i] == NULL)
-        ERR("ec:out of memory");
-    my_ec_info.readVal[i] = (double *)malloc(test->repetitions * sizeof(double));
-    if (my_ec_info.readVal[i] == NULL)
-        ERR("ec:out of memory");
-    /*ec_timer*/
-
     test->writeVal[i] = (double *)malloc(test->repetitions * sizeof(double));
     if (test->writeVal[i] == NULL) ERR("out of memory");
     test->readVal[i] = (double *)malloc(test->repetitions * sizeof(double));
@@ -2040,16 +2072,21 @@ TestIoSys(IOR_param_t *test)
               ? (GetTimeStamp() - startTime < maxTimeDuration) : 1)) {
             GetTestFileName(testFileName, test);//origin_mark
 
-            /*initialize ec target files*/
-            FileList ec_files;
-            ec_files.file[0] = "/data/data1/ec_testfile.part1";
-            ec_files.file[1] = "/data/data2/ec_testfile.part2";
-            ec_files.file[2] = "/data/data3/ec_testfile.parity1";
-            ec_files.file[3] = "/data/data4/ec_testfile.parity2";
-            fprintf(stdout, "task %d writing:\n%s\n%s\n%s\n%s\n", rank, 
-            ec_files.file[0], ec_files.file[1],
-            ec_files.file[2], ec_files.file[3]);
-            /*initialize ec target files*/
+            /*****************ec_file_init*************************/
+            int total_stripe_num = test->ec_k + test->ec_m;
+            ec_testFileNames = (char **)malloc(sizeof(char *) * total_stripe_num);
+            for(i = 0;i<total_file_num;i++){
+                ec_testFileNames[i] = (char *)malloc(sizeof(char) * MAX_STR);
+            }
+            GetTestFileName_ec(ec_testFileNames, test);
+            if(test->ec_verbose >= VERBOSE_1){
+                sprintf(stdout, "process %d's target files initialized as:\n", rank);
+                for(i = 0;i<total_stripe_num;i++){
+                    sprintf(stdout, "%s\n", ec_testFileNames[i]);
+                }
+            }           
+            /*****************ec_file_init*************************/
+
 
             if (verbose >= VERBOSE_3) {
                 fprintf(stdout, "task %d writing %s\n", rank, testFileName);
@@ -2057,32 +2094,30 @@ TestIoSys(IOR_param_t *test)
             DelaySecs(test->interTestDelay);
             if (test->useExistingTestFile == FALSE) {
                 RemoveFile(testFileName, test->filePerProc, test);//origin_mark
-                /*delete ec files*/
-                if (access(ec_files.file[0], F_OK) == 0)
-                    IOR_Delete(ec_files.file[0], test);
-                if (access(ec_files.file[1], F_OK) == 0)
-                    IOR_Delete(ec_files.file[1], test);
-                if (access(ec_files.file[2], F_OK) == 0)    
-                    IOR_Delete(ec_files.file[2], test);
-                if (access(ec_files.file[3], F_OK) == 0)
-                    IOR_Delete(ec_files.file[3], test);
-                /*delete ec files*/
+                /*******************delete ec files********************/
+                for(i=0;i<total_stripe_num;i++){
+                    if (access(ec_testFileNames[i], F_OK) == 0){
+                        IOR_Delete(ec_testFileNames[i], test);
+                    }
+                }
+                /*******************delete ec files********************/
             }
             MPI_CHECK(MPI_Barrier(testComm), "barrier error");
             test->open = WRITE;
             timer[0][rep] = GetTimeStamp();
             fd = IOR_Create(testFileName, test);//origin_mark
 
-            /*create ec fds*/
-            ec_fds.fd[0] = IOR_Create(ec_files.file[0], test);
-            ec_fds.fd[1] = IOR_Create(ec_files.file[1], test);
-            ec_fds.fd[2] = IOR_Create(ec_files.file[2], test);
-            ec_fds.fd[3] = IOR_Create(ec_files.file[3], test);
-            if (ec_fds.fd[0] == NULL || ec_fds.fd[1] == NULL || ec_fds.fd[2] == NULL || ec_fds.fd[3] == NULL)
-                ERR("open ec fds failed");
-            /*create ec fds*/
+            /************************create ec fds**********************/
+            ec_fds = (char **)malloc(sizeof(char *) * total_stripe_num);
+            for(i=0;i<total_stripe_num;i++){
+                ec_fds[i] = IOR_Create(ec_testFileNames[i], test);
+                if(ec_fds[i] == NULL){
+                    ERR("open ec fds failed");
+                }
+            }
+            /************************create ec fds**********************/
 
-                timer[1][rep] = GetTimeStamp();
+            timer[1][rep] = GetTimeStamp();
             if (test->intraTestBarriers)
                 MPI_CHECK(MPI_Barrier(testComm), "barrier error");
             if (rank == 0 && verbose >= VERBOSE_1) {
@@ -2091,19 +2126,19 @@ TestIoSys(IOR_param_t *test)
             }
             timer[2][rep] = GetTimeStamp();
             //dataMoved = WriteOrRead(test, fd, WRITE); //origin_mark
-            dataMoved = WriteOrRead_ec(test, &ec_fds, WRITE);//ec_version
+            dataMoved = WriteOrRead_ec(test, ec_fds, WRITE);//ec_version
             //fprintf(stdout, "datamoved=%lld\n", dataMoved);
             timer[3][rep] = GetTimeStamp();
             if (test->intraTestBarriers)
                 MPI_CHECK(MPI_Barrier(testComm), "barrier error");
             timer[4][rep] = GetTimeStamp();
             //IOR_Close(ec_fds.fd1, test);//origin_mark
-            /*ec close*/
-            IOR_Close(ec_fds.fd[0], test);
-            IOR_Close(ec_fds.fd[1], test);
-            IOR_Close(ec_fds.fd[2], test);
-            IOR_Close(ec_fds.fd[3], test);
-            /*ec close*/
+            /*************************ec close***************************/
+            for (i = 0; i < total_stripe_num; i++)
+            {
+                IOR_Close(ec_fds[i], test);
+            }
+            /*************************ec close***************************/
 
 #if USE_UNDOC_OPT /* includeDeleteTime */
             if (test->includeDeleteTime) {
@@ -2239,16 +2274,23 @@ TestIoSys(IOR_param_t *test)
             /* Using globally passed rankOffset, following function generates testFileName to read */
             GetTestFileName(testFileName, test);
 
-            /*initialize ec target files*/
-            FileList ec_files;
-            ec_files.file[0] = "/data/data1/ec_testfile.part1";
-            ec_files.file[1] = "/data/data2/ec_testfile.part2";
-            ec_files.file[2] = "/data/data3/ec_testfile.parity1";
-            ec_files.file[3] = "/data/data4/ec_testfile.parity2";
-            fprintf(stdout, "task %d reading:\n%s\n%s\n%s\n%s\n", rank, 
-            ec_files.file[0], ec_files.file[1],
-            ec_files.file[2], ec_files.file[3]);
-            /*initialize ec target files*/
+            /*****************ec_file_init*************************/
+            int total_stripe_num = test->ec_k + test->ec_m;
+            ec_testFileNames = (char **)malloc(sizeof(char *) * total_stripe_num);
+            for (i = 0; i < total_file_num; i++)
+            {
+                ec_testFileNames[i] = (char *)malloc(sizeof(char) * MAX_STR);
+            }
+            GetTestFileName_ec(ec_testFileNames, test);
+            if (test->ec_verbose >= VERBOSE_1)
+            {
+                sprintf(stdout, "process %d will read following files:\n", rank);
+                for (i = 0; i < total_stripe_num; i++)
+                {
+                    sprintf(stdout, "%s\n", ec_testFileNames[i]);
+                }
+            }
+            /*****************ec_file_init*************************/
 
             if (verbose >= VERBOSE_3) {
                 fprintf(stdout, "task %d reading %s\n", rank, testFileName);
@@ -2262,14 +2304,17 @@ TestIoSys(IOR_param_t *test)
                 fprintf(stdout, "[RANK %03d] open for reading file %s XXCEL\n", rank,testFileName);
             }
 
-            /*create ec fds*/
-            ec_fds.fd[0] = IOR_Open(ec_files.file[0], test);
-            ec_fds.fd[1] = IOR_Open(ec_files.file[1], test);
-            ec_fds.fd[2] = IOR_Open(ec_files.file[2], test);
-            ec_fds.fd[3] = IOR_Open(ec_files.file[3], test);
-            if (ec_fds.fd[0] == NULL || ec_fds.fd[1] == NULL || ec_fds.fd[2] == NULL || ec_fds.fd[3] == NULL)
-                ERR("open ec fds failed");
-            /*create ec fds*/
+            /************************create ec fds**********************/
+            ec_fds = (char **)malloc(sizeof(char *) * total_stripe_num);
+            for (i = 0; i < total_stripe_num; i++)
+            {
+                ec_fds[i] = IOR_Create(ec_testFileNames[i], test);
+                if (ec_fds[i] == NULL)
+                {
+                    ERR("open ec fds failed");
+                }
+            }
+            /************************create ec fds**********************/
 
             timer[7][rep] = GetTimeStamp();
             if (test->intraTestBarriers)
@@ -2280,19 +2325,19 @@ TestIoSys(IOR_param_t *test)
             }
             timer[8][rep] = GetTimeStamp();
             //dataMoved = WriteOrRead(test, fd, READ);
-            dataMoved = WriteOrRead_ec(test, &ec_fds, READ);
+            dataMoved = WriteOrRead_ec(test, ec_fds, READ);
             timer[9][rep] = GetTimeStamp();
             if (test->intraTestBarriers)
                 MPI_CHECK(MPI_Barrier(testComm), "barrier error");
             timer[10][rep] = GetTimeStamp();
             IOR_Close(fd, test);
 
-            /*close ec fds*/
-            IOR_Close(ec_fds.fd[0], test);
-            IOR_Close(ec_fds.fd[1], test);
-            IOR_Close(ec_fds.fd[2], test);
-            IOR_Close(ec_fds.fd[3], test);
-            /*close ec fds*/
+            /*************************ec close***************************/
+            for (i = 0; i < total_stripe_num; i++)
+            {
+                IOR_Close(ec_fds[i], test);
+            }
+            /*************************ec close***************************/
 
             timer[11][rep] = GetTimeStamp();
 
@@ -2761,14 +2806,25 @@ WriteOrRead(IOR_param_t * test,
 
 /****************************ec functions*******************************************/
 
-int tranferDone[TOTAL_STRIPE_NUM];
+/*****************experiment timers***************/
+double *ec_timers;
+IOR_offset_t ec_count = 0;
+double ec_startTime = 0;
+double ec_endTime = 0;
+/*****************experiment timerss***************/
+
+/*****************thread variables****************/
+pthread_t *threads;
+int *tranferDone;
 volatile int numTransferred;
 pthread_mutex_t lockOfNT = PTHREAD_MUTEX_INITIALIZER;
+/*****************thread parameters****************/
 
 void* 
 ec_read_thread(ec_read_thread_args* arg)
 {
     int id = arg->id;
+    int k = arg->test->ec_k;
     //void *fd = arg->fds->fd[id];
     //fprintf(stdout,"reading file%...\n",id);
     
@@ -2776,15 +2832,15 @@ ec_read_thread(ec_read_thread_args* arg)
     double startTime = 0;
     double endTime = 0;
     startTime = GetTimeStamp();
-    if (id < K)
+    if (id < k)
     {
         sleep(10000);
     }
 
-    if(id<K){
-        transferred_size = IOR_Xfer(arg->access, arg->fds->fd[id], (arg->ec_data)[id], arg->transfer, arg->test);
+    if(id<k){
+        transferred_size = IOR_Xfer(arg->access, (arg->fds)[i], (arg->ec_data)[id], arg->transfer, arg->test);
     }else{
-        transferred_size = IOR_Xfer(arg->access, arg->fds->fd[id], (arg->ec_coding)[id - K], arg->transfer, arg->test);
+        transferred_size = IOR_Xfer(arg->access, (arg->fds)[id], (arg->ec_coding)[id - k], arg->transfer, arg->test);
     }
     //fprintf(stdout, "reading file%d complete, size: %lld\n", id, transferred_size);
     tranferDone[id] = 1;
@@ -2792,12 +2848,12 @@ ec_read_thread(ec_read_thread_args* arg)
     numTransferred += 1;
     pthread_mutex_unlock(&lockOfNT);
     endTime = GetTimeStamp();
-    arg->ec_timer->readTotalTime += endTime-startTime;
+    ec_timers[id] += endTime-startTime;
 }
 
 IOR_offset_t
 WriteOrRead_ec(IOR_param_t *test,
-            FdList *ec_fds,
+            void **ec_fds,
             int access)
 {
     int errors = 0;
@@ -2814,21 +2870,20 @@ WriteOrRead_ec(IOR_param_t *test,
     double startForStonewall;
     int hitStonewall;
 
-    /********************************ec params******************************/
-    IOR_offset_t amtXferred1,
-        amtXferred2,
-        amtXferred3,
-        amtXferred4,
-        ec_blocksize,
-        ec_buffersize;
-
-    Coding_Technique method = Cauchy_Good; // coding technique (parameter)
-    int k = 2, m = 2, w = 8, ec_packetsize = 8;    // parameters
-    //int ec_size = 524288; //equal to  ec_blocksize
-    int total;
-    int extra;
+    /********************************ec_parameters******************************/
     int readins = 1;
-    /* Jerasure Arguments */
+    int total_stripe_num = test->ec_k + test->ec_m;
+
+    IOR_offset_t *ec_amtXferred = (IOR_offset_t *)malloc(sizeof(IOR_offset_t) * total_stripe_num);
+    IOR_offset_t ec_blocksize = test->ec_stripesize;
+    ec_read_thread_args *ec_read_args;
+
+    Coding_Technique method = test->ec_method;      // coding technique (parameter)
+    int k = test->ec_k, 
+        m = test->ec_m, 
+        w = test->ec_w, 
+        ec_packetsize = test->ec_packetsize; // parameters
+    
     char **ec_data = NULL;
     char **ec_coding = NULL;
     int *ec_matrix = NULL;
@@ -2836,12 +2891,9 @@ WriteOrRead_ec(IOR_param_t *test,
     int **ec_schedule = NULL;
 
     int i;
-    int init_ec_flag = 1;
     int one_ec_flag = 1;
-
-    double ec_startTime = 0;
-    double ec_endTime = 0;
-    /********************************ec params******************************/
+    
+    /********************************ec_parameters******************************/
 
     /* initialize values */
     pretendRank = (rank + rankOffset) % test->numTasks;
@@ -2863,101 +2915,64 @@ WriteOrRead_ec(IOR_param_t *test,
     hitStonewall = ((test->deadlineForStonewalling != 0) && ((GetTimeStamp() - startForStonewall) > test->deadlineForStonewalling));
 
     /* loop over offsets to access */
-
-    /*****************ec parameters***************/
-    ec_read_timer ec_timers[TOTAL_STRIPE_NUM];
-    for(i=0;i<TOTAL_STRIPE_NUM;i++){
-        ec_timers[i].readTotalTime = 0;
-    }
-    /*****************ec parameters***************/
-    IOR_offset_t ec_count = 0;
-    ec_startTime = GetTimeStamp();
-
-    while ((offsetArray[pairCnt] != -1) && !hitStonewall)
-    {
-        ec_count++;
-        test->offset = offsetArray[pairCnt];
-        //ec_offset
-        test->offset = test->offset/k;
-        /*
-         * fills each transfer with a unique pattern
-         * containing the offset into the file
-         */
-        if (test->storeFileOffset == TRUE)
+    
+    /*****************************init ec********************************/
+    if(access == WRITE){
+        //allocate space
+        ec_data = (char **)malloc(sizeof(char *) * k);
+        ec_coding = (char **)malloc(sizeof(char *) * m);
+        for (i = 0; i < m; i++)
         {
-            FillBuffer(buffer, test, test->offset, pretendRank);
+            ec_coding[i] = (char *)malloc(sizeof(char) * test->ec_stripe_size);
+            if (ec_coding[i] == NULL)
+            {
+                ERR("malloc coding fail");
+            }
         }
-        transfer = test->transferSize;
-        if (access == WRITE)
+        //init matrix
+        switch (method)
         {
-            ec_blocksize = transfer/k;
-            ec_buffersize = transfer;
-            /*ec buffers*/
-            // void *ec_buffer1 = CreateBuffer(ec_blocksize);
-            // void *ec_buffer2 = CreateBuffer(ec_blocksize);
-            // void *ec_buffer3 = CreateBuffer(ec_blocksize);
-            // void *ec_buffer4 = CreateBuffer(ec_blocksize);
-            /*encode original buffer & fill the ec_buffers*/
-            ec_data = (char **)malloc(sizeof(char *) * k);
-            ec_coding = (char **)malloc(sizeof(char *) * m);
-            for (i = 0; i < m; i++)
-            {
-                ec_coding[i] = (char *)malloc(sizeof(char) * ec_blocksize);
-                if (ec_coding[i] == NULL)
-                {
-                    ERR("malloc coding fail");
-                }
-            }
-            if(init_ec_flag){
-                init_ec_flag = 0;
-                /*for test*/
-                fprintf(stdout,
-                    "ec_blocksize : %lld.\ntransfer : %lld.\n",
-                     ec_blocksize, transfer);
-                /*for test*/
-                switch (method)
-                {
-                case No_Coding:
-                    break;
-                case Reed_Sol_Van:
-                    ec_matrix = reed_sol_vandermonde_coding_matrix(k, m, w);
-                    break;
-                case Reed_Sol_R6_Op:
-                    break;
-                case Cauchy_Orig:
-                    ec_matrix = cauchy_original_coding_matrix(k, m, w);
-                    ec_bitmatrix = jerasure_matrix_to_bitmatrix(k, m, w, ec_matrix);
-                    ec_schedule = jerasure_smart_bitmatrix_to_schedule(k, m, w, ec_bitmatrix);
-                    break;
-                case Cauchy_Good:
-                    ec_matrix = cauchy_good_general_coding_matrix(k, m, w);
-                    ec_bitmatrix = jerasure_matrix_to_bitmatrix(k, m, w, ec_matrix);
-                    ec_schedule = jerasure_smart_bitmatrix_to_schedule(k, m, w, ec_bitmatrix);
-                    break;
-                case Liberation:
-                    ec_bitmatrix = liberation_coding_bitmatrix(k, w);
-                    ec_schedule = jerasure_smart_bitmatrix_to_schedule(k, m, w, ec_bitmatrix);
-                    break;
-                case Blaum_Roth:
-                    ec_bitmatrix = blaum_roth_coding_bitmatrix(k, w);
-                    ec_schedule = jerasure_smart_bitmatrix_to_schedule(k, m, w, ec_bitmatrix);
-                    break;
-                case Liber8tion:
-                    ec_bitmatrix = liber8tion_coding_bitmatrix(k);
-                    ec_schedule = jerasure_smart_bitmatrix_to_schedule(k, m, w, ec_bitmatrix);
-                    break;
-                case RDP:
-                case EVENODD:
-                    assert(0);
-                }
-            }
+            case No_Coding:
+                break;
+            case Reed_Sol_Van:
+                ec_matrix = reed_sol_vandermonde_coding_matrix(k, m, w);
+                break;
+            case Reed_Sol_R6_Op:
+                break;
+            case Cauchy_Orig:
+                ec_matrix = cauchy_original_coding_matrix(k, m, w);
+                ec_bitmatrix = jerasure_matrix_to_bitmatrix(k, m, w, ec_matrix);
+                ec_schedule = jerasure_smart_bitmatrix_to_schedule(k, m, w, ec_bitmatrix);
+                break;
+            case Cauchy_Good:
+                ec_matrix = cauchy_good_general_coding_matrix(k, m, w);
+                ec_bitmatrix = jerasure_matrix_to_bitmatrix(k, m, w, ec_matrix);
+                ec_schedule = jerasure_smart_bitmatrix_to_schedule(k, m, w, ec_bitmatrix);
+                break;
+            case Liberation:
+                ec_bitmatrix = liberation_coding_bitmatrix(k, w);
+                ec_schedule = jerasure_smart_bitmatrix_to_schedule(k, m, w, ec_bitmatrix);
+                break;
+            case Blaum_Roth:
+                ec_bitmatrix = blaum_roth_coding_bitmatrix(k, w);
+                ec_schedule = jerasure_smart_bitmatrix_to_schedule(k, m, w, ec_bitmatrix);
+                break;
+            case Liber8tion:
+                ec_bitmatrix = liber8tion_coding_bitmatrix(k);
+                ec_schedule = jerasure_smart_bitmatrix_to_schedule(k, m, w, ec_bitmatrix);
+                break;
+            case RDP:
+            case EVENODD:
+                assert(0);
+        }
 
-            for (i = 0; i < k; i++)
-            {
-                ec_data[i] = buffer + (i * ec_blocksize);
-            }
-            switch (method)
-            {
+        for (i = 0; i < k; i++)
+        {
+            ec_data[i] = buffer + (i * ec_blocksize);
+        }
+        
+        switch (method)
+        {
             case No_Coding:
                 break;
             case Reed_Sol_Van:
@@ -2984,117 +2999,122 @@ WriteOrRead_ec(IOR_param_t *test,
             case RDP:
             case EVENODD:
                 assert(0);
+        }   
+    }else if(access == READ){
+
+        ec_timers = (double *)malloc(sizeof(double) * total_stripe_num);
+        threads = (pthread_t *)malloc(sizeof(pthread_t) * total_stripe_num);
+        ec_read_args = (ec_read_thread_args *)malloc(sizeof(ec_read_thread_args) * total_stripe_num);
+        tranferDone = (int *)malloc(sizeof(int) * total_stripe_num);
+
+        ec_data = (char **)malloc(sizeof(char *) * k);
+        ec_coding = (char **)malloc(sizeof(char *) * m);
+
+        for (i = 0; i < k; i++)
+        {
+            ec_data[i] = (char *)malloc(sizeof(char) * ec_blocksize);
+            if (ec_data[i] == NULL)
+            {
+                ERR("malloc data fail");
             }
-            /*encode original buffer & fill the ec_buffers*/
-            // FillBuffer_ec(*ec_buffer1, test, 0, pretendRank);
-            // FillBuffer_ec(*ec_buffer2, test, 0, pretendRank);
-            // FillBuffer_ec(*ec_buffer3, test, 0, pretendRank);
-            // FillBuffer_ec(*ec_buffer4, test, 0, pretendRank);
-            /*ec buffers*/
+        }
+
+        for (i = 0; i < m; i++)
+        {
+            ec_coding[i] = (char *)malloc(sizeof(char) * ec_blocksize);
+            if (ec_coding[i] == NULL)
+            {
+                ERR("malloc coding fail");
+            }
+        }
+
+        switch (method)
+        {
+            case No_Coding:
+                break;
+            case Reed_Sol_Van:
+                ec_matrix = reed_sol_vandermonde_coding_matrix(k, m, w);
+                break;
+            case Reed_Sol_R6_Op:
+                ec_matrix = reed_sol_r6_coding_matrix(k, w);
+                break;
+            case Cauchy_Orig:
+                ec_matrix = cauchy_original_coding_matrix(k, m, w);
+                ec_bitmatrix = jerasure_matrix_to_bitmatrix(k, m, w, ec_matrix);
+                break;
+            case Cauchy_Good:
+                ec_matrix = cauchy_good_general_coding_matrix(k, m, w);
+                ec_bitmatrix = jerasure_matrix_to_bitmatrix(k, m, w, ec_matrix);
+                break;
+            case Liberation:
+                ec_bitmatrix = liberation_coding_bitmatrix(k, w);
+                break;
+            case Blaum_Roth:
+                ec_bitmatrix = blaum_roth_coding_bitmatrix(k, w);
+                break;
+            case Liber8tion:
+                ec_bitmatrix = liber8tion_coding_bitmatrix(k);
+            }
+        }
+
+        for (i = 0; i < total_stripe_num; i++)
+        {
+            ec_read_args[i].fds = ec_fds;
+            ec_read_args[i].id = i;
+            ec_read_args[i].test = test;
+            ec_read_args[i].ec_data = ec_data;
+            ec_read_args[i].ec_coding = ec_coding;
+            ec_read_args[i].transfer = ec_blocksize;
+            ec_read_args[i].method = method;
+            ec_read_args[i].ec_matrix = ec_matrix;
+            ec_read_args[i].ec_bitmatrix = ec_bitmatrix;
+        }
+    }
+    /*****************************init ec********************************/
+
+    ec_startTime = GetTimeStamp();
+    while ((offsetArray[pairCnt] != -1) && !hitStonewall)
+    {
+        ec_count++;
+        test->offset = offsetArray[pairCnt];
+        //ec_offset
+        /*
+         * fills each transfer with a unique pattern
+         * containing the offset into the file
+         */
+        if (test->storeFileOffset == TRUE)
+        {
+            FillBuffer(buffer, test, test->offset, pretendRank);
+        }
+        transfer = test->transferSize;
+        if (access == WRITE)
+        {
             /*ec transfer*/
-            amtXferred1 = IOR_Xfer(access, ec_fds->fd[0], ec_data[0], ec_blocksize, test);
-            amtXferred2 = IOR_Xfer(access, ec_fds->fd[1], ec_data[1], ec_blocksize, test);
-            amtXferred3 = IOR_Xfer(access, ec_fds->fd[2], ec_coding[0], ec_blocksize, test);
-            amtXferred4 = IOR_Xfer(access, ec_fds->fd[3], ec_coding[1], ec_blocksize, test);
+            for(i=0;i<total_stripe_num;i++){
+                ec_amtXferred[i] = IOR_Xfer(access, ec_fds[i], ec_data[0], ec_blocksize, test);
+            }
             /*ec transfer*/
             //amtXferred = IOR_Xfer(access, fd, buffer, transfer, test); //origin_mark
             amtXferred = ec_blocksize*k;
-            if (amtXferred1 !=  ec_blocksize ||amtXferred2 != ec_blocksize||amtXferred3 != ec_blocksize||amtXferred4 != ec_blocksize)
-                ERR("write to file failed!");
+            for (i = 0; i < total_stripe_num; i++)
+            {
+                if (ec_amtXferred[i] != ec_blocksize)
+                    ERR("write to file failed!");
+            }
             
-            // if(test_flag){
-            //     test_flag = 0;
-            //     fprintf(stdout,"per transfer size: %lld\n", amtXferred1);
-            // }
-            free(ec_data);
-            free(ec_coding);
+            
         }
         else if (access == READ)
         {
             /*************************ec multi-thread read*************************/
             //fprintf(stdout, "in READ!\n");
-            
-            ec_blocksize = transfer/k;
-            ec_buffersize = transfer;
-            
-            pthread_t threads[TOTAL_STRIPE_NUM];
-            ec_read_thread_args ec_read_args[TOTAL_STRIPE_NUM];
-            ec_data = (char **)malloc(sizeof(char *) * k);
-            ec_coding = (char **)malloc(sizeof(char *) * m);
-
-            for(i=0;i<TOTAL_STRIPE_NUM;i++){
-                tranferDone[i] = 0;
-            }
             numTransferred = 0;
-
-            for(i=0;i<k;i++){
-                ec_data[i] = (char *)malloc(sizeof(char) * ec_blocksize);
-                if (ec_data[i] == NULL)
-                {
-                    ERR("malloc data fail");
-                }
-            }
-            
-            for(i=0;i<m;i++){
-                ec_coding[i] = (char *)malloc(sizeof(char) * ec_blocksize);
-                if (ec_coding[i] == NULL)
-                {
-                    ERR("malloc coding fail");
-                }
-            }
-            
-            if(init_ec_flag){
-                init_ec_flag = 0;
-                /* Create coding matrix or bitmatrix */
-                switch (method)
-                {
-                case No_Coding:
-                    break;
-                case Reed_Sol_Van:
-                    ec_matrix = reed_sol_vandermonde_coding_matrix(k, m, w);
-                    break;
-                case Reed_Sol_R6_Op:
-                    ec_matrix = reed_sol_r6_coding_matrix(k, w);
-                    break;
-                case Cauchy_Orig:
-                    ec_matrix = cauchy_original_coding_matrix(k, m, w);
-                    ec_bitmatrix = jerasure_matrix_to_bitmatrix(k, m, w, ec_matrix);
-                    break;
-                case Cauchy_Good:
-                    ec_matrix = cauchy_good_general_coding_matrix(k, m, w);
-                    ec_bitmatrix = jerasure_matrix_to_bitmatrix(k, m, w, ec_matrix);
-                    break;
-                case Liberation:
-                    ec_bitmatrix = liberation_coding_bitmatrix(k, w);
-                    break;
-                case Blaum_Roth:
-                    ec_bitmatrix = blaum_roth_coding_bitmatrix(k, w);
-                    break;
-                case Liber8tion:
-                    ec_bitmatrix = liber8tion_coding_bitmatrix(k);
-                }
-            }
-            
-            for (i = 0; i < TOTAL_STRIPE_NUM; i++)
-            {
-                ec_read_args[i].fds = ec_fds;
-                ec_read_args[i].id = i;
-                ec_read_args[i].ec_timer = &ec_timers[i];
-                ec_read_args[i].test = test;
-                ec_read_args[i].ec_data = ec_data;
-                ec_read_args[i].ec_coding = ec_coding;
-                ec_read_args[i].transfer = ec_blocksize;
-                ec_read_args[i].method = method;
-                ec_read_args[i].ec_matrix = ec_matrix;
-                ec_read_args[i].ec_bitmatrix = ec_bitmatrix;
-            }
-
-            for(i=0;i<TOTAL_STRIPE_NUM;i++){
+            for(i=0;i<total_stripe_num;i++){
                 pthread_create(&threads[i], NULL, ec_read_thread, &ec_read_args[i]);
             }
 
             /*ec when k stripes arrive*/
-            if(IMIDIATE_EC){
+            if(test->EC_Strategy == IMMEDIATE_EC){
                 while(1){
                     pthread_mutex_lock(&lockOfNT);
                     if(numTransferred == k){
@@ -3172,10 +3192,6 @@ WriteOrRead_ec(IOR_param_t *test,
                 pthread_join(threads[i],NULL);
             }
             /*ec when k stripes arrive*/
-
-
-            free(ec_data);
-            free(ec_coding);
             amtXferred = ec_blocksize*k;
             /*************************ec multi-thread read*************************/
             
@@ -3228,6 +3244,8 @@ WriteOrRead_ec(IOR_param_t *test,
         IOR_Fsync(ec_fds->fd[3], test);
         IOR_Fsync(ec_fds->fd[4], test);
     }
+    free(ec_data);
+    free(ec_coding);
     fprintf(stdout,"total count: %lld.\n", ec_count);
     return (dataMoved);
 } /* WriteOrRead_ec() */

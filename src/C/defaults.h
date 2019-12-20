@@ -152,6 +152,8 @@ IOR_param_t defaultParameters = {
     8,               /* ec_w */
     8,               /* ec_packetsize */
     0,               /* ec_method */   
-    0                /* ec_strategy */
+    0,               /* ec_strategy */
+    0,               /* ec_verbose */
+    8                /* ec_num_ost*/
 };
 #endif /* not _IOR_DEFAULTS_H */

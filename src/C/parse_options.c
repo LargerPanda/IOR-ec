@@ -90,11 +90,15 @@ void DecodeDirective(char *line, IOR_param_t *test)
         test->ec_m = atoi(value);
     } else if (strcasecmp(option, "ec_w") == 0) {
         test->ec_w = atoi(value);
-    }else if (strcasecmp(option, "ec_packetsize") == 0) {
+    } else if (strcasecmp(option, "ec_packetsize") == 0) {
         test->ec_packetsize = atoi(value);
-    }else if (strcasecmp(option, "ec_method") == 0) {
+    } else if (strcasecmp(option, "ec_verbose") == 0) {
+        test->ec_verbose = atoi(value);
+    } else if (strcasecmp(option, "ec_method") == 0) {
         test->ec_method = atoi(value);
-    }else if (strcasecmp(option, "ec_strategy") == 0) { //ec parameters end
+    } else if (strcasecmp(option, "ec_num_ost") == 0) {
+        test->ec_num_ost = atoi(value);
+    } else if (strcasecmp(option, "ec_strategy") == 0) { //ec parameters end
         test->ec_strategy = atoi(value);
     } else if (strcasecmp(option, "debug") == 0) {
         strcpy(test->debug, value);
@@ -243,6 +247,9 @@ ParseLine(char *line, IOR_param_t *test)
         start = end + 1;
     } while (end != NULL);
 
+    /**************ec************/
+    //change transersize to stripesize*stripcount
+    test->transferSize = test->ec_stripe_count * test->ec_stripe_size;
 } /* ParseLine() */
 
 
