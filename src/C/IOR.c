@@ -898,20 +898,20 @@ void GetTestFileName_ec(char **ec_testFileNames, IOR_param_t *test)
     if(test->filePerProc){
         for(i=0;i<total_stripe_num;i++){
             if(i<(test->ec_k)){
-                sprintf(bareFileName, "%d/%s.process%d.stripe%d",start_ost+i,initialTestFileName, rank, i);
+                sprintf(bareFileName, "%d/%s.process%d.stripe%d",(start_ost+i)%test->ec_num_ost,initialTestFileName, rank, i);
                 sprintf(ec_testFileNames[i], strcat(targetDirectoryRoot, bareFileName));
             }else{
-                sprintf(bareFileName, "%d/%s.process%d.parity%d",start_ost+i,initialTestFileName, rank, i-(test->ec_k));
+                sprintf(bareFileName, "%d/%s.process%d.parity%d",(start_ost+i)%test->ec_num_ost,initialTestFileName, rank, i-(test->ec_k));
                 sprintf(ec_testFileNames[i], strcat(targetDirectoryRoot, bareFileName));
             }
         }
     }else{
         for(i=0;i<total_stripe_num;i++){
             if(i<(test->ec_k)){
-                sprintf(bareFileName, "%d/%s.stripe%d",start_ost+i,initialTestFileName, i);
+                sprintf(bareFileName, "%d/%s.stripe%d", (start_ost + i) % test->ec_num_ost, initialTestFileName, i);
                 sprintf(ec_testFileNames[i], strcat(targetDirectoryRoot, bareFileName));
             }else{
-                sprintf(bareFileName, "%d/%s.parity%d",start_ost+i,initialTestFileName, i-(test->ec_k));
+                sprintf(bareFileName, "%d/%s.parity%d",(start_ost+i)%test->ec_num_ost, initialTestFileName, i-(test->ec_k));
                 sprintf(ec_testFileNames[i], strcat(targetDirectoryRoot, bareFileName));
             }
         }
