@@ -2251,7 +2251,7 @@ TestIoSys(IOR_param_t *test)
             /*****************ec_file_init*************************/
             int total_stripe_num = test->ec_k + test->ec_m;
             ec_testFileNames = (char **)malloc(sizeof(char *) * total_stripe_num);
-            for (i = 0; i < total_file_num; i++)
+            for (i = 0; i < total_stripe_num; i++)
             {
                 ec_testFileNames[i] = (char *)malloc(sizeof(char) * MAX_STR);
             }
@@ -2785,7 +2785,7 @@ double *ec_timers;
 IOR_offset_t ec_count;
 double ec_startTime;
 double ec_endTime;
-/*****************experiment timerss***************/
+/*****************experiment timers***************/
 
 /*****************thread variables****************/
 pthread_t *threads;
@@ -3201,10 +3201,10 @@ WriteOrRead_ec(IOR_param_t *test,
     /*print ec time info*/
     ec_endTime = GetTimeStamp();
 
-    for(i = 0;i<TOTAL_STRIPE_NUM;i++){
-        fprintf(stdout, "read time of stripe %d : %lf\n", i, ec_timers[i].readTotalTime);
+    for(i = 0;i<total_stripe_num;i++){
+        fprintf(stdout, "read time of stripe %d : %lf\n", i, ec_timers[i]);
     }
-    fprintf(stdout, "Total read time of %d stripes: %lf\n", TOTAL_STRIPE_NUM, ec_endTime-ec_startTime);
+    fprintf(stdout, "Total read time of %d stripes: %lf\n", total_stripe_num, ec_endTime-ec_startTime);
 
 
     totalErrorCount += CountErrors(test, access, errors);
@@ -3214,10 +3214,9 @@ WriteOrRead_ec(IOR_param_t *test,
     if (access == WRITE && test->fsync == TRUE)
     {
         //IOR_Fsync(fd, test); /*fsync after all accesses*/
-        IOR_Fsync(ec_fds->fd[1], test);
-        IOR_Fsync(ec_fds->fd[2], test);
-        IOR_Fsync(ec_fds->fd[3], test);
-        IOR_Fsync(ec_fds->fd[4], test);
+        for(i=0;i<total_stripe_num;i++){
+            IOR_Fsync(ec_fds[i], test);
+        }
     }
     free(ec_data);
     free(ec_coding);
