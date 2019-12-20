@@ -3043,10 +3043,9 @@ WriteOrRead_ec(IOR_param_t *test,
             ec_read_args[i].ec_matrix = ec_matrix;
             ec_read_args[i].ec_bitmatrix = ec_bitmatrix;
         }
-    }
     /*****************************init ec********************************/
-    while ((offsetArray[pairCnt] != -1) && !hitStonewall)
-    {
+    
+    while ((offsetArray[pairCnt] != -1) && !hitStonewall) {
         ec_count++;
         test->offset = offsetArray[pairCnt];
         //ec_offset
