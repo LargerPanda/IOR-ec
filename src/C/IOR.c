@@ -2071,9 +2071,10 @@ TestIoSys(IOR_param_t *test)
             GetTestFileName_ec(ec_testFileNames, test);
             fprintf(stdout, "break at 2072\n");
             if(test->ec_verbose >= VERBOSE_1){
-                sprintf(stdout, "process %d's target files initialized as:\n", rank);
+                fprintf(stdout, "break at 2074\n");
+                fprintf(stdout, "process %d's target files initialized as:\n", rank);
                 for(i = 0;i<total_stripe_num;i++){
-                    sprintf(stdout, "%s\n", ec_testFileNames[i]);
+                    fprintf(stdout, "%s\n", ec_testFileNames[i]);
                 }
             }           
             /*****************ec_file_init*************************/
