@@ -2823,10 +2823,10 @@ ec_read_thread(ec_read_thread_args* arg)
     double startTime = 0;
     double endTime = 0;
     startTime = GetTimeStamp();
-    // if (id < k)
-    // {
-    //     sleep(10000);
-    // }
+    if (id < k)
+    {
+        sleep(10000);
+    }
 
     if(id<k){
         transferred_size = IOR_Xfer(arg->access, (arg->fds)[id], (arg->ec_data)[id], arg->test->ec_stripe_size, arg->test);
