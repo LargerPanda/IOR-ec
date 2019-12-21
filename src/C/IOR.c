@@ -3099,7 +3099,7 @@ WriteOrRead_ec(IOR_param_t *test,
                     ERR("write to file failed!");
             }
             
-            
+            fprintf(stdout, "break at 3102\n");
         }
         else if (access == READ)
         {
@@ -3223,10 +3223,14 @@ WriteOrRead_ec(IOR_param_t *test,
 
     /*print ec time info*/
 
-    for(i = 0;i<total_stripe_num;i++){
-        fprintf(stdout, "read time of stripe %d : %lf\n", i, ec_timers[i]);
+    if(access == READ){
+        for (i = 0; i < total_stripe_num; i++)
+        {
+            fprintf(stdout, "read time of stripe %d : %lf\n", i, ec_timers[i]);
+        }
+        fprintf(stdout, "Total read time of %d stripes: %lf\n", total_stripe_num, ec_endTime - ec_startTime);
     }
-    fprintf(stdout, "Total read time of %d stripes: %lf\n", total_stripe_num, ec_endTime-ec_startTime);
+    
 
 
     totalErrorCount += CountErrors(test, access, errors);
