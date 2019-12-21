@@ -1997,6 +1997,7 @@ TestIoSys(IOR_param_t *test)
 
     /* show test setup */
     if (rank == 0 && verbose >= VERBOSE_0) ShowSetup(test);
+    fprintf(stdout, "break at 2000\n");
 
     startTime = GetTimeStamp();
     maxTimeDuration = test->maxTimeDuration * 60;	/* convert to seconds */
@@ -2063,10 +2064,12 @@ TestIoSys(IOR_param_t *test)
             }  
             int total_stripe_num = test->ec_k + test->ec_m;
             ec_testFileNames = (char **)malloc(sizeof(char *) * total_stripe_num);
+            fprintf(stdout, "break at 2067\n");
             for(i = 0;i<total_stripe_num;i++){
                 ec_testFileNames[i] = (char *)malloc(sizeof(char) * MAX_STR);
             }
             GetTestFileName_ec(ec_testFileNames, test);
+            fprintf(stdout, "break at 2072\n");
             if(test->ec_verbose >= VERBOSE_1){
                 sprintf(stdout, "process %d's target files initialized as:\n", rank);
                 for(i = 0;i<total_stripe_num;i++){
