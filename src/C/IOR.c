@@ -2825,7 +2825,8 @@ ec_read_thread(ec_read_thread_args* arg)
     startTime = GetTimeStamp();
     if (id < k)
     {
-        sleep(10);
+        fprintf(stdout, "enter sleep\n");
+        sleep(1);
     }
 
     if(id<k){
