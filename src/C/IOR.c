@@ -3051,20 +3051,22 @@ WriteOrRead_ec(IOR_param_t *test,
             case Liber8tion:
                 ec_bitmatrix = liber8tion_coding_bitmatrix(k);
         }
+
+        for (i = 0; i < total_stripe_num; i++)
+        {
+            ec_read_args[i].fds = ec_fds;
+            ec_read_args[i].id = i;
+            ec_read_args[i].test = test;
+            ec_read_args[i].access = access;
+            ec_read_args[i].ec_data = ec_data;
+            ec_read_args[i].ec_coding = ec_coding;
+            ec_read_args[i].method = method;
+            ec_read_args[i].ec_matrix = ec_matrix;
+            ec_read_args[i].ec_bitmatrix = ec_bitmatrix;
+        }
     }
 
-    for (i = 0; i < total_stripe_num; i++)
-    {
-        ec_read_args[i].fds = ec_fds;
-        ec_read_args[i].id = i;
-        ec_read_args[i].test = test;
-        ec_read_args[i].access = access;
-        ec_read_args[i].ec_data = ec_data;
-        ec_read_args[i].ec_coding = ec_coding;
-        ec_read_args[i].method = method;
-        ec_read_args[i].ec_matrix = ec_matrix;
-        ec_read_args[i].ec_bitmatrix = ec_bitmatrix;
-    }
+    
     fprintf(stdout, "break at 3608\n");
     /*****************************init ec********************************/
     
