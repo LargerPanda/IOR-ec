@@ -2055,7 +2055,7 @@ TestIoSys(IOR_param_t *test)
 
             /*****************ec_file_init*************************/
             if(test->ec_verbose >= VERBOSE_3){
-                sprintf(stdout, "in ec_file_init\n");
+                fprintf(stdout, "in ec_file_init\n");
             }  
             int total_stripe_num = test->ec_k + test->ec_m;
             ec_testFileNames = (char **)malloc(sizeof(char *) * total_stripe_num);
@@ -2275,10 +2275,10 @@ TestIoSys(IOR_param_t *test)
             GetTestFileName_ec(ec_testFileNames, test);
             if (test->ec_verbose >= VERBOSE_1)
             {
-                sprintf(stdout, "process %d will read following files:\n", rank);
+                fprintf(stdout, "process %d will read following files:\n", rank);
                 for (i = 0; i < total_stripe_num; i++)
                 {
-                    sprintf(stdout, "%s\n", ec_testFileNames[i]);
+                    fprintf(stdout, "%s\n", ec_testFileNames[i]);
                 }
             }
             /*****************ec_file_init*************************/
