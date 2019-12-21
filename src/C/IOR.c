@@ -2093,15 +2093,18 @@ TestIoSys(IOR_param_t *test)
                 }
                 /*******************delete ec files********************/
             }
+            fprintf(stdout, "break at 2096\n");
             MPI_CHECK(MPI_Barrier(testComm), "barrier error");
             test->open = WRITE;
             timer[0][rep] = GetTimeStamp();
             fd = IOR_Create(testFileName, test);//origin_mark
 
             /************************create ec fds**********************/
-            ec_fds = (char **)malloc(sizeof(char *) * total_stripe_num);
+            ec_fds = (void **)malloc(sizeof(void *) * total_stripe_num);
+            fprintf(stdout, "break at 2104\n");
             for(i=0;i<total_stripe_num;i++){
                 ec_fds[i] = IOR_Create(ec_testFileNames[i], test);
+                fprintf(stdout, "break at 2107\n");
                 if(ec_fds[i] == NULL){
                     ERR("open ec fds failed");
                 }
