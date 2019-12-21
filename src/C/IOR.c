@@ -2097,10 +2097,10 @@ TestIoSys(IOR_param_t *test)
 
             /************************create ec fds**********************/
             ec_fds = (void **)malloc(sizeof(void *) * total_stripe_num);
-            fprintf(stdout, "break at 2104\n");
+            fprintf(stdout, "break at 2100\n");
             for(i=0;i<total_stripe_num;i++){
                 ec_fds[i] = IOR_Create(ec_testFileNames[i], test);
-                fprintf(stdout, "break at 2107\n");
+                fprintf(stdout, "break at 2103\n");
                 if(ec_fds[i] == NULL){
                     ERR("open ec fds failed");
                 }
@@ -2117,6 +2117,7 @@ TestIoSys(IOR_param_t *test)
             timer[2][rep] = GetTimeStamp();
             //dataMoved = WriteOrRead(test, fd, WRITE); //origin_mark
             dataMoved = WriteOrRead_ec(test, ec_fds, WRITE);//ec_version
+            fprintf(stdout, "break at 2120\n");
             //fprintf(stdout, "datamoved=%lld\n", dataMoved);
             timer[3][rep] = GetTimeStamp();
             if (test->intraTestBarriers)
