@@ -890,8 +890,7 @@ void GetTestFileName_ec(char **ec_testFileNames, IOR_param_t *test)
         fprintf(stdout, "in GetTestFileName_ec\n");
     }
     char initialTestFileName[MAX_STR],
-         targetDirectoryRoot[MAX_STR] = "/data/ost",
-         bareFileName[MAX_STR];
+         targetDirectoryRoot[MAX_STR] = "/data/ost";
 
     int total_stripe_num = test->ec_k+test->ec_m;
     int start_ost = ChooseStartOST();
@@ -901,21 +900,17 @@ void GetTestFileName_ec(char **ec_testFileNames, IOR_param_t *test)
     if(test->filePerProc){
         for(i=0;i<total_stripe_num;i++){
             if(i<(test->ec_k)){
-                sprintf(bareFileName, "%d/%s.process%d.stripe%d",(start_ost+i)%test->ec_num_ost,initialTestFileName, rank, i);
-                sprintf(ec_testFileNames[i], strcat("/data/ost", bareFileName));
+                sprintf(ec_testFileNames[i], "%s%d/%s.process%d.stripe%d", targetDirectoryRoot, (start_ost + i) % test->ec_num_ost, initialTestFileName, rank, i);
             }else{
-                sprintf(bareFileName, "%d/%s.process%d.parity%d",(start_ost+i)%test->ec_num_ost,initialTestFileName, rank, i-(test->ec_k));
-                sprintf(ec_testFileNames[i], strcat("/data/ost", bareFileName));
+                sprintf(ec_testFileNames[i], "%s%d/%s.process%d.parity%d", targetDirectoryRoot, (start_ost + i) % test->ec_num_ost, initialTestFileName, rank, i - (test->ec_k));
             }
         }
     }else{
         for(i=0;i<total_stripe_num;i++){
             if(i<(test->ec_k)){
-                sprintf(bareFileName, "%d/%s.stripe%d", (start_ost + i) % test->ec_num_ost, initialTestFileName, i);
-                sprintf(ec_testFileNames[i], strcat("/data/ost", bareFileName));
+                sprintf(ec_testFileNames[i], "%s%d/%s.stripe%d", targetDirectoryRoot, (start_ost + i) % test->ec_num_ost, initialTestFileName, i);
             }else{
-                sprintf(bareFileName, "%d/%s.parity%d",(start_ost+i)%test->ec_num_ost, initialTestFileName, i-(test->ec_k));
-                sprintf(ec_testFileNames[i], strcat("/data/ost", bareFileName));
+                sprintf(ec_testFileNames[i], "%s%d/%s.parity%d", targetDirectoryRoot, (start_ost + i) % test->ec_num_ost, initialTestFileName, i - (test->ec_k));
             }
         }
     }
