@@ -2802,7 +2802,7 @@ IOR_Xfer_ec(int access,
                void *fd,
                void *buffer,
                IOR_offset_t length,
-               IOR_param_t *param
+               IOR_param_t *param,
                IOR_offset_t ec_offset)
 {
     int(MPIAPI * Access)(MPI_File, void *, int,
@@ -2986,7 +2986,7 @@ ec_read_thread(ec_read_thread_args* arg)
     {
         ec_count++;
         offset = offsetArray[pairCnt];
-        offset = offset / test->ec_k;
+        offset = offset / arg->test->ec_k;
         if (id < k)
         {
             transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], (arg->ec_data)[id], arg->test->ec_stripe_size, arg->test, offset);
