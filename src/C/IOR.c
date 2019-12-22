@@ -1992,7 +1992,7 @@ TestIoSys(IOR_param_t *test)
 
     /* show test setup */
     if (rank == 0 && verbose >= VERBOSE_0) ShowSetup(test);
-    fprintf(stdout, "break at 2000\n");
+    //fprintf(stdout, "break at 2000\n");
 
     startTime = GetTimeStamp();
     maxTimeDuration = test->maxTimeDuration * 60;	/* convert to seconds */
@@ -2059,14 +2059,14 @@ TestIoSys(IOR_param_t *test)
             }  
             int total_stripe_num = test->ec_k + test->ec_m;
             ec_testFileNames = (char **)malloc(sizeof(char *) * total_stripe_num);
-            fprintf(stdout, "break at 2067\n");
+            //fprintf(stdout, "break at 2067\n");
             for(i = 0;i<total_stripe_num;i++){
                 ec_testFileNames[i] = (char *)malloc(sizeof(char) * MAX_STR);
             }
             GetTestFileName_ec(ec_testFileNames, test);
-            fprintf(stdout, "break at 2072\n");
+            //fprintf(stdout, "break at 2072\n");
             if(test->ec_verbose >= VERBOSE_1){
-                fprintf(stdout, "break at 2074\n");
+                //fprintf(stdout, "break at 2074\n");
                 fprintf(stdout, "process %d's target files initialized as:\n", rank);
                 for(i = 0;i<total_stripe_num;i++){
                     fprintf(stdout, "%s\n", ec_testFileNames[i]);
@@ -2089,7 +2089,7 @@ TestIoSys(IOR_param_t *test)
                 }
                 /*******************delete ec files********************/
             }
-            fprintf(stdout, "break at 2096\n");
+            //fprintf(stdout, "break at 2096\n");
             MPI_CHECK(MPI_Barrier(testComm), "barrier error");
             test->open = WRITE;
             timer[0][rep] = GetTimeStamp();
@@ -2097,10 +2097,10 @@ TestIoSys(IOR_param_t *test)
 
             /************************create ec fds**********************/
             ec_fds = (void **)malloc(sizeof(void *) * total_stripe_num);
-            fprintf(stdout, "break at 2100\n");
+            //fprintf(stdout, "break at 2100\n");
             for(i=0;i<total_stripe_num;i++){
                 ec_fds[i] = IOR_Create(ec_testFileNames[i], test);
-                fprintf(stdout, "break at 2103\n");
+                //fprintf(stdout, "break at 2103\n");
                 if(ec_fds[i] == NULL){
                     ERR("open ec fds failed");
                 }
@@ -2117,7 +2117,7 @@ TestIoSys(IOR_param_t *test)
             timer[2][rep] = GetTimeStamp();
             //dataMoved = WriteOrRead(test, fd, WRITE); //origin_mark
             dataMoved = WriteOrRead_ec(test, ec_fds, WRITE);//ec_version
-            fprintf(stdout, "break at 2120\n");
+            //fprintf(stdout, "break at 2120\n");
             //fprintf(stdout, "datamoved=%lld\n", dataMoved);
             timer[3][rep] = GetTimeStamp();
             if (test->intraTestBarriers)
@@ -2800,7 +2800,6 @@ WriteOrRead(IOR_param_t * test,
 
 /*****************experiment timers***************/
 double *ec_timers;
-IOR_offset_t ec_count;
 double ec_startTime;
 double ec_endTime;
 /*****************experiment timers***************/
@@ -2838,7 +2837,6 @@ ec_read_thread(ec_read_thread_args* arg)
 
     while ((offsetArray[pairCnt] != -1) && !hitStonewall)
     {
-        ec_count++;
         offset = offsetArray[pairCnt];
         offset = offset / arg->test->ec_k;
         if (id < k)
@@ -2922,7 +2920,7 @@ WriteOrRead_ec(IOR_param_t *test,
     SetupXferBuffers(&buffer, &checkBuffer, &readCheckBuffer,
                      test, pretendRank, access);
 
-    fprintf(stdout, "break at 2907\n");
+    //fprintf(stdout, "break at 2907\n");
     /* check for stonewall */
     startForStonewall = GetTimeStamp();
     hitStonewall = ((test->deadlineForStonewalling != 0) && ((GetTimeStamp() - startForStonewall) > test->deadlineForStonewalling));
@@ -2978,7 +2976,7 @@ WriteOrRead_ec(IOR_param_t *test,
             case EVENODD:
                 assert(0);
         }
-        fprintf(stdout, "break at 2963\n");
+        //fprintf(stdout, "break at 2963\n");
         for (i = 0; i < k; i++)
         {
             ec_data[i] = buffer + (i * ec_blocksize);
@@ -3015,6 +3013,8 @@ WriteOrRead_ec(IOR_param_t *test,
         }
         fprintf(stdout, "break 2998\n"); 
     }else if(access == READ){
+
+        ec_startTime = GetTimeStamp();
 
         ec_timers = (double *)malloc(sizeof(double) * total_stripe_num);
         threads = (pthread_t *)malloc(sizeof(pthread_t) * total_stripe_num);
@@ -3086,7 +3086,7 @@ WriteOrRead_ec(IOR_param_t *test,
     }
 
     
-    fprintf(stdout, "break at 30708\n");
+    //fprintf(stdout, "break at 30708\n");
     /*****************************init ec********************************/
     
 
@@ -3197,11 +3197,12 @@ WriteOrRead_ec(IOR_param_t *test,
         // amtXferred = IOR_Xfer(access, fd, buffer, transfer, test);
         // if (amtXferred != transfer)
         //     ERR("cannot read from file");
+        ec_endTime = GetTimeStamp();
     }
 
 
     while ((offsetArray[pairCnt] != -1) && !hitStonewall) {
-        ec_count++;
+    
         test->offset = offsetArray[pairCnt];
         test->offset = test->offset/test->ec_k;
         //ec_offset
@@ -3229,7 +3230,7 @@ WriteOrRead_ec(IOR_param_t *test,
                     ERR("write to file failed!");
             }
             
-            fprintf(stdout, "break at 3102\n");
+            //fprintf(stdout, "break at 3102\n");
         }
         else if (access == READ)
         {
@@ -3285,7 +3286,7 @@ print_info:
     }
     free(ec_data);
     free(ec_coding);
-    fprintf(stdout,"total count: %lld.\n", ec_count);
+    
     return (dataMoved);
 } /* WriteOrRead_ec() */
 
