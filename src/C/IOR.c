@@ -2901,7 +2901,6 @@ WriteOrRead_ec(IOR_param_t *test,
     int **ec_schedule = NULL;
 
     int i;
-    int one_ec_flag = 1;
     
     /********************************ec_parameters******************************/
 
@@ -3173,9 +3172,8 @@ WriteOrRead_ec(IOR_param_t *test,
                     }
                     else
                     {
-                        if (one_ec_flag)
+                        if (test->ec_verbose >= VERBOSE_0)
                         {
-                            one_ec_flag = 0;
                             fprintf(stdout, "decode success!\n");
                         }
                     }
