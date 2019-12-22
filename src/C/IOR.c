@@ -3099,6 +3099,9 @@ WriteOrRead_ec(IOR_param_t *test,
         /*ec when k stripes arrive*/
         if (test->ec_strategy == IMMEDIATE_EC)
         {
+            if(test->ec_verbose >= VERBOSE_0){
+                fprintf(stdout, "using immediate EC strategy!\n");
+            }
             while (1)
             {
                 pthread_mutex_lock(&lockOfNT);
