@@ -31,6 +31,7 @@ typedef struct ec_read_thread_args
     IOR_param_t *test;
     void **fds;
     int access;
+    IOR_offset_t *offSetArray;
     /* ec decode parameters */
     char **ec_data;
     char **ec_coding;

@@ -2797,6 +2797,153 @@ WriteOrRead(IOR_param_t * test,
 
 /****************************ec functions*******************************************/
 
+IOR_offset_t
+IOR_Xfer_ec(int access,
+               void *fd,
+               void *buffer,
+               IOR_offset_t length,
+               IOR_param_t *param
+               IOR_offset_t ec_offset)
+{
+    int(MPIAPI * Access)(MPI_File, void *, int,
+                         MPI_Datatype, MPI_Status *);
+    int(MPIAPI * Access_at)(MPI_File, MPI_Offset, void *, int,
+                            MPI_Datatype, MPI_Status *);
+    int(MPIAPI * Access_all)(MPI_File, void *, int,
+                             MPI_Datatype, MPI_Status *);
+    int(MPIAPI * Access_at_all)(MPI_File, MPI_Offset, void *, int,
+                                MPI_Datatype, MPI_Status *);
+    /*
+     * this needs to be properly implemented:
+     *
+     *   int        (*Access_ordered)(MPI_File, void *, int,
+     *                                MPI_Datatype, MPI_Status *);
+     */
+    MPI_Status status;
+
+    /* point functions to appropriate MPIIO calls */
+    if (access == WRITE)
+    { /* WRITE */
+        Access = MPI_File_write;
+        Access_at = MPI_File_write_at;
+        Access_all = MPI_File_write_all;
+        Access_at_all = MPI_File_write_at_all;
+        /*
+         * this needs to be properly implemented:
+         *
+         *   Access_ordered = MPI_File_write_ordered;
+         */
+    }
+    else
+    { /* READ or CHECK */
+        Access = MPI_File_read;
+        Access_at = MPI_File_read_at;
+        Access_all = MPI_File_read_all;
+        Access_at_all = MPI_File_read_at_all;
+        /*
+         * this needs to be properly implemented:
+         *
+         *   Access_ordered = MPI_File_read_ordered;
+         */
+    }
+
+    /*
+     * 'useFileView' uses derived datatypes and individual file pointers
+     */
+    if (param->useFileView)
+    {
+        fprintf(stdout, "useFileView=1\n");
+        /* find offset in file */
+        if (SeekOffset_MPIIO(*(MPI_File *)fd, ec_offset, param) < 0)
+        {
+            /* if unsuccessful */
+            length = -1;
+        }
+        else
+        {
+            /*
+             * 'useStridedDatatype' fits multi-strided pattern into a datatype;
+             * must use 'length' to determine repetitions (fix this for
+             * multi-segments someday, WEL):
+             * e.g.,  'IOR -s 2 -b 32K -t 32K -a MPIIO -S'
+             */
+            if (param->useStridedDatatype)
+            {
+                length = param->segmentCount;
+            }
+            else
+            {
+                length = 1;
+            }
+            if (param->collective)
+            {
+                /* individual, collective call */
+                fprintf(stdout, "collective=1\n");
+                MPI_CHECK(Access_all(*(MPI_File *)fd, buffer, length,
+                                     param->transferType, &status),
+                          "cannot access collective");
+            }
+            else
+            {
+                /* individual, noncollective call */
+                MPI_CHECK(Access(*(MPI_File *)fd, buffer, length,
+                                 param->transferType, &status),
+                          "cannot access noncollective");
+            }
+            length *= param->transferSize; /* for return value in bytes */
+        }
+    }
+    else
+    {
+        /*
+         * !useFileView does not use derived datatypes, but it uses either
+         * shared or explicit file pointers
+         */
+        if (param->useSharedFilePointer)
+        {
+            /* find offset in file */
+            if (SeekOffset_MPIIO(*(MPI_File *)fd, ec_offset, param) < 0)
+            {
+                /* if unsuccessful */
+                length = -1;
+            }
+            else
+            {
+                /* shared, collective call */
+                /*
+                 * this needs to be properly implemented:
+                 *
+                 *   MPI_CHECK(Access_ordered(fd.MPIIO, buffer, length,
+                 *                            MPI_BYTE, &status),
+                 *             "cannot access shared, collective");
+                 */
+                fprintf(stdout, "useSharedFilePointer not implemented\n");
+            }
+        }
+        else
+        {
+            if (param->collective)
+            {
+                /* explicit, collective call */
+                fprintf(stdout, "collective=1\n");
+                MPI_CHECK(Access_at_all(*(MPI_File *)fd, ec_offset,
+                                        buffer, length, MPI_BYTE, &status),
+                          "cannot access explicit, collective");
+            }
+            else
+            {
+                /* explicit, noncollective call */
+                //fprintf(stdout, "collective!=1\n");
+                //fprintf(stdout, "offset = %lld\n", param->offset);
+                MPI_CHECK(Access_at(*(MPI_File *)fd, ec_offset, buffer,
+                                    length, MPI_BYTE, &status),
+                          "cannot access explicit, noncollective");
+            }
+        }
+    }
+    return (length);
+} /* IOR_Xfer_ec */
+
 /*****************experiment timers***************/
 double *ec_timers;
 IOR_offset_t ec_count;
@@ -2809,7 +2956,10 @@ pthread_t *threads;
 int *tranferDone;
 volatile int numTransferred;
 pthread_mutex_t lockOfNT = PTHREAD_MUTEX_INITIALIZER;
+int hitStonewall;
 /*****************thread parameters****************/
+
+
 
 void* 
 ec_read_thread(ec_read_thread_args* arg)
@@ -2820,27 +2970,40 @@ ec_read_thread(ec_read_thread_args* arg)
     //fprintf(stdout,"reading file%...\n",id);
     
     IOR_offset_t transferred_size = 0;
+    IOR_offset_t *offsetArray = arg->offSetArray;
+    IOR_offset_t offset;
+    int pairCnt = 0;
     double startTime = 0;
     double endTime = 0;
     startTime = GetTimeStamp();
     if (id < k)
     {
         fprintf(stdout, "enter sleep\n");
-        sleep(1);
+        sleep(10);
     }
 
-    if(id<k){
-        transferred_size = IOR_Xfer(arg->access, (arg->fds)[id], (arg->ec_data)[id], arg->test->ec_stripe_size, arg->test);
-    }else{
-        transferred_size = IOR_Xfer(arg->access, (arg->fds)[id], (arg->ec_coding)[id - k], arg->test->ec_stripe_size, arg->test);
+    while ((offsetArray[pairCnt] != -1) && !hitStonewall)
+    {
+        ec_count++;
+        offset = offsetArray[pairCnt];
+        offset = offset / test->ec_k;
+        if (id < k)
+        {
+            transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], (arg->ec_data)[id], arg->test->ec_stripe_size, arg->test, offset);
+        }
+        else
+        {
+            transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], (arg->ec_coding)[id - k], arg->test->ec_stripe_size, arg->test, offset);
+        }
+        pairCnt++;
     }
-    //fprintf(stdout, "reading file%d complete, size: %lld\n", id, transferred_size);
-    tranferDone[id] = 1;
-    pthread_mutex_lock(&lockOfNT);
-    numTransferred += 1;
-    pthread_mutex_unlock(&lockOfNT);
-    endTime = GetTimeStamp();
-    ec_timers[id] += endTime-startTime;
+        //fprintf(stdout, "reading file%d complete, size: %lld\n", id, transferred_size);
+        tranferDone[id] = 1;
+        pthread_mutex_lock(&lockOfNT);
+        numTransferred += 1;
+        pthread_mutex_unlock(&lockOfNT);
+        endTime = GetTimeStamp();
+        ec_timers[id] += endTime - startTime;
 }
 
 IOR_offset_t
@@ -2863,7 +3026,7 @@ WriteOrRead_ec(IOR_param_t *test,
     void *readCheckBuffer = NULL;
     IOR_offset_t dataMoved = 0; /* for data rate calculation */
     double startForStonewall;
-    int hitStonewall;
+    //int hitStonewall;
 
     /********************************ec_parameters******************************/
     //int readins = 1;
@@ -3064,6 +3227,7 @@ WriteOrRead_ec(IOR_param_t *test,
             ec_read_args[i].method = method;
             ec_read_args[i].ec_matrix = ec_matrix;
             ec_read_args[i].ec_bitmatrix = ec_bitmatrix;
+            ec_read_args[i].offSetArray = offsetArray;
         }
     }
 
@@ -3071,6 +3235,117 @@ WriteOrRead_ec(IOR_param_t *test,
     fprintf(stdout, "break at 30708\n");
     /*****************************init ec********************************/
     
+
+    /*****************************ec_read********************************/
+    if(access == READ){
+        numTransferred = 0;
+        for(i=0;i<total_stripe_num;i++){
+            pthread_create(&threads[i], NULL, ec_read_thread, &ec_read_args[i]);
+        }
+
+        /*ec when k stripes arrive*/
+        if (test->ec_strategy == IMMEDIATE_EC)
+        {
+            while (1)
+            {
+                pthread_mutex_lock(&lockOfNT);
+                if (numTransferred == k)
+                {
+                    /*end unfinished jobs*/
+                    int canceled;
+                    /*end unfinished jobs*/
+                    int originReceived = 1;
+                    int *erasures = (int *)malloc(sizeof(int) * total_stripe_num);
+                    for (i = 0; i < k; i++)
+                    { //if original stripes received or not
+                        if (tranferDone[i] == 0)
+                        {
+                            originReceived = 0;
+                            break;
+                        }
+                    }
+                    if (originReceived)
+                    {
+                        for (i = 0; i < m; i++)
+                        {
+                            canceled = pthread_cancel(threads[k + i]);
+                            if (canceled == 0 && test->ec_verbose >= VERBOSE_2)
+                            {
+                                fprintf(stdout, "cenceled thread %d due to oringin stripes received\n", threads[k + i]);
+                            }
+                            else if (canceled != 0 && test->ec_verbose >= VERBOSE_2)
+                            {
+                                fprintf(stdout, "cenceled thread %d failed (origin received)\n", threads[k + i]);
+                            }
+                        }
+                        pthread_mutex_unlock(&lockOfNT);
+                        break;
+                    }
+
+                    /*recompute*/
+                    int numerased = 0;
+                    for (i = 0; i < total_stripe_num; i++)
+                    {
+                        if (tranferDone[i] == 0)
+                        {
+                            canceled = pthread_cancel(threads[i]);
+                            if (canceled == 0 && test->ec_verbose >= VERBOSE_2)
+                            {
+                                fprintf(stdout, "cenceled thread %d due to latency\n", threads[k + i]);
+                            }
+                            else if (canceled != 0 && test->ec_verbose >= VERBOSE_2)
+                            {
+                                fprintf(stdout, "cenceled thread %d failed (latency)\n", threads[k + i]);
+                            }
+                            erasures[numerased] = i;
+                            numerased++;
+                        }
+                    }
+                    erasures[numerased] = -1;
+
+                    if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
+                    {
+                        i = jerasure_matrix_decode(k, m, w, ec_matrix, 1, erasures, ec_data, ec_coding, ec_blocksize);
+                    }
+                    else if (method == Cauchy_Orig || method == Cauchy_Good || method == Liberation || method == Blaum_Roth || method == Liber8tion)
+                    {
+                        i = jerasure_schedule_decode_lazy(k, m, w, ec_bitmatrix, erasures, ec_data, ec_coding, ec_blocksize, ec_packetsize, 1);
+                    }
+
+                    if (i == -1)
+                    {
+                        pthread_mutex_unlock(&lockOfNT);
+                        ERR("decode failed!");
+                    }
+                    else
+                    {
+                        if (one_ec_flag)
+                        {
+                            one_ec_flag = 0;
+                            fprintf(stdout, "decode success!\n");
+                        }
+                    }
+                    pthread_mutex_unlock(&lockOfNT);
+                    break;
+                }
+                pthread_mutex_unlock(&lockOfNT);
+            }
+        }
+
+        for (i = 0; i < total_stripe_num; i++)
+        {
+            pthread_join(threads[i], NULL);
+        }
+        /*ec when k stripes arrive*/
+        amtXferred = ec_blocksize * k;
+        /*************************ec multi-thread read*************************/
+
+        // amtXferred = IOR_Xfer(access, fd, buffer, transfer, test);
+        // if (amtXferred != transfer)
+        //     ERR("cannot read from file");
+    }
+
+
     while ((offsetArray[pairCnt] != -1) && !hitStonewall) {
         ec_count++;
         test->offset = offsetArray[pairCnt];
@@ -3104,98 +3379,7 @@ WriteOrRead_ec(IOR_param_t *test,
         }
         else if (access == READ)
         {
-            /*************************ec multi-thread read*************************/
-            //fprintf(stdout, "in READ!\n");
-            numTransferred = 0;
-            for(i=0;i<total_stripe_num;i++){
-                pthread_create(&threads[i], NULL, ec_read_thread, &ec_read_args[i]);
-            }
-
-            /*ec when k stripes arrive*/
-            if(test->ec_strategy == IMMEDIATE_EC){
-                while(1){
-                    pthread_mutex_lock(&lockOfNT);
-                    if(numTransferred == k){
-                        /*end unfinished jobs*/
-                        int canceled;
-                        /*end unfinished jobs*/
-                        int originReceived = 1;
-                        int *erasures = (int *)malloc(sizeof(int) * total_stripe_num);
-                        for(i=0;i<k;i++){ //if original stripes received or not
-                            if(tranferDone[i]==0){
-                                originReceived = 0;
-                                break;
-                            }
-                        }
-                        if(originReceived){
-                            for(i=0;i<m;i++){
-                                canceled = pthread_cancel(threads[k+i]);
-                                if(canceled==0 && test->ec_verbose >= VERBOSE_2){
-                                    fprintf(stdout, "cenceled thread %d due to oringin stripes received\n", threads[k+i]);
-                                }else if(canceled != 0 && test->ec_verbose >= VERBOSE_2){
-                                    fprintf(stdout, "cenceled thread %d failed (origin received)\n", threads[k+i]);
-                                }
-                            }
-                            pthread_mutex_unlock(&lockOfNT);
-                            break;
-                        }
-                        
-                        /*recompute*/
-                        int numerased = 0;
-                        for(i=0;i<total_stripe_num;i++){
-                            if(tranferDone[i]==0){
-                                canceled = pthread_cancel(threads[i]);
-                                if (canceled == 0 && test->ec_verbose >= VERBOSE_2)
-                                {
-                                    fprintf(stdout, "cenceled thread %d due to latency\n", threads[k+i]);
-                                }
-                                else if(canceled != 0 && test->ec_verbose >= VERBOSE_2)
-                                {
-                                    fprintf(stdout, "cenceled thread %d failed (latency)\n", threads[k+i]);
-                                }
-                                erasures[numerased] = i;
-                                numerased++;
-                            }   
-                        }
-                        erasures[numerased] = -1;
-
-                        if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
-                        {
-                            i = jerasure_matrix_decode(k, m, w, ec_matrix, 1, erasures, ec_data, ec_coding, ec_blocksize);
-                        }
-                        else if (method == Cauchy_Orig || method == Cauchy_Good || method == Liberation || method == Blaum_Roth || method == Liber8tion)
-                        {
-                            i = jerasure_schedule_decode_lazy(k, m, w, ec_bitmatrix, erasures, ec_data, ec_coding, ec_blocksize, ec_packetsize, 1);
-                        }
-
-                        if (i == -1)
-                        {
-                            pthread_mutex_unlock(&lockOfNT);
-                            ERR("decode failed!");
-                        }else{
-                            if(one_ec_flag){
-                                one_ec_flag = 0;
-                                fprintf(stdout, "decode success!\n");
-                            }
-                        }
-                        pthread_mutex_unlock(&lockOfNT);
-                        break;
-                        
-                    }
-                    pthread_mutex_unlock(&lockOfNT);
-                }
-            }
-
-            for (i = 0; i < total_stripe_num; i++){
-                pthread_join(threads[i],NULL);
-            }
-            /*ec when k stripes arrive*/
-            amtXferred = ec_blocksize*k;
-            /*************************ec multi-thread read*************************/
-            
-            // amtXferred = IOR_Xfer(access, fd, buffer, transfer, test);
-            // if (amtXferred != transfer)
-            //     ERR("cannot read from file");
+            amtXferred = test->ec_stripe_size * test->ec_k;
         }
         else if (access == WRITECHECK)
         {
@@ -3221,7 +3405,7 @@ WriteOrRead_ec(IOR_param_t *test,
     
     }
 
-
+print_info:
     /*print ec time info*/
 
     if(access == READ){
