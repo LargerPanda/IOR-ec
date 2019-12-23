@@ -3019,7 +3019,7 @@ WriteOrRead_ec(IOR_param_t *test,
         ec_timers = (double *)malloc(sizeof(double) * total_stripe_num);
         threads = (pthread_t *)malloc(sizeof(pthread_t) * total_stripe_num);
         ec_read_args = (ec_read_thread_args *)malloc(sizeof(ec_read_thread_args) * total_stripe_num);
-        tranferDone = (int *)malloc(sizeof(int) * total_stripe_num);
+        tranferDone = (int *)calloc(sizeof(int) * total_stripe_num);
 
         ec_data = (char **)malloc(sizeof(char *) * k);
         ec_coding = (char **)malloc(sizeof(char *) * m);
