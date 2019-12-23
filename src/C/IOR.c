@@ -2802,6 +2802,8 @@ WriteOrRead(IOR_param_t * test,
 double *ec_timers;
 double ec_startTime;
 double ec_endTime;
+double ec_strategy_startTime;
+double ec_strategy_endTime;
 /*****************experiment timers***************/
 
 /*****************thread variables****************/
@@ -3109,6 +3111,7 @@ WriteOrRead_ec(IOR_param_t *test,
                 pthread_mutex_lock(&lockOfNT);
                 if (numTransferred == k)
                 {
+                    ec_strategy_startTime = GetTimeStamp();
                     if(test->ec_verbose >= VERBOSE_2){
                         fprintf(stdout, "when k stripes arrive:\n");
                         for(i=0;i<(k+m);i++){
@@ -3199,6 +3202,8 @@ WriteOrRead_ec(IOR_param_t *test,
             }
         }
 
+        ec_strategy_endTime = GetTimeStamp();
+
         for (i = 0; i < total_stripe_num; i++)
         {
             pthread_join(threads[i], NULL);
@@ -3282,6 +3287,7 @@ print_info:
             fprintf(stdout, "read time of stripe %d : %lf\n", i, ec_timers[i]);
         }
         fprintf(stdout, "Total read time of %d stripes: %lf\n", total_stripe_num, ec_endTime - ec_startTime);
+        fprintf(stdout, "EC strategy time of %d : %lf\n", test->ec_strategy, ec_strategy_endTime - ec_strategy_startTime);
     }
     
 
