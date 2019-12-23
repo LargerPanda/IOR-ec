@@ -2850,12 +2850,13 @@ ec_read_thread(ec_read_thread_args* arg)
         pairCnt++;
     }
         //fprintf(stdout, "reading file%d complete, size: %lld\n", id, transferred_size);
-        tranferDone[id] = 1;
-        pthread_mutex_lock(&lockOfNT);
-        numTransferred += 1;
-        pthread_mutex_unlock(&lockOfNT);
-        endTime = GetTimeStamp();
-        ec_timers[id] += endTime - startTime;
+    
+    pthread_mutex_lock(&lockOfNT);
+    tranferDone[id] = 1;
+    numTransferred += 1;
+    pthread_mutex_unlock(&lockOfNT);
+    endTime = GetTimeStamp();
+    ec_timers[id] += endTime - startTime;
 }
 
 IOR_offset_t
@@ -3107,6 +3108,12 @@ WriteOrRead_ec(IOR_param_t *test,
                 pthread_mutex_lock(&lockOfNT);
                 if (numTransferred == k)
                 {
+                    if(test->ec_verbose >= VERBOSE_2){
+                        fprintf(stdout, "when k stripes arrive:\n");
+                        for(i=0;i<(k+m);i++){
+                            fprintf(stdout, "stripe %d: %d\n", i, tranferDone[i]);
+                        }
+                    }
                     /*end unfinished jobs*/
                     int canceled;
                     /*end unfinished jobs*/
@@ -3139,6 +3146,10 @@ WriteOrRead_ec(IOR_param_t *test,
                     }
 
                     /*recompute*/
+                    if (test->ec_verbose >= VERBOSE_2)
+                    {
+                        fprintf(stdout, "in recompute phase:\n");
+                    }
                     int numerased = 0;
                     for (i = 0; i < total_stripe_num; i++)
                     {
