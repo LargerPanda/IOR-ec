@@ -3174,13 +3174,20 @@ WriteOrRead_ec(IOR_param_t *test,
                     }
                     erasures[numerased] = -1;
 
+                    //reconstruct for njum_reconstruct times
+                    int num_reconstruct = (test->blockSize / test->transferSize) * test->segmentCount;
+                    int j;
+
                     if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
                     {
-                        i = jerasure_matrix_decode(k, m, w, ec_matrix, 1, erasures, ec_data, ec_coding, ec_blocksize);
+                        for(j = 0; j < num_reconstruct; j++)    
+                            i = jerasure_matrix_decode(k, m, w, ec_matrix, 1, erasures, ec_data, ec_coding, ec_blocksize);
                     }
                     else if (method == Cauchy_Orig || method == Cauchy_Good || method == Liberation || method == Blaum_Roth || method == Liber8tion)
                     {
-                        i = jerasure_schedule_decode_lazy(k, m, w, ec_bitmatrix, erasures, ec_data, ec_coding, ec_blocksize, ec_packetsize, 1);
+                        for (j = 0; j < num_reconstruct; j++)
+                            i = jerasure_schedule_decode_lazy(k, m, w, ec_bitmatrix, erasures, ec_data, ec_coding, ec_blocksize, ec_packetsize, 1);
+                    }
                     }
 
                     if (i == -1)
@@ -3192,7 +3199,7 @@ WriteOrRead_ec(IOR_param_t *test,
                     {
                         if (test->ec_verbose >= VERBOSE_0)
                         {
-                            fprintf(stdout, "decode success!\n");
+                            fprintf(stdout, "decode success for %d times!\n", j);
                         }
                     }
                     pthread_mutex_unlock(&lockOfNT);
