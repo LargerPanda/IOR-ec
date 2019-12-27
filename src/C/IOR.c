@@ -3188,7 +3188,7 @@ WriteOrRead_ec(IOR_param_t *test,
                         for (j = 0; j < num_reconstruct; j++)
                             i = jerasure_schedule_decode_lazy(k, m, w, ec_bitmatrix, erasures, ec_data, ec_coding, ec_blocksize, ec_packetsize, 1);
                     }
-                    }
+                    
 
                     if (i == -1)
                     {
