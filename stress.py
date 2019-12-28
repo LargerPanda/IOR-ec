@@ -36,7 +36,7 @@ print("stress generator start...\n")
 for it in tqdm(range(numIterations)):
     for i in range(nodeNum):
         is_straggler = random.random()
-        if is_straggler>=0 and is_straggler<1:
+        if is_straggler>=0 and is_straggler<P:
             directory = nodeList[i]
             hdd = S[random.randint(0, len(S)-1)]
             streeTime = str(random.randint(0, T))
