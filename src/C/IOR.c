@@ -3101,6 +3101,7 @@ WriteOrRead_ec(IOR_param_t *test,
         }
 
         /*ec when k stripes arrive*/
+        fprintf(stdout, "ec_strategy = %d\n", test->ec_strategy);
         if (test->ec_strategy == IMMEDIATE_EC)
         {
             if(test->ec_verbose >= VERBOSE_0){
