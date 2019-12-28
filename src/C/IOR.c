@@ -2809,6 +2809,7 @@ double ec_strategy_endTime;
 /*****************thread variables****************/
 pthread_t *threads;
 int *tranferDone;
+int *dataLeft;
 volatile int numTransferred;
 pthread_mutex_t lockOfNT = PTHREAD_MUTEX_INITIALIZER;
 int hitStonewall;
@@ -2827,6 +2828,8 @@ ec_read_thread(ec_read_thread_args* arg)
     IOR_offset_t transferred_size = 0;
     IOR_offset_t *offsetArray = arg->offSetArray;
     IOR_offset_t offset;
+    int num_reconstruct = (test->blockSize / test->transferSize) * test->segmentCount;
+    dataLeft[id] = num_reconstruct;
     int pairCnt = 0;
     double startTime = 0;
     double endTime = 0;
@@ -2850,6 +2853,7 @@ ec_read_thread(ec_read_thread_args* arg)
             transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], (arg->ec_coding)[id - k], arg->test->ec_stripe_size, arg->test, offset);
         }
         pairCnt++;
+        dataLeft[id]--;
     }
         //fprintf(stdout, "reading file%d complete, size: %lld\n", id, transferred_size);
     
@@ -3023,6 +3027,8 @@ WriteOrRead_ec(IOR_param_t *test,
         ec_read_args = (ec_read_thread_args *)malloc(sizeof(ec_read_thread_args) * total_stripe_num);
         tranferDone = (int *)malloc(sizeof(int) * total_stripe_num);
         memset(tranferDone,0,sizeof(int) * total_stripe_num);
+        dataLeft = (int *)malloc(sizeof(int) * total_stripe_num);
+        memset(tranferDone, 0, sizeof(int) * total_stripe_num);
 
         ec_data = (char **)malloc(sizeof(char *) * k);
         ec_coding = (char **)malloc(sizeof(char *) * m);
@@ -3156,11 +3162,14 @@ WriteOrRead_ec(IOR_param_t *test,
                         fprintf(stdout, "in recompute phase:\n");
                     }
                     int numerased = 0;
+                    int num_iteration = 0;
+
                     for (i = 0; i < total_stripe_num; i++)
                     {
                         if (tranferDone[i] == 0)
                         {
                             canceled = pthread_cancel(threads[i]);
+                            num_iteration = MAX(num_iteration, dataLeft[i]);
                             if (canceled == 0 && test->ec_verbose >= VERBOSE_2)
                             {
                                 fprintf(stdout, "cenceled thread %d due to latency\n", threads[k + i]);
@@ -3176,17 +3185,16 @@ WriteOrRead_ec(IOR_param_t *test,
                     erasures[numerased] = -1;
 
                     //reconstruct for njum_reconstruct times
-                    int num_reconstruct = (test->blockSize / test->transferSize) * test->segmentCount;
+                    
                     int j;
-
                     if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
                     {
-                        for(j = 0; j < num_reconstruct; j++)    
+                        for(j = 0; j < num_iteration; j++)    
                             i = jerasure_matrix_decode(k, m, w, ec_matrix, 1, erasures, ec_data, ec_coding, ec_blocksize);
                     }
                     else if (method == Cauchy_Orig || method == Cauchy_Good || method == Liberation || method == Blaum_Roth || method == Liber8tion)
                     {
-                        for (j = 0; j < num_reconstruct; j++)
+                        for (j = 0; j < num_iteration; j++)
                             i = jerasure_schedule_decode_lazy(k, m, w, ec_bitmatrix, erasures, ec_data, ec_coding, ec_blocksize, ec_packetsize, 1);
                     }
                     
