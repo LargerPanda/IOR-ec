@@ -31,7 +31,7 @@ nodeList = ["cd /data/ost0;",
 
 numIterations = 100;
 
-print "stress generator start...\n"
+print("stress generator start...\n")
 
 for it in trange(numIterations):
     for i in range(nodeNum):
@@ -43,7 +43,8 @@ for it in trange(numIterations):
             time = str(random.randint(0, T))
             stressCmd = "nohup stress --hdd " + hdd +" --timeout "+ time + "&"
             cmd = directory + " " + stressCmd
-            print "cmd is "+cmd
-            print "ost" + i + " is straggler, degree is " + hdd + ", time is " + time
+            print("cmd is " + cmd)
+            print("ost" + i + " is straggler, degree is " + hdd +
+                  ", time is " + time)
             os.system(cmd)
     time.sleep(T)
