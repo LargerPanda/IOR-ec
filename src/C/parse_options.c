@@ -68,7 +68,7 @@ void CheckRunSettings(IOR_queue_t *tests) {
 void DecodeDirective(char *line, IOR_param_t *test)
 {
     
-    fprintf(stdout, "in DecodeDirective\n");
+    //fprintf(stdout, "in DecodeDirective\n");
     
     char option[MAX_STR];
     char value[MAX_STR];
@@ -250,7 +250,7 @@ void
 ParseLine(char *line, IOR_param_t *test)
 {
   
-    fprintf(stdout, "in ParseLine\n");
+    //fprintf(stdout, "in ParseLine\n");
     
     char *start, *end;
 

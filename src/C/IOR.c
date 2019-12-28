@@ -1434,7 +1434,7 @@ IOR_queue_t *
 SetupTests(int argc, char ** argv)
 {
     
-    fprintf(stdout, "in SetupTests\n");
+    //fprintf(stdout, "in SetupTests\n");
     
     
     IOR_queue_t * tests,
