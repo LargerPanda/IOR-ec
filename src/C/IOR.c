@@ -2815,7 +2815,7 @@ int hitStonewall;
 /*****************thread parameters****************/
 
 
-
+int sleepFlag = 0;
 void* 
 ec_read_thread(ec_read_thread_args* arg)
 {
@@ -2831,7 +2831,7 @@ ec_read_thread(ec_read_thread_args* arg)
     double startTime = 0;
     double endTime = 0;
     startTime = GetTimeStamp();
-    if (id < k)
+    if (sleepFlag && id < k)
     {
         fprintf(stdout, "enter sleep\n");
         sleep(10);
