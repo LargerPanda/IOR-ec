@@ -8,7 +8,7 @@ nodeNum = 8
 
 P = 0.2
 np.random.seed(0)
-p = np.array([p, 1-p])
+p = np.array([P, 1-P])
 p = p.ravel()
 
 T = 60
