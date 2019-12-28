@@ -19,5 +19,9 @@
         "tuple": "c",
         "type_traits": "c",
         "vector": "c"
-    }
+    },
+    "python.linting.pylintEnabled": false,
+    "python.linting.enabled": true,
+    "python.linting.banditEnabled": true,
+    "python.formatting.provider": "yapf"
 }
