@@ -41,7 +41,7 @@ for it in tqdm(range(numIterations)):
     print("stress generator start...\n")
     f = subprocess.Popen("mpiexec -n 1 src/C/IOR -f read_8n_3g", shell=True, stdout=subprocess.PIPE)
     f.wait()
-    print f.stdout.read()
+    print(f.stdout.read())
     time.sleep(sleepT)
     print("------------------------.\n")
     print("------------------------.\n")
