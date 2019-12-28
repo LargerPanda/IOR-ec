@@ -2828,7 +2828,7 @@ ec_read_thread(ec_read_thread_args* arg)
     IOR_offset_t transferred_size = 0;
     IOR_offset_t *offsetArray = arg->offSetArray;
     IOR_offset_t offset;
-    int num_reconstruct = (test->blockSize / test->transferSize) * test->segmentCount;
+    int num_reconstruct = (arg->test->blockSize / arg->test->transferSize) * arg->test->segmentCount;
     dataLeft[id] = num_reconstruct;
     int pairCnt = 0;
     double startTime = 0;
