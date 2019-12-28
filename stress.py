@@ -13,6 +13,7 @@ p = p.ravel()
 
 T = 60
 
+
 S =     ["1",
          "2",
          "3",
@@ -34,16 +35,18 @@ numIterations = 100;
 print("stress generator start...\n")
 
 for it in tqdm(range(numIterations)):
+    sleepT = 0
     for i in range(nodeNum):
         is_straggler = random.random()
         if is_straggler>=0 and is_straggler<P:
             directory = nodeList[i]
             hdd = S[random.randint(0, len(S)-1)]
-            stressTime = str(random.randint(0, T))
+            stressTime = random.randint(0, T)
             stressCmd = "nohup stress --hdd " + hdd +" --timeout "+ stressTime + "&"
             cmd = directory + " " + stressCmd
             print("cmd is " + cmd)
             print("ost" + str(i) + " is straggler, degree is " + hdd +
-                  ", time is " + stressTime)
+                  ", time is " + str(stressTime))
+            sleepT = max(sleepT, stressTime)
             os.system(cmd)
-    time.sleep(T)
+    time.sleep(sleepT)
