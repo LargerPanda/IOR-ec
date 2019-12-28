@@ -41,7 +41,7 @@ for it in tqdm(range(numIterations)):
         if is_straggler>=0 and is_straggler<P:
             directory = nodeList[i]
             hdd = S[random.randint(0, len(S)-1)]
-            stressTime = random.randint(0, T)
+            stressTime = random.randint(0, T) + 60
             stressCmd = "nohup stress --hdd " + hdd +" --timeout "+ str(stressTime) + "&"
             cmd = directory + " " + stressCmd
             print("cmd is " + cmd)
