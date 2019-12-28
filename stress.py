@@ -38,12 +38,12 @@ for it in tqdm(range(numIterations)):
         is_straggler = random.random()
         if is_straggler>=0 and is_straggler<1:
             directory = nodeList[i]
-            hdd = nodeList[random.randint(0, len(nodeList)-1)]
+            hdd = S[random.randint(0, len(S)-1)]
             time = str(random.randint(0, T))
             stressCmd = "nohup stress --hdd " + hdd +" --timeout "+ time + "&"
             cmd = directory + " " + stressCmd
             print("cmd is " + cmd)
-            print("ost" + i + " is straggler, degree is " + hdd +
+            print("ost" + str(i) + " is straggler, degree is " + hdd +
                   ", time is " + time)
             os.system(cmd)
     time.sleep(T)
