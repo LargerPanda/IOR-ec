@@ -35,7 +35,7 @@ print("stress generator start...\n")
 
 for it in tqdm(range(numIterations)):
     for i in range(nodeNum):
-        is_straggler = random.random(1)
+        is_straggler = random.random()
         if is_straggler>=0 and is_straggler<1:
             directory = nodeList[i]
             hdd = hddList[random.randint(0, len(hddList)-1)]
