@@ -35,9 +35,8 @@ print("stress generator start...\n")
 
 for it in tqdm(range(numIterations)):
     for i in range(nodeNum):
-        is_straggler = np.random.choice([1.0, 0.0], p)
-        if is_straggler == 1.0:
-
+        is_straggler = random.random(1)
+        if is_straggler>=0 and is_straggler<1:
             directory = nodeList[i]
             hdd = hddList[random.randint(0, len(hddList)-1)]
             time = str(random.randint(0, T))
