@@ -44,7 +44,7 @@ for it in tqdm(range(numIterations)):
             stressTime = random.randint(0, T) + 60
             stressCmd = "nohup stress --hdd " + hdd +" --timeout "+ str(stressTime) + "&"
             cmd = directory + " " + stressCmd
-            print("cmd is " + cmd)
+            #print("cmd is " + cmd)
             print("ost" + str(i) + " is straggler, degree is " + hdd +
                   ", time is " + str(stressTime))
             sleepT = max(sleepT, stressTime)
