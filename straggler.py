@@ -20,48 +20,38 @@ nodeList = [
 
 numIterations = 100
 
-result = []
 
-for it in tqdm(range(numIterations)):
-    print("stress generator start...\n")
-    sleepT = 0
-    for i in range(nodeNum):
-        is_straggler = random.random()
-        if is_straggler >= 0 and is_straggler < P:
-            directory = nodeList[i]
-            hdd = S[random.randint(0, len(S) - 1)]
-            stressTime = random.randint(0, T) + 60
-            stressCmd = "nohup stress --hdd " + hdd + " --timeout " + str(
-                stressTime) + " &"
-            cmd = directory + " " + stressCmd
-            #print("cmd is " + cmd)
-            print("ost" + str(i) + " is straggler, degree is " + hdd +
-                  ", time is " + str(stressTime))
-            sleepT = max(sleepT, stressTime)
-            os.system(cmd)
-    #run task
-    os.system("sudo ./refresh.sh")
-    print("refreshing...\n")
-    print("task start...\n")
-    f = subprocess.Popen("mpiexec -n 1 src/C/IOR -f read_8n_3g", shell=True, stdout=subprocess.PIPE)
-    f.wait()
-    print("process result...\n")
-    lines = f.stdout.readlines()
-    temp = []
-    for line in lines:
-        line = line.decode('utf-8')
-        if line[0:5] == "#read":
-            strList = line.split()
-            print(float(strList[6]))
-            temp.append(float(strList[6]))
 
-    mid = np.median(temp)
-    print("mid=%f",mid)
-    largest = max(temp)
-    print("largest=%f", largest)
-    variance = (largest-mid)/mid
-    result.append(variance)
+def test_straggler(numIterations, script):
+    print("-----------------------------------------------------.")
+    result = []
+    cmd = "mpiexec -n 1 src/C/IOR -f " + script
+    for it in tqdm(range(numIterations)):
+        #run task
+        os.system("sudo ./refresh.sh")
+        print("refreshing...")
+        print("task start...")
+        f = subprocess.Popen(cmd,
+                         shell=True,
+                         stdout=subprocess.PIPE)
+        f.wait()
+        print("process result...\n")
+        lines = f.stdout.readlines()
+        temp = []
+        for line in lines:
+            line = line.decode('utf-8')
+            if line[0:5] == "#read":
+                strList = line.split()
+                #print(float(strList[6]))
+                temp.append(float(strList[6]))
+
+        mid = np.median(temp)
+        #print("mid=%f", mid)
+        largest = max(temp)
+        #print("largest=%f", largest)
+        variance = (largest - mid) / mid
+        result.append(variance)
+        #print(result)
+        #time.sleep(sleepT)
     print(result)
-    time.sleep(sleepT)
-    print("------------------------.\n")
-    print("------------------------.\n")
+    print("-----------------------------------------------------.")

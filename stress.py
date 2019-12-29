@@ -34,7 +34,8 @@ numIterations = 100;
 
 print("stress generator start...\n")
 
-for it in tqdm(range(numIterations)):
+#for it in tqdm(range(numIterations)):
+while True:
     sleepT = 0
     for i in range(nodeNum):
         is_straggler = random.random()
