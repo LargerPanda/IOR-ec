@@ -48,8 +48,7 @@ for it in tqdm(range(numIterations)):
     temp = []
     for line in lines:
         line = line.decode('utf-8')
-        print(line[0:4])
-        if line[0:4] == "read":
+        if line[0:5] == "#read":
             strList = line.split()
             temp.append(float(strList[6]))
 
