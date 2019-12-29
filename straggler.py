@@ -47,8 +47,9 @@ for it in tqdm(range(numIterations)):
     lines = f.stdout.readlines()
     temp = []
     for line in lines:
-        print(line)
-        if line[0:4] == "read":
+        if line[0:6] == "b'read":
+            line=line[2:-3]
+            print(line)
             strList = line.split()
             temp.append(float(strList[6]))
 
