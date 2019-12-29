@@ -41,6 +41,7 @@ for it in tqdm(range(numIterations)):
             os.system(cmd)
     #run task
     os.system("sudo ./refresh.sh")
+    print("refreshing...\n")
     print("task start...\n")
     f = subprocess.Popen("mpiexec -n 1 src/C/IOR -f read_8n_3g", shell=True, stdout=subprocess.PIPE)
     f.wait()
