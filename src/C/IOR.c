@@ -3300,10 +3300,10 @@ print_info:
     if(access == READ){
         for (i = 0; i < total_stripe_num; i++)
         {
-            fprintf(stdout, "read time of stripe %d : %lf\n", i, ec_timers[i]);
+            fprintf(stdout, "#read time of stripe %d : %lf\n", i, ec_timers[i]);
         }
-        fprintf(stdout, "Total read time of %d stripes: %lf\n", total_stripe_num, ec_endTime - ec_startTime);
-        fprintf(stdout, "EC strategy time of %d : %lf\n", test->ec_strategy, ec_strategy_endTime - ec_strategy_startTime);
+        fprintf(stdout, "#Total read time of %d stripes: %lf\n", total_stripe_num, ec_endTime - ec_startTime);
+        fprintf(stdout, "#EC strategy time of %d : %lf\n", test->ec_strategy, ec_strategy_endTime - ec_strategy_startTime);
     }
     
 
