@@ -4,6 +4,7 @@ import numpy as np
 import time
 from tqdm import tqdm
 import multiprocessing
+import subprocess
 
 
 P = [0.1, 0.15, 0.2, 0.25, 0.3]
@@ -28,7 +29,7 @@ def stress_generator(p, t):
             if is_straggler >= 0 and is_straggler < p:
                 directory = nodeList[i]
                 hdd = S[random.randint(0, len(S) - 1)]
-                stressTime = random.randint(0, t) + 60
+                stressTime = random.randint(0, t)
                 stressCmd = "nohup stress --hdd " + hdd + " --timeout " + str(
                     stressTime) + "&"
                 cmd = directory + " " + stressCmd
