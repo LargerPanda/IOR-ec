@@ -47,8 +47,10 @@ def test_straggler(numIterations, fileSize, scaleSize):
     result = []
     generate_script = "generate_"+fileSize+"_"+str(scaleSize)
     generate_cmd = "mpiexec -n 1 src/C/IOR -f " + generate_script
+    print(generate_cmd)
     read_script = "read_" + fileSize + "_" + str(scaleSize)
     read_cmd = "mpiexec -n 1 src/C/IOR -f " + read_script
+    print(read_cmd)
     f = subprocess.Popen(generate_cmd, shell=True, stdout=subprocess.PIPE)
     f.wait()
     for it in tqdm(range(numIterations)):
