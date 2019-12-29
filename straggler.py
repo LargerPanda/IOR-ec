@@ -40,9 +40,10 @@ for it in tqdm(range(numIterations)):
             sleepT = max(sleepT, stressTime)
             os.system(cmd)
     #run task
-    print("stress generator start...\n")
+    print("task start...\n")
     f = subprocess.Popen("mpiexec -n 1 src/C/IOR -f read_8n_3g", shell=True, stdout=subprocess.PIPE)
     f.wait()
+    print("process result...\n")
     lines = f.stdout.readlines()
     temp = []
     for line in lines:
