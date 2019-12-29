@@ -32,7 +32,7 @@ for it in tqdm(range(numIterations)):
             hdd = S[random.randint(0, len(S) - 1)]
             stressTime = random.randint(0, T) + 60
             stressCmd = "nohup stress --hdd " + hdd + " --timeout " + str(
-                stressTime) + "> /dev/null 2>&1 &"
+                stressTime) + " &"
             cmd = directory + " " + stressCmd
             #print("cmd is " + cmd)
             print("ost" + str(i) + " is straggler, degree is " + hdd +
