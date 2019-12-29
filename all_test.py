@@ -7,8 +7,8 @@ import multiprocessing
 import subprocess
 
 
-P = [0.1, 0.15, 0.2, 0.25, 0.3]
-T = [10, 20, 40, 80, 100, 120]
+P = [0.1, 0.2, 0.3]
+T = [5, 10, 20, 40, 80]
 S = ["2", "3", "4", "5", "6", "7"]
 
 nodeNum = 8
@@ -23,7 +23,7 @@ scalesizeList = [2, 4, 8]
 fd = open("data.txt", 'w')
 
 def stress_generator(p, t):
-    print("stress generator with p=%f, t=%d start...", p, t)
+    print("stress generator with p=" + str(p) + " t=" + str(t))
     while True:
         sleepT = 0
         for i in range(nodeNum):
