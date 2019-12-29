@@ -54,7 +54,9 @@ for it in tqdm(range(numIterations)):
             temp.append(float(strList[6]))
 
     mid = np.median(temp)
-    largest = max(temp);
+    print("mid=%f",mid)
+    largest = max(temp)
+    print("largest=%f", largest)
     variance = (largest-mid)/mid
     result.append(variance)
     print(result)
