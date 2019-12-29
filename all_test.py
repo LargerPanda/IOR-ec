@@ -17,7 +17,7 @@ nodeList = [
     "cd /data/ost4;", "cd /data/ost5;", "cd /data/ost6;", "cd /data/ost7;"
 ]
 
-fileSizeList = ["64M", "256M", "1G", "4G", "16G", "64G"]
+fileSizeList = ["64MB", "256MB", "1GB", "4GB", "16GB", "64GB"]
 scalesizeList = [2, 4, 8]
 
 def stress_generator(p, t):
