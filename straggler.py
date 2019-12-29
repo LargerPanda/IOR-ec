@@ -47,10 +47,9 @@ for it in tqdm(range(numIterations)):
     lines = f.stdout.readlines()
     temp = []
     for line in lines:
-        print(line[0:6])
-        if line[0:6] == "b'read":
-            line=line[2:-3]
-            print(line)
+        line = line.decode('utf-8')
+        print(line[0:4])
+        if line[0:4] == "read":
             strList = line.split()
             temp.append(float(strList[6]))
 
