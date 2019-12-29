@@ -91,9 +91,9 @@ for p in P:
     for t in T:
         stress_process = multiprocessing.Process(target=stress_generator, args=(p, t))
         stress_process.start()
-        # for fileSize in fileSizeList:
-        #     for scaleSize in scalesizeList:
-        #         test_straggler(1, fileSize, scaleSize)
+        for fileSize in fileSizeList:
+            for scaleSize in scalesizeList:
+                test_straggler(5, fileSize, scaleSize)
         time.sleep(10)
         stress_process.terminate()
         stress_process.join()
