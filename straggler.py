@@ -32,7 +32,7 @@ for it in tqdm(range(numIterations)):
             hdd = S[random.randint(0, len(S) - 1)]
             stressTime = random.randint(0, T) + 60
             stressCmd = "nohup stress --hdd " + hdd + " --timeout " + str(
-                stressTime) + "&"
+                stressTime) + "> /dev/null 2>&1 &"
             cmd = directory + " " + stressCmd
             #print("cmd is " + cmd)
             print("ost" + str(i) + " is straggler, degree is " + hdd +
@@ -40,6 +40,7 @@ for it in tqdm(range(numIterations)):
             sleepT = max(sleepT, stressTime)
             os.system(cmd)
     #run task
+    os.system("sudo ./refresh.sh")
     print("task start...\n")
     f = subprocess.Popen("mpiexec -n 1 src/C/IOR -f read_8n_3g", shell=True, stdout=subprocess.PIPE)
     f.wait()
