@@ -17,7 +17,7 @@ nodeList = [
     "cd /data/ost4;", "cd /data/ost5;", "cd /data/ost6;", "cd /data/ost7;"
 ]
 
-fileSizeList = ["64MB", "256MB", "1GB", "4GB", "16GB", "64GB"]
+fileSizeList = ["64MB", "256MB", "1GB", "4GB", "16GB"]
 scalesizeList = [2, 4, 8]
 
 fd = open("data.txt", 'w')
@@ -78,7 +78,7 @@ def test_straggler(numIterations, fileSize, scaleSize):
         #print("mid=%f", mid)
         largest = max(temp)
         #print("largest=%f", largest)
-        variance = (largest - mid) / mid
+        variance = largest / mid
         result.append(variance)
         #print(result)
         #time.sleep(sleepT)
@@ -91,9 +91,10 @@ for p in P:
     for t in T:
         stress_process = multiprocessing.Process(target=stress_generator, args=(p, t))
         stress_process.start()
-        for fileSize in fileSizeList:
-            for scaleSize in scalesizeList:
-                test_straggler(1, fileSize, scaleSize)
+        # for fileSize in fileSizeList:
+        #     for scaleSize in scalesizeList:
+        #         test_straggler(1, fileSize, scaleSize)
+        sleep(10)
         stress_process.terminate()
         stress_process.join()
 
