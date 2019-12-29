@@ -93,7 +93,7 @@ for p in P:
         stress_process.start()
         for fileSize in fileSizeList:
             for scaleSize in scalesizeList:
-                test_straggler(20, fileSize, scaleSize)
+                test_straggler(1, fileSize, scaleSize)
         stress_process.terminate()
         stress_process.join()
 
