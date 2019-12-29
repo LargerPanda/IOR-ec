@@ -20,6 +20,8 @@ nodeList = [
 fileSizeList = ["64MB", "256MB", "1GB", "4GB", "16GB", "64GB"]
 scalesizeList = [2, 4, 8]
 
+fd = open("data.txt", 'w')
+
 def stress_generator(p, t):
     print("stress generator with p=%f, t=%d start...", p, t)
     while True:
@@ -80,6 +82,7 @@ def test_straggler(numIterations, fileSize, scaleSize):
         result.append(variance)
         #print(result)
         #time.sleep(sleepT)
+    fd.write(str(result))
     print(result)
     #print("-----------------------------------------------------.")
 
@@ -92,3 +95,5 @@ for p in P:
                 test_straggler(20, fileSize, scaleSize)
         stress_process.terminate()
         stress_process.join()
+
+fd.close()
