@@ -82,7 +82,7 @@ def test_straggler(numIterations, fileSize, scaleSize):
         result.append(variance)
         #print(result)
         #time.sleep(sleepT)
-    fd.write(str(result))
+    fd.write(str(result)+'\n')
     print(result)
     #print("-----------------------------------------------------.")
 
