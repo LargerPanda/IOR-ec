@@ -52,6 +52,7 @@ for it in tqdm(range(numIterations)):
         line = line.decode('utf-8')
         if line[0:5] == "#read":
             strList = line.split()
+            print(float(strList[6]))
             temp.append(float(strList[6]))
 
     mid = np.median(temp)
