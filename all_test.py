@@ -93,20 +93,20 @@ countF = 0
 countS = 0
 
 for p in P:
-    if countP>=2:
+    if countP>=0:
         for t in T:
-            if countT >= 1:
+            if countT >= 0:
                 stress_process = multiprocessing.Process(target=stress_generator, args=(p, t))
                 stress_process.start()
                 for fileSize in fileSizeList:
-                    if countF>=4:
+                    if countF>=0:
                         for scaleSize in scalesizeList:
-                            if countS >= 1:
+                            if countS >= 0:
                                 test_straggler(5, fileSize, scaleSize)
                             countS = countS + 1
                             print(str(countP)+str(countT)+str(countF)+str(countS))
                     countF = countF+1
-            if countT >= 1:
+            if countT >= 0:
                 time.sleep(10)
                 stress_process.terminate()
                 stress_process.join()
