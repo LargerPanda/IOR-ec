@@ -103,7 +103,7 @@ for p in P:
                         for scaleSize in scalesizeList:
                             if countS >= 0:
                                 fd.write(
-                                    str(countP) + ' '+str(countT) +' '+ str(countF) + ' '
+                                    str(countP) + ' '+str(countT) +' '+ str(countF) + ' ' +
                                     str(countS) + '\n')
                                 test_straggler(5, fileSize, scaleSize)
                             countS = countS + 1
