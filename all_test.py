@@ -101,7 +101,7 @@ for p in P:
                 for fileSize in fileSizeList:
                     if countF>=4:
                         for scaleSize in scalesizeList:
-                            if count >= 1:
+                            if countS >= 1:
                                 test_straggler(5, fileSize, scaleSize)
                             countS = countS + 1
                             print(str(countP)+str(countT)+str(countF)+str(countS))
