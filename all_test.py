@@ -99,6 +99,7 @@ for p in P:
                 if count >= 178:
                     test_straggler(5, fileSize, scaleSize)
                 count = count + 1
+                print(count)
         if count >= 178:
             time.sleep(10)
             stress_process.terminate()
