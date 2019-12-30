@@ -107,13 +107,16 @@ for p in P:
                                     str(countS) + '\n')
                                 test_straggler(5, fileSize, scaleSize)
                             countS = countS + 1
-
+                        countS = 0
                     countF = countF+1
+                countF=0
             if countT >= 0:
                 time.sleep(10)
                 stress_process.terminate()
                 stress_process.join()
             countT = countT+1
+        countT = 0
     countP = countP+1
+countP = 0
 
 fd.close()
