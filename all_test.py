@@ -20,7 +20,7 @@ nodeList = [
 fileSizeList = ["64MB", "256MB", "1GB", "4GB", "16GB"]
 scalesizeList = [2, 4, 8]
 
-fd = open("data.txt", 'w')
+fd = open("data.txt", 'w+')
 
 def stress_generator(p, t):
     print("stress generator with p=" + str(p) + " t=" + str(t))
@@ -102,9 +102,12 @@ for p in P:
                     if countF>=0:
                         for scaleSize in scalesizeList:
                             if countS >= 0:
+                                fd.write(
+                                    str(countP) + ' '+str(countT) +' '+ str(countF) + ' '
+                                    str(countS) + '\n')
                                 test_straggler(5, fileSize, scaleSize)
                             countS = countS + 1
-                            print(str(countP)+str(countT)+str(countF)+str(countS))
+
                     countF = countF+1
             if countT >= 0:
                 time.sleep(10)
