@@ -87,21 +87,26 @@ def test_straggler(numIterations, fileSize, scaleSize):
     print(result)
     #print("-----------------------------------------------------.")
 
-countP = 1
-countT = 4
-countF = 4
-countS = 1
+countP = 0
+countT = 0
+countF = 0
+countS = 0
+
+startP = 1
+startT = 4
+startF = 4
+startS = 1
 
 for p in P:
-    if countP>=0:
+    if countP>=startP:
         for t in T:
-            if countT >= 0:
+            if countT >= startT:
                 stress_process = multiprocessing.Process(target=stress_generator, args=(p, t))
                 stress_process.start()
                 for fileSize in fileSizeList:
-                    if countF>=0:
+                    if countF>=startF:
                         for scaleSize in scalesizeList:
-                            if countS >= 0:
+                            if countS >= startS:
                                 fd.write(
                                     str(countP) + ' '+str(countT) +' '+ str(countF) + ' ' +
                                     str(countS) + '\n')
@@ -109,15 +114,19 @@ for p in P:
                                 test_straggler(5, fileSize, scaleSize)
                             countS = countS + 1
                         countS = 0
+                        startS = 0
                     countF = countF+1
                 countF=0
-            if countT >= 0:
+                startF = 0
+            if countT >= startT:
                 time.sleep(10)
                 stress_process.terminate()
                 stress_process.join()
             countT = countT+1
         countT = 0
+        startT = 0
     countP = countP+1
+startP = 0
 countP = 0
 
 fd.close()
