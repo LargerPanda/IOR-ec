@@ -93,15 +93,15 @@ countF = 0
 countS = 0
 
 for p in P:
-    if countP>=0:
+    if countP==1:
         for t in T:
-            if countT >= 0:
+            if countT == 4:
                 stress_process = multiprocessing.Process(target=stress_generator, args=(p, t))
                 stress_process.start()
                 for fileSize in fileSizeList:
-                    if countF>=0:
+                    if countF==4:
                         for scaleSize in scalesizeList:
-                            if countS >= 0:
+                            if countS >= 1:
                                 fd.write(
                                     str(countP) + ' '+str(countT) +' '+ str(countF) + ' ' +
                                     str(countS) + '\n')
@@ -110,7 +110,7 @@ for p in P:
                         countS = 0
                     countF = countF+1
                 countF=0
-            if countT >= 0:
+            if countT == 4:
                 time.sleep(10)
                 stress_process.terminate()
                 stress_process.join()
