@@ -30,7 +30,8 @@ def stress_generator(p, t):
             is_straggler = random.random()
             if is_straggler >= 0 and is_straggler < p:
                 directory = nodeList[i]
-                hdd = S[random.randint(0, len(S) - 1)]
+                #hdd = S[random.randint(0, len(S) - 1)]
+                hdd = S[5]
                 stressTime = t
                 stressCmd = "nohup stress --hdd " + hdd + " --timeout " + str(
                     stressTime) + "&"
