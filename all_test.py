@@ -109,7 +109,7 @@ for p in P:
                             if countS >= startS:
                                 print(
                                     str(countP) + ' ' + str(countT) + ' ' +
-                                    str(countF) + ' ' + str(countS) + '\n')
+                                    str(countF) + ' ' + str(countS))
                                 fd.write(
                                     str(countP) + ' '+str(countT) +' '+ str(countF) + ' ' +
                                     str(countS) + '\n')
