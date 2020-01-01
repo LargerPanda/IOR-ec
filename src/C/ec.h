@@ -23,7 +23,8 @@
 #include <pthread.h>
 //#include <timing.h>
 #define IMMEDIATE_EC 0
-
+#define POST_PARALLELISM 1
+#define COLLECTIVE_THREAD 2
 typedef struct ec_read_thread_args
 {
     /* data */
