@@ -20,7 +20,7 @@ nodeList = [
 fileSizeList = ["64MB", "256MB", "1GB", "4GB", "16GB"]
 scalesizeList = [2, 4, 8]
 
-fd = open("data.txt", 'w+')
+fd = open("data.txt", 'a+')
 
 def stress_generator(p, t):
     print("stress generator with p=" + str(p) + " t=" + str(t))
@@ -92,8 +92,8 @@ countT = 0
 countF = 0
 countS = 0
 
-startP = 1
-startT = 4
+startP = 2
+startT = 0
 startF = 4
 startS = 1
 
@@ -107,6 +107,9 @@ for p in P:
                     if countF>=startF:
                         for scaleSize in scalesizeList:
                             if countS >= startS:
+                                print(
+                                    str(countP) + ' ' + str(countT) + ' ' +
+                                    str(countF) + ' ' + str(countS) + '\n')
                                 fd.write(
                                     str(countP) + ' '+str(countT) +' '+ str(countF) + ' ' +
                                     str(countS) + '\n')
