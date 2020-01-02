@@ -2882,12 +2882,12 @@ ec_collective_thread(ec_read_thread_args *arg)
     int pairCnt = 0;
     double startTime = 0;
     double endTime = 0;
+
+    int isOriginReader = id<k?1:0;
+    int isStraggler = 0;
+    int transferTime = 0;
     startTime = GetTimeStamp();
-    if (sleepFlag && id < k)
-    {
-        fprintf(stdout, "enter sleep\n");
-        sleep(10);
-    }
+    
 
     while ((offsetArray[pairCnt] != -1) && !hitStonewall)
     {
@@ -2911,7 +2911,11 @@ ec_collective_thread(ec_read_thread_args *arg)
     numTransferred += 1;
     pthread_mutex_unlock(&lockOfNT);
     endTime = GetTimeStamp();
-    ec_timers[id] += endTime - startTime;
+    transferTime = endTime - startTime;
+    /****************is_straggler******************/
+    
+    /****************is_straggler******************/
+    ec_timers[id] += transferTime;
 }
 
 IOR_offset_t
