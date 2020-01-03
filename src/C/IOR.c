@@ -2949,7 +2949,7 @@ pthread_mutex_t lockOfNT = PTHREAD_MUTEX_INITIALIZER;
 int hitStonewall;
 char ***omp_data;
 char ***omp_coding;
-int decode_thread_num = 1;
+int decode_thread_num = 8;
 ec_decode_thread_args ec_decode_arg;
 int decode_res = 0;
 /*****************thread parameters****************/
@@ -3074,7 +3074,7 @@ ec_decode_thread(int *target){
         decode_res_local = jerasure_schedule_decode_lazy(ec_decode_arg.k, ec_decode_arg.m, ec_decode_arg.w, ec_decode_arg.ec_bitmatrix, ec_decode_arg.erasures, omp_data[*target], omp_coding[*target], ec_decode_arg.ec_blocksize, ec_decode_arg.ec_packetsize, 1);
     }
     decode_endTime = GetTimeStamp();
-    fprintf(stdout,"in decode thread, time is %lf,res is %d\n", decode_endTime, decode_res_local);
+    fprintf(stdout,"in decode thread, time is %lf,res is %d\n", decode_endTime-decode_startTime, decode_res_local);
 }
 
 IOR_offset_t
