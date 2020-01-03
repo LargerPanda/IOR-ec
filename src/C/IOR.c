@@ -3076,7 +3076,7 @@ ec_decode_thread(int *target){
         decode_res = jerasure_schedule_decode_lazy(ec_decode_arg.k, ec_decode_arg.m, ec_decode_arg.w, ec_decode_arg.ec_bitmatrix, ec_decode_arg.erasures, omp_data[*target], omp_coding[*target], ec_decode_arg.ec_blocksize, ec_decode_arg.ec_packetsize, 1);
     }
     decode_endTime = GetTimeStamp();
-    fprintf(stdout,"in decode thread, time is %lf,res is %d\n", decode_endTime-decode_startTime, decode_res_local);
+    fprintf(stdout,"in decode thread, time is %lf", decode_endTime-decode_startTime);
     pthread_mutex_lock(&lockOfDecodeSum);
     decode_sum++;
     pthread_mutex_unlock(&lockOfDecodeSum);
