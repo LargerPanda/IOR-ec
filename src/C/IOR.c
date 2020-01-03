@@ -2950,7 +2950,7 @@ pthread_mutex_t lockOfDecodeSum = PTHREAD_MUTEX_INITIALIZER;
 int hitStonewall;
 char ***omp_data;
 char ***omp_coding;
-int omp_thread_num = 2;
+int omp_thread_num = 4;
 ec_decode_thread_args ec_decode_arg;
 int decode_sum = 0;
 int decode_res = 0;
