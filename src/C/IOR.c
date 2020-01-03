@@ -3063,18 +3063,18 @@ ec_decode_thread(int *target){
     double decode_startTime;
     double decode_endTime;
     enum Coding_Technique method = ec_decode_arg.method;
-    
+    int decode_res_local = 0;
     decode_startTime = GetTimeStamp();
     if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
     {
-        decode_res = jerasure_matrix_decode(ec_decode_arg.k, ec_decode_arg.m, ec_decode_arg.w, ec_decode_arg.ec_matrix, 1, ec_decode_arg.erasures, omp_data[*target], omp_coding[*target], ec_decode_arg.ec_blocksize);
+        decode_res_local = jerasure_matrix_decode(ec_decode_arg.k, ec_decode_arg.m, ec_decode_arg.w, ec_decode_arg.ec_matrix, 1, ec_decode_arg.erasures, omp_data[*target], omp_coding[*target], ec_decode_arg.ec_blocksize);
     }
     else if (method == Cauchy_Orig || method == Cauchy_Good || method == Liberation || method == Blaum_Roth || method == Liber8tion)
     {
-        decode_res = jerasure_schedule_decode_lazy(ec_decode_arg.k, ec_decode_arg.m, ec_decode_arg.w, ec_decode_arg.ec_bitmatrix, ec_decode_arg.erasures, omp_data[*target], omp_coding[*target], ec_decode_arg.ec_blocksize, ec_decode_arg.ec_packetsize, 1);
+        decode_res_local = jerasure_schedule_decode_lazy(ec_decode_arg.k, ec_decode_arg.m, ec_decode_arg.w, ec_decode_arg.ec_bitmatrix, ec_decode_arg.erasures, omp_data[*target], omp_coding[*target], ec_decode_arg.ec_blocksize, ec_decode_arg.ec_packetsize, 1);
     }
     decode_endTime = GetTimeStamp();
-    fprintf(stdout,"in decode thread, time is %lf\n", decode_endTime);
+    fprintf(stdout,"in decode thread, time is %lf,res is %d\n", decode_endTime, decode_res_local);
 }
 
 IOR_offset_t
