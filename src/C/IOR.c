@@ -3417,8 +3417,9 @@ WriteOrRead_ec(IOR_param_t *test,
                                     ERR("malloc coding fail");
                                 }
                             }
-                            omp_res = jerasure_schedule_decode_lazy(k, m, w, ec_matrix, 1, erasures, omp_data, omp_coding, ec_blocksize);
+                            omp_res = jerasure_schedule_decode_lazy(k, m, w, ec_bitmatrix, erasures, omp_data, omp_coding, ec_blocksize, ec_packetsize, 1);
                         }
+            
                     }
 
                     if (omp_res == -1)
