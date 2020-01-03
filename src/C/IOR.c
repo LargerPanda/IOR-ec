@@ -3361,20 +3361,67 @@ WriteOrRead_ec(IOR_param_t *test,
                     //reconstruct for njum_reconstruct times
 
                     int j;
+                    int omp_res = 0;
                     if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
                     {
-                        #pragma omp parallel for num_threads(8) private(ec_data, ec_coding)
-                        for (j = 0; j < num_iteration; j++)
-                            i = jerasure_matrix_decode(k, m, w, ec_matrix, 1, erasures, ec_data, ec_coding, ec_blocksize);
+                        
+                        #pragma omp parallel for reduction(+:omp_res) num_threads(8) private(omp_data, omp_coding, l)
+                        for (j = 0; j < num_iteration; j++){
+                            char **omp_data = (char **)malloc(sizeof(char *) * k);
+                            char **omp_coding = (char **)malloc(sizeof(char *) * m);
+
+                            int l;
+                            for (l = 0; l < k; l++)
+                            {
+                                memcpy(omp_data[l], ec_data[l], sizeof(char) * ec_blocksize);
+                                if (omp_data[l] == NULL)
+                                {
+                                    ERR("malloc data fail");
+                                }
+                            }
+
+                            for (l = 0; l < m; l++)
+                            {
+                                memcpy(omp_coding[l], ec_coding[l], sizeof(char) * ec_blocksize);
+                                if (omp_coding[l] == NULL)
+                                {
+                                    ERR("malloc coding fail");
+                                }
+                            }
+                            omp_res = jerasure_matrix_decode(k, m, w, ec_matrix, 1, erasures, omp_data, omp_coding, ec_blocksize);
+                        }
                     }
                     else if (method == Cauchy_Orig || method == Cauchy_Good || method == Liberation || method == Blaum_Roth || method == Liber8tion)
                     {
                         #pragma omp parallel for num_threads(8) private(ec_data, ec_coding)
                         for (j = 0; j < num_iteration; j++)
-                            i = jerasure_schedule_decode_lazy(k, m, w, ec_bitmatrix, erasures, ec_data, ec_coding, ec_blocksize, ec_packetsize, 1);
+                        {
+                            char **omp_data = (char **)malloc(sizeof(char *) * k);
+                            char **omp_coding = (char **)malloc(sizeof(char *) * m);
+
+                            int l;
+                            for (l = 0; l < k; l++)
+                            {
+                                memcpy(omp_data[l], ec_data[l], sizeof(char) * ec_blocksize);
+                                if (omp_data[l] == NULL)
+                                {
+                                    ERR("malloc data fail");
+                                }
+                            }
+
+                            for (l = 0; l < m; l++)
+                            {
+                                memcpy(omp_coding[l], ec_coding[l], sizeof(char) * ec_blocksize);
+                                if (omp_coding[l] == NULL)
+                                {
+                                    ERR("malloc coding fail");
+                                }
+                            }
+                            omp_res = jerasure_schedule_decode_lazy(k, m, w, ec_matrix, 1, erasures, omp_data, omp_coding, ec_blocksize);
+                        }
                     }
 
-                    if (i == -1)
+                    if (omp_res == -1)
                     {
                         pthread_mutex_unlock(&lockOfNT);
                         ERR("decode failed!");
