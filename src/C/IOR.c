@@ -3528,7 +3528,7 @@ WriteOrRead_ec(IOR_param_t *test,
                     omp_data = (char ***)malloc(sizeof(char**)*decode_thread_num);
                     omp_coding = (char ***)malloc(sizeof(char**)*decode_thread_num);
 
-                    for(j=0;i<decode_thread_num;j++){
+                    for(j=0;j<decode_thread_num;j++){
                         omp_data[j] = (char**)malloc(sizeof(char*)*k);
                         omp_coding[j] = (char**)malloc(sizeof(char*)*m);
 
