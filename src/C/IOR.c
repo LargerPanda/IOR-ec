@@ -2949,7 +2949,7 @@ pthread_mutex_t lockOfNT = PTHREAD_MUTEX_INITIALIZER;
 int hitStonewall;
 char ***omp_data;
 char ***omp_coding;
-int omp_thread_num = 8;
+int omp_thread_num = 2;
 //ec_decode_thread_args ec_decode_arg;
 //int decode_res = 0;
 /*****************thread parameters****************/
@@ -3602,7 +3602,7 @@ WriteOrRead_ec(IOR_param_t *test,
                     {
                         if (test->ec_verbose >= VERBOSE_0)
                         {
-                            fprintf(stdout, "decode success for %d times!\n", 1500);
+                            fprintf(stdout, "decode success for %d times!\n", num_iteration);
                         }
                     }
                     pthread_mutex_unlock(&lockOfNT);
