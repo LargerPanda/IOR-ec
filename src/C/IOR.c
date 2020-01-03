@@ -3565,6 +3565,7 @@ WriteOrRead_ec(IOR_param_t *test,
                         #pragma omp parallel for reduction(+:i) num_threads(omp_thread_num) private(omp_id) 
                         for (j = 0; j < num_iteration; j++){
                             omp_id = omp_get_thread_num();
+                            fprintf(stdout,"ompid = %d\n", omp_id);
                             i = jerasure_matrix_decode(k, m, w, ec_matrix, 1, erasures, omp_data[omp_id], ec_coding[omp_id], ec_blocksize);
                         }
                             
@@ -3574,6 +3575,7 @@ WriteOrRead_ec(IOR_param_t *test,
                         #pragma omp parallel for reduction(+:i) num_threads(omp_thread_num) private(omp_id)
                         for (j = 0; j < num_iteration; j++){
                             omp_id = omp_get_thread_num();
+                            fprintf(stdout,"ompid = %d\n", omp_id);
                             i = jerasure_schedule_decode_lazy(k, m, w, ec_bitmatrix, erasures, omp_data[omp_id], ec_coding[omp_id], ec_blocksize, ec_packetsize, 1);
                         }
                            
