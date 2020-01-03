@@ -3559,6 +3559,7 @@ WriteOrRead_ec(IOR_param_t *test,
 
                     // pool_destroy();
                     int omp_id;
+                    i=0;
                     if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
                     {
                         #pragma omp parallel for reduction(+:i) num_threads(omp_thread_num) private(omp_id) 
@@ -3578,7 +3579,7 @@ WriteOrRead_ec(IOR_param_t *test,
                            
                     }
 
-                    if (decode_res == -1)
+                    if (i != 0)
                     {
                         pthread_mutex_unlock(&lockOfNT);
                         ERR("decode failed!");
