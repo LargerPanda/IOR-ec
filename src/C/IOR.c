@@ -3363,7 +3363,7 @@ WriteOrRead_ec(IOR_param_t *test,
                     int j;
                     int l;
                     int omp_res;
-                    int opm_id;
+                    int omp_id;
                     int omp_num = 8;
                     int z;
                     char ***omp_data = (char ***)malloc(sizeof(char **) * 8);
