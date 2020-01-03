@@ -3362,9 +3362,8 @@ WriteOrRead_ec(IOR_param_t *test,
                     int j;
                     if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
                     {
-                        
                         for (j = 0; j < num_iteration; j++){
-                            omp_res = jerasure_matrix_decode(k, m, w, ec_matrix, 1, erasures, ec_data, ec_coding, ec_blocksize);
+                            i = jerasure_matrix_decode(k, m, w, ec_matrix, 1, erasures, ec_data, ec_coding, ec_blocksize);
                         }
                     }
                     else if (method == Cauchy_Orig || method == Cauchy_Good || method == Liberation || method == Blaum_Roth || method == Liber8tion)
@@ -3372,12 +3371,12 @@ WriteOrRead_ec(IOR_param_t *test,
                         
                         for (j = 0; j < num_iteration; j++)
                         {
-                            omp_res = jerasure_schedule_decode_lazy(k, m, w, ec_bitmatrix, erasures, ec_data, ec_coding, ec_blocksize, ec_packetsize, 1);
+                            i = jerasure_schedule_decode_lazy(k, m, w, ec_bitmatrix, erasures, ec_data, ec_coding, ec_blocksize, ec_packetsize, 1);
                         }
             
                     }
 
-                    if (omp_res == -1)
+                    if (i == -1)
                     {
                         pthread_mutex_unlock(&lockOfNT);
                         ERR("decode failed!");
