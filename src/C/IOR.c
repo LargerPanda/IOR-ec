@@ -3058,7 +3058,7 @@ ec_collective_thread(ec_read_thread_args *arg)
 
 
 void *
-ec_decode_thread(int target){
+ec_decode_thread(int *target){
     
     double decode_startTime;
     double decode_endTime;
@@ -3067,14 +3067,14 @@ ec_decode_thread(int target){
     decode_startTime = GetTimeStamp();
     if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
     {
-        decode_res = jerasure_matrix_decode(ec_decode_arg.k, ec_decode_arg.m, ec_decode_arg.w, ec_decode_arg.ec_matrix, 1, ec_decode_arg.erasures, omp_data[target], omp_coding[target], ec_decode_arg.ec_blocksize);
+        decode_res = jerasure_matrix_decode(ec_decode_arg.k, ec_decode_arg.m, ec_decode_arg.w, ec_decode_arg.ec_matrix, 1, ec_decode_arg.erasures, omp_data[*target], omp_coding[*target], ec_decode_arg.ec_blocksize);
     }
     else if (method == Cauchy_Orig || method == Cauchy_Good || method == Liberation || method == Blaum_Roth || method == Liber8tion)
     {
-        decode_res = jerasure_schedule_decode_lazy(ec_decode_arg.k, ec_decode_arg.m, ec_decode_arg.w, ec_decode_arg.ec_bitmatrix, ec_decode_arg.erasures, omp_data[target], omp_coding[target], ec_decode_arg.ec_blocksize, ec_decode_arg.ec_packetsize, 1);
+        decode_res = jerasure_schedule_decode_lazy(ec_decode_arg.k, ec_decode_arg.m, ec_decode_arg.w, ec_decode_arg.ec_bitmatrix, ec_decode_arg.erasures, omp_data[*target], omp_coding[*target], ec_decode_arg.ec_blocksize, ec_decode_arg.ec_packetsize, 1);
     }
     decode_endTime = GetTimeStamp();
-    fprintf(stdout,"in decode thread, time is %lf", decode_endTime);
+    fprintf(stdout,"in decode thread, time is %lf\n", decode_endTime);
 }
 
 IOR_offset_t
@@ -3552,7 +3552,9 @@ WriteOrRead_ec(IOR_param_t *test,
                        
                     for (j = 0; j < num_iteration; j++)
                     {
-                        pool_add_worker(ec_decode_thread, j%decode_thread_num);
+                        int target = j%decode_thread_num;
+                        fprintf(stdout, "add worker\n");
+                        pool_add_worker(ec_decode_thread, &target);
                     }
                     sleep(5);
                     pool_destroy();
