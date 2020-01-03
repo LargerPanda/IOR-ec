@@ -3361,63 +3361,51 @@ WriteOrRead_ec(IOR_param_t *test,
                     //reconstruct for njum_reconstruct times
 
                     int j;
+                    int l;
                     int omp_res = 0;
+                    int omp_num = 8;
+                    int z;
+                    char ***omp_data = (char ***)malloc(sizeof(char **) * 8);
+                    char ***omp_coding = (char ***)malloc(sizeof(char **) * 8); 
+                    for (z = 0; z < omp_num; z++)
+                    {
+                        omp_data[z] = (char **)malloc(sizeof(char *) * k);
+                        for (l = 0; l < k; l++)
+                        {
+                            memcpy(omp_data[z][l], ec_data[l], sizeof(char) * ec_blocksize);
+                            if (omp_data[z][l] == NULL)
+                            {
+                                ERR("malloc data fail");
+                            }
+                        }
+                    }
+                    for (z = 0; z < omp_num; z++)
+                    {
+                        omp_coding[z] = (char **)malloc(sizeof(char *) * m);
+                        for (l = 0; l < m; l++)
+                        {
+                            memcpy(omp_coding[z][l], ec_coding[l], sizeof(char) * ec_blocksize);
+                            if (omp_coding[l] == NULL)
+                            {
+                                ERR("malloc data fail");
+                            }
+                        }
+                    }
                     if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
                     {
-                        
-                        #pragma omp parallel for reduction(+:omp_res) num_threads(8) private(omp_data, omp_coding, l)
+                        #pragma omp parallel for reduction(+:omp_res) num_threads(8) private(omp_id)
                         for (j = 0; j < num_iteration; j++){
-                            char **omp_data = (char **)malloc(sizeof(char *) * k);
-                            char **omp_coding = (char **)malloc(sizeof(char *) * m);
-
-                            int l;
-                            for (l = 0; l < k; l++)
-                            {
-                                memcpy(omp_data[l], ec_data[l], sizeof(char) * ec_blocksize);
-                                if (omp_data[l] == NULL)
-                                {
-                                    ERR("malloc data fail");
-                                }
-                            }
-
-                            for (l = 0; l < m; l++)
-                            {
-                                memcpy(omp_coding[l], ec_coding[l], sizeof(char) * ec_blocksize);
-                                if (omp_coding[l] == NULL)
-                                {
-                                    ERR("malloc coding fail");
-                                }
-                            }
-                            omp_res = jerasure_matrix_decode(k, m, w, ec_matrix, 1, erasures, omp_data, omp_coding, ec_blocksize);
+                            int omp_id = omp_get_thread_num();
+                            omp_res = jerasure_matrix_decode(k, m, w, ec_matrix, 1, erasures, omp_data[omp_id], omp_coding[omp_id], ec_blocksize);
                         }
                     }
                     else if (method == Cauchy_Orig || method == Cauchy_Good || method == Liberation || method == Blaum_Roth || method == Liber8tion)
                     {
-                        #pragma omp parallel for num_threads(8) private(ec_data, ec_coding)
+                        #pragma omp parallel for reduction(+:opm_res) num_threads(8) private(omp_id)
                         for (j = 0; j < num_iteration; j++)
                         {
-                            char **omp_data = (char **)malloc(sizeof(char *) * k);
-                            char **omp_coding = (char **)malloc(sizeof(char *) * m);
-
-                            int l;
-                            for (l = 0; l < k; l++)
-                            {
-                                memcpy(omp_data[l], ec_data[l], sizeof(char) * ec_blocksize);
-                                if (omp_data[l] == NULL)
-                                {
-                                    ERR("malloc data fail");
-                                }
-                            }
-
-                            for (l = 0; l < m; l++)
-                            {
-                                memcpy(omp_coding[l], ec_coding[l], sizeof(char) * ec_blocksize);
-                                if (omp_coding[l] == NULL)
-                                {
-                                    ERR("malloc coding fail");
-                                }
-                            }
-                            omp_res = jerasure_schedule_decode_lazy(k, m, w, ec_bitmatrix, erasures, omp_data, omp_coding, ec_blocksize, ec_packetsize, 1);
+                            int omp_id = omp_get_thread_num();
+                            omp_res = jerasure_schedule_decode_lazy(k, m, w, ec_bitmatrix, erasures, omp_data[omp_id], omp_coding[omp_id], ec_blocksize, ec_packetsize, 1);
                         }
             
                     }
