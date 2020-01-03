@@ -3363,13 +3363,13 @@ WriteOrRead_ec(IOR_param_t *test,
                     int j;
                     if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
                     {
-                        #pragma omp parallel for num_threads(8) private(erasures, ec_data, ec_coding)
+                        #pragma omp parallel for num_threads(8) private(ec_data, ec_coding)
                         for (j = 0; j < num_iteration; j++)
                             i = jerasure_matrix_decode(k, m, w, ec_matrix, 1, erasures, ec_data, ec_coding, ec_blocksize);
                     }
                     else if (method == Cauchy_Orig || method == Cauchy_Good || method == Liberation || method == Blaum_Roth || method == Liber8tion)
                     {
-                        #pragma omp parallel for num_threads(8) private(erasures, ec_data, ec_coding)
+                        #pragma omp parallel for num_threads(8) private(ec_data, ec_coding)
                         for (j = 0; j < num_iteration; j++)
                             i = jerasure_schedule_decode_lazy(k, m, w, ec_bitmatrix, erasures, ec_data, ec_coding, ec_blocksize, ec_packetsize, 1);
                     }
