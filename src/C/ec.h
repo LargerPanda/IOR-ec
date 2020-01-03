@@ -21,7 +21,6 @@
 #include <cauchy.h>
 #include <liberation.h>
 #include <pthread.h>
-#include "thread_pool.h"
 //#include <timing.h>
 #define IMMEDIATE_EC 0
 #define POST_PARALLELISM 5
