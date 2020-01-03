@@ -309,7 +309,7 @@ IOR_queue_t *
 ReadConfigScript(char * scriptName)
 {
     
-    fprintf(stdout, "in ReadConfigScript\n");
+    //fprintf(stdout, "in ReadConfigScript\n");
     
     
     int          test_num = 0;
@@ -383,7 +383,7 @@ ReadConfigScript(char * scriptName)
 IOR_queue_t *
 ParseCommandLine(int argc, char ** argv)
 {
-    fprintf(stdout, "int ParseCommandLine\n");
+    //fprintf(stdout, "int ParseCommandLine\n");
     static const char * opts
         = "A:a:b:BcCQ:ZX:d:D:YeEf:FgG:hHi:j:J:IkKlmnN:o:O:pPqrRs:St:T:uU:vVwWxz";
     int                 c, i;

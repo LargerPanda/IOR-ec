@@ -3422,7 +3422,7 @@ WriteOrRead_ec(IOR_param_t *test,
                             decode_startTime = GetTimeStamp();
                             i = jerasure_matrix_decode(k, m, w, ec_matrix, 1, erasures, ec_data, ec_coding, ec_blocksize);
                             decode_endTime = GetTimeStamp();
-                            fprintf(stdout,"time = %lf",decode_endTime-decode_startTime);
+                            //fprintf(stdout,"time = %lf\n",decode_endTime-decode_startTime);
                         }    
                             
                     }
@@ -3432,7 +3432,7 @@ WriteOrRead_ec(IOR_param_t *test,
                             decode_startTime = GetTimeStamp();
                             i = jerasure_schedule_decode_lazy(k, m, w, ec_bitmatrix, erasures, ec_data, ec_coding, ec_blocksize, ec_packetsize, 1);
                             decode_endTime = GetTimeStamp();
-                            fprintf(stdout,"time = %lf",decode_endTime-decode_startTime);
+                            //fprintf(stdout,"time = %lf\n",decode_endTime-decode_startTime);
                         }
                     }
                     
