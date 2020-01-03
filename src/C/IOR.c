@@ -79,7 +79,8 @@
 #include <string.h>
 #include <sys/stat.h>                                 /* struct stat */
 #include <time.h>
-#include "ec.h"                                       /* ec header */
+#include "ec.h"
+#include "thread_pool.h"                                       /* ec header */
 #include <omp.h>
 #ifndef _WIN32
 #   include <sys/time.h>                              /* gettimeofday() */
