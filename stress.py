@@ -30,7 +30,7 @@ print("stress generator start...\n")
 def stress_generator(p, t):
     print("stress generator with p="+ str(p) + " t="+str(t))
     while True:
-        sleepT = 0
+        sleepT = 1
         for i in range(nodeNum):
             is_straggler = random.random()
             if is_straggler >= 0 and is_straggler < p:
