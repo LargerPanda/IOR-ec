@@ -46,13 +46,12 @@ typedef struct ec_read_thread_args
 
 typedef struct ec_decode_thread_args
 {
-
     enum Coding_Technique method;
     int k;
     int m;
     int w;
-    int *ec_matrix = NULL;
-    int *ec_bitmatrix = NULL;
+    int *ec_matrix;
+    int *ec_bitmatrix;
     int *erasures;
     IOR_offset_t ec_blocksize;
     int ec_packetsize;
