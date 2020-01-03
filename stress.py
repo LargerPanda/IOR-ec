@@ -45,7 +45,7 @@ def stress_generator(p, t):
                       ", time is " + str(stressTime))
                 sleepT = max(sleepT, stressTime)
                 os.system(cmd)
-        time.sleep(sleepT)
+        time.sleep(sleepT-1)
 
 
 #########python3 stress.py p t
