@@ -3564,7 +3564,7 @@ WriteOrRead_ec(IOR_param_t *test,
                     double omp_endTime;
                     int num_total=0;
                     //i = jerasure_schedule_decode_lazy(k, m, w, ec_bitmatrix, erasures, omp_data[omp_id], omp_coding[omp_id], ec_blocksize, ec_packetsize, 1);
-                    fprintf(stdout,"ec_method=%d\n", method)
+                    fprintf(stdout,"ec_method=%d\n", method);
                     if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
                     {
                         #pragma omp parallel for reduction(+:i) num_threads(omp_thread_num) private(omp_id) 
