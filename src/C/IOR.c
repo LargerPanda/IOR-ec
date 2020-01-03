@@ -3359,54 +3359,20 @@ WriteOrRead_ec(IOR_param_t *test,
                     erasures[numerased] = -1;
 
                     //reconstruct for njum_reconstruct times
-
                     int j;
-                    int l;
-                    int omp_res;
-                    int omp_id;
-                    int omp_num = 8;
-                    int z;
-                    char ***omp_data = (char ***)malloc(sizeof(char **) * 8);
-                    char ***omp_coding = (char ***)malloc(sizeof(char **) * 8); 
-                    for (z = 0; z < omp_num; z++)
-                    {
-                        omp_data[z] = (char **)malloc(sizeof(char *) * k);
-                        for (l = 0; l < k; l++)
-                        {
-                            memcpy(omp_data[z][l], ec_data[l], sizeof(char) * ec_blocksize);
-                            if (omp_data[z][l] == NULL)
-                            {
-                                ERR("malloc data fail");
-                            }
-                        }
-                    }
-                    for (z = 0; z < omp_num; z++)
-                    {
-                        omp_coding[z] = (char **)malloc(sizeof(char *) * m);
-                        for (l = 0; l < m; l++)
-                        {
-                            memcpy(omp_coding[z][l], ec_coding[l], sizeof(char) * ec_blocksize);
-                            if (omp_coding[l] == NULL)
-                            {
-                                ERR("malloc data fail");
-                            }
-                        }
-                    }
                     if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
                     {
-                        #pragma omp parallel for reduction(+:omp_res) num_threads(8) private(omp_id)
+                        
                         for (j = 0; j < num_iteration; j++){
-                            omp_id = omp_get_thread_num();
-                            omp_res = jerasure_matrix_decode(k, m, w, ec_matrix, 1, erasures, omp_data[omp_id], omp_coding[omp_id], ec_blocksize);
+                            omp_res = jerasure_matrix_decode(k, m, w, ec_matrix, 1, erasures, ec_data, ec_coding, ec_blocksize);
                         }
                     }
                     else if (method == Cauchy_Orig || method == Cauchy_Good || method == Liberation || method == Blaum_Roth || method == Liber8tion)
                     {
-                        #pragma omp parallel for reduction(+:omp_res) num_threads(8) private(omp_id)
+                        
                         for (j = 0; j < num_iteration; j++)
                         {
-                            omp_id = omp_get_thread_num();
-                            omp_res = jerasure_schedule_decode_lazy(k, m, w, ec_bitmatrix, erasures, omp_data[omp_id], omp_coding[omp_id], ec_blocksize, ec_packetsize, 1);
+                            omp_res = jerasure_schedule_decode_lazy(k, m, w, ec_bitmatrix, erasures, ec_data, ec_coding, ec_blocksize, ec_packetsize, 1);
                         }
             
                     }
