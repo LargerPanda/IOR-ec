@@ -2931,11 +2931,11 @@ ec_decode_thread(int target){
     
     if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
     {
-        decode_res = jerasure_matrix_decode(ec_decode_arg.k, ec_decode_arg.m, ec_decode_arg.w, ec_decode_arg.ec_matrix, 1, ec_decode_arg.erasures, omp_data[i], omp_coding[i], ec_decode_arg.ec_blocksize);
+        decode_res = jerasure_matrix_decode(ec_decode_arg.k, ec_decode_arg.m, ec_decode_arg.w, ec_decode_arg.ec_matrix, 1, ec_decode_arg.erasures, omp_data[target], omp_coding[target], ec_decode_arg.ec_blocksize);
     }
     else if (method == Cauchy_Orig || method == Cauchy_Good || method == Liberation || method == Blaum_Roth || method == Liber8tion)
     {
-        decode_res = jerasure_schedule_decode_lazy(ec_decode_arg.k, ec_decode_arg.m, ec_decode_arg.w, ec_decode_arg.ec_bitmatrix, ec_decode_arg.erasures, omp_data[i], omp_coding[i], ec_decode_arg.ec_blocksize, ec_decode_arg.ec_packetsize, 1);
+        decode_res = jerasure_schedule_decode_lazy(ec_decode_arg.k, ec_decode_arg.m, ec_decode_arg.w, ec_decode_arg.ec_bitmatrix, ec_decode_arg.erasures, omp_data[target], omp_coding[target], ec_decode_arg.ec_blocksize, ec_decode_arg.ec_packetsize, 1);
     }
 }
 
@@ -3397,14 +3397,14 @@ WriteOrRead_ec(IOR_param_t *test,
 
                     for(j=0;i<decode_thread_num;j++){
                         omp_data[j] = (char**)malloc(sizeof(char*)*k);
-                        omp_coding[j] = (cahr**)malloc(sizeof(char*)*m);
+                        omp_coding[j] = (char**)malloc(sizeof(char*)*m);
 
                         for(i=0;i<k;i++){
-                            memcpy(omp_data[j][i],ec_data[i]);
+                            memcpy(omp_data[j][i],ec_data[i],sizeof(char)*ec_blocksize);
                         }
 
                         for(i=0;i<m;i++){
-                            memcpy(omp_coding[j][i],ec_coding[i]);
+                            memcpy(omp_coding[j][i],ec_coding[i],sizeof(char)*ec_blocksize);
                         }
                     }
 
