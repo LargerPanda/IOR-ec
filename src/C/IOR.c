@@ -2949,7 +2949,7 @@ pthread_mutex_t lockOfNT = PTHREAD_MUTEX_INITIALIZER;
 int hitStonewall;
 char ***omp_data;
 char ***omp_coding;
-int decode_thread_num = 8;
+int decode_thread_num = 1;
 ec_decode_thread_args ec_decode_arg;
 int decode_res = 0;
 /*****************thread parameters****************/
