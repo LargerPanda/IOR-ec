@@ -2949,7 +2949,7 @@ pthread_mutex_t lockOfNT = PTHREAD_MUTEX_INITIALIZER;
 int hitStonewall;
 char ***omp_data;
 char ***omp_coding;
-int decode_thread_num = 1;
+int decode_thread_num = 8;
 ec_decode_thread_args ec_decode_arg;
 int decode_res = 0;
 /*****************thread parameters****************/
@@ -3533,10 +3533,12 @@ WriteOrRead_ec(IOR_param_t *test,
                         omp_coding[j] = (char**)malloc(sizeof(char*)*m);
 
                         for(i=0;i<k;i++){
-                            memcpy(omp_data[j][i],ec_data[i],sizeof(char)*ec_blocksize);
+                            omp_data[j][i] = (char*)malloc(sizeof(char) * ec_blocksize);
+                            memcpy(omp_data[j][i], ec_data[i], sizeof(char) * ec_blocksize);
                         }
 
                         for(i=0;i<m;i++){
+                            omp_coding[j][i] = (char*)malloc(sizeof(char) * ec_blocksize);
                             memcpy(omp_coding[j][i],ec_coding[i],sizeof(char)*ec_blocksize);
                         }
                     }
