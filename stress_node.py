@@ -19,7 +19,7 @@ print("stress generator start...\n")
 
 #for it in tqdm(range(numIterations)):
 def stress_generator(n, s, t):
-    print("stress generator with p=" + str(p) + " t=" + str(t)+" n=" + str(n))
+    print("stress generator with s=" + str(s) + " t=" + str(t)+" n=" + str(n))
     while True:
         sleepT = 0
         i = n      
