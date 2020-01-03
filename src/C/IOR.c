@@ -3411,13 +3411,16 @@ WriteOrRead_ec(IOR_param_t *test,
                     int j;
                     if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
                     {
-                        for(j = 0; j < num_iteration; j++)    
+                        for(j = 0; j < num_iteration; j++){
                             i = jerasure_matrix_decode(k, m, w, ec_matrix, 1, erasures, ec_data, ec_coding, ec_blocksize);
+                        }    
+                            
                     }
                     else if (method == Cauchy_Orig || method == Cauchy_Good || method == Liberation || method == Blaum_Roth || method == Liber8tion)
                     {
-                        for (j = 0; j < num_iteration; j++)
+                        for (j = 0; j < num_iteration; j++){
                             i = jerasure_schedule_decode_lazy(k, m, w, ec_bitmatrix, erasures, ec_data, ec_coding, ec_blocksize, ec_packetsize, 1);
+                        }
                     }
                     
 
@@ -3577,15 +3580,15 @@ WriteOrRead_ec(IOR_param_t *test,
                     }
                     else if (method == Cauchy_Orig || method == Cauchy_Good || method == Liberation || method == Blaum_Roth || method == Liber8tion)
                     {
-                        #pragma omp parallel for reduction(+:i) num_threads(omp_thread_num) private(omp_id,omp_startTime,omp_endTime)
+                        #pragma omp parallel for num_threads(omp_thread_num) //private(omp_id,omp_startTime,omp_endTime)
                         for (j = 0; j < num_iteration; j++){
-                            omp_id = omp_get_thread_num();
+                            //omp_id = omp_get_thread_num();
                             //fprintf(stdout,"ompid = %d\n", omp_id);
-                            omp_startTime = GetTimeStamp();
-                            i = jerasure_schedule_decode_lazy(k, m, w, ec_bitmatrix, erasures, omp_data[omp_id], omp_coding[omp_id], ec_blocksize, ec_packetsize, 1);
-                            omp_endTime = GetTimeStamp();
+                            //omp_startTime = GetTimeStamp();
+                            jerasure_schedule_decode_lazy(k, m, w, ec_bitmatrix, erasures, omp_data[omp_id], omp_coding[omp_id], ec_blocksize, ec_packetsize, 1);
+                            //omp_endTime = GetTimeStamp();
                             num_total++;
-                            fprintf(stdout, "time = %lf\n", omp_endTime-omp_startTime);
+                            //fprintf(stdout, "time = %lf\n", omp_endTime-omp_startTime);
                         }
                            
                     }
@@ -3599,7 +3602,7 @@ WriteOrRead_ec(IOR_param_t *test,
                     {
                         if (test->ec_verbose >= VERBOSE_0)
                         {
-                            fprintf(stdout, "decode success for %d times!\n", num_total);
+                            fprintf(stdout, "decode success for %d times!\n", 1500);
                         }
                     }
                     pthread_mutex_unlock(&lockOfNT);
