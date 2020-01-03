@@ -2949,9 +2949,9 @@ pthread_mutex_t lockOfNT = PTHREAD_MUTEX_INITIALIZER;
 int hitStonewall;
 char ***omp_data;
 char ***omp_coding;
-int decode_thread_num = 8;
-ec_decode_thread_args ec_decode_arg;
-int decode_res = 0;
+int omp_thread_num = 8;
+//ec_decode_thread_args ec_decode_arg;
+//int decode_res = 0;
 /*****************thread parameters****************/
 
 
@@ -3057,25 +3057,25 @@ ec_collective_thread(ec_read_thread_args *arg)
 }
 
 
-void *
-ec_decode_thread(int *target){
+// void *
+// ec_decode_thread(int *target){
     
-    double decode_startTime;
-    double decode_endTime;
-    enum Coding_Technique method = ec_decode_arg.method;
-    int decode_res_local = 0;
-    decode_startTime = GetTimeStamp();
-    if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
-    {
-        decode_res_local = jerasure_matrix_decode(ec_decode_arg.k, ec_decode_arg.m, ec_decode_arg.w, ec_decode_arg.ec_matrix, 1, ec_decode_arg.erasures, omp_data[*target], omp_coding[*target], ec_decode_arg.ec_blocksize);
-    }
-    else if (method == Cauchy_Orig || method == Cauchy_Good || method == Liberation || method == Blaum_Roth || method == Liber8tion)
-    {
-        decode_res_local = jerasure_schedule_decode_lazy(ec_decode_arg.k, ec_decode_arg.m, ec_decode_arg.w, ec_decode_arg.ec_bitmatrix, ec_decode_arg.erasures, omp_data[*target], omp_coding[*target], ec_decode_arg.ec_blocksize, ec_decode_arg.ec_packetsize, 1);
-    }
-    decode_endTime = GetTimeStamp();
-    fprintf(stdout,"in decode thread, time is %lf,res is %d\n", decode_endTime-decode_startTime, decode_res_local);
-}
+//     double decode_startTime;
+//     double decode_endTime;
+//     enum Coding_Technique method = ec_decode_arg.method;
+//     int decode_res_local = 0;
+//     decode_startTime = GetTimeStamp();
+//     if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
+//     {
+//         decode_res_local = jerasure_matrix_decode(ec_decode_arg.k, ec_decode_arg.m, ec_decode_arg.w, ec_decode_arg.ec_matrix, 1, ec_decode_arg.erasures, omp_data[*target], omp_coding[*target], ec_decode_arg.ec_blocksize);
+//     }
+//     else if (method == Cauchy_Orig || method == Cauchy_Good || method == Liberation || method == Blaum_Roth || method == Liber8tion)
+//     {
+//         decode_res_local = jerasure_schedule_decode_lazy(ec_decode_arg.k, ec_decode_arg.m, ec_decode_arg.w, ec_decode_arg.ec_bitmatrix, ec_decode_arg.erasures, omp_data[*target], omp_coding[*target], ec_decode_arg.ec_blocksize, ec_decode_arg.ec_packetsize, 1);
+//     }
+//     decode_endTime = GetTimeStamp();
+//     fprintf(stdout,"in decode thread, time is %lf,res is %d\n", decode_endTime-decode_startTime, decode_res_local);
+// }
 
 IOR_offset_t
 WriteOrRead_ec(IOR_param_t *test,
@@ -3520,15 +3520,15 @@ WriteOrRead_ec(IOR_param_t *test,
                     //reconstruct for njum_reconstruct times
                     int j;
                     
-                    ec_decode_arg.method = method;
-                    ec_decode_arg.k = k;
-                    ec_decode_arg.m = m;
-                    ec_decode_arg.w = w;
-                    ec_decode_arg.ec_packetsize = ec_packetsize;
-                    ec_decode_arg.ec_blocksize = ec_blocksize;
-                    ec_decode_arg.ec_matrix = ec_matrix;
-                    ec_decode_arg.ec_bitmatrix = ec_bitmatrix;
-                    ec_decode_arg.erasures = erasures;
+                    // ec_decode_arg.method = method;
+                    // ec_decode_arg.k = k;
+                    // ec_decode_arg.m = m;
+                    // ec_decode_arg.w = w;
+                    // ec_decode_arg.ec_packetsize = ec_packetsize;
+                    // ec_decode_arg.ec_blocksize = ec_blocksize;
+                    // ec_decode_arg.ec_matrix = ec_matrix;
+                    // ec_decode_arg.ec_bitmatrix = ec_bitmatrix;
+                    // ec_decode_arg.erasures = erasures;
 
                     omp_data = (char ***)malloc(sizeof(char**)*decode_thread_num);
                     omp_coding = (char ***)malloc(sizeof(char**)*decode_thread_num);
@@ -3548,16 +3548,35 @@ WriteOrRead_ec(IOR_param_t *test,
                         }
                     }
 
-                    pool_init(decode_thread_num);
+                    // pool_init(decode_thread_num);
                        
-                    for (j = 0; j < num_iteration; j++)
+                    // for (j = 0; j < num_iteration; j++)
+                    // {
+                    //     int target = j%decode_thread_num;
+                    //     fprintf(stdout, "add worker\n");
+                    //     pool_add_worker(ec_decode_thread, &target);
+                    // }
+
+                    // pool_destroy();
+                    int omp_id;
+                    if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
                     {
-                        int target = j%decode_thread_num;
-                        fprintf(stdout, "add worker\n");
-                        pool_add_worker(ec_decode_thread, &target);
+                        #pragma omp parallel for reduction(+:i) num_threads(omp_thread_num) private(omp_id) 
+                        for (j = 0; j < num_iteration; j++){
+                            omp_id = omp_get_thread_num();
+                            i = jerasure_matrix_decode(k, m, w, ec_matrix, 1, erasures, omp_data[omp_id], ec_coding[omp_id], ec_blocksize);
+                        }
+                            
                     }
-                    
-                    pool_destroy();
+                    else if (method == Cauchy_Orig || method == Cauchy_Good || method == Liberation || method == Blaum_Roth || method == Liber8tion)
+                    {
+                        #pragma omp parallel for reduction(+:i) num_threads(omp_thread_num) private(omp_id)
+                        for (j = 0; j < num_iteration; j++){
+                            omp_id = omp_get_thread_num();
+                            i = jerasure_schedule_decode_lazy(k, m, w, ec_bitmatrix, erasures, omp_data[omp_id], ec_coding[omp_id], ec_blocksize, ec_packetsize, 1);
+                        }
+                           
+                    }
 
                     if (decode_res == -1)
                     {
