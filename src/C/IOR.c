@@ -3556,7 +3556,7 @@ WriteOrRead_ec(IOR_param_t *test,
                         fprintf(stdout, "add worker\n");
                         pool_add_worker(ec_decode_thread, &target);
                     }
-                    sleep(5);
+                    
                     pool_destroy();
 
                     if (decode_res == -1)
@@ -3662,8 +3662,8 @@ print_info:
         {
             fprintf(stdout, "#read time of stripe %d : %lf\n", i, ec_timers[i]);
         }
-        fprintf(stdout, "#Total read time of %d stripes: %lf\n", total_stripe_num, ec_endTime - ec_startTime-5);
-        fprintf(stdout, "#EC strategy time of %d : %lf\n", test->ec_strategy, ec_strategy_endTime - ec_strategy_startTime-5);
+        fprintf(stdout, "#Total read time of %d stripes: %lf\n", total_stripe_num, ec_endTime - ec_startTime);
+        fprintf(stdout, "#EC strategy time of %d : %lf\n", test->ec_strategy, ec_strategy_endTime - ec_strategy_startTime);
     }
     
 
