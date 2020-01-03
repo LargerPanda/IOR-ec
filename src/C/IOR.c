@@ -2950,7 +2950,7 @@ pthread_mutex_t lockOfDecodeSum = PTHREAD_MUTEX_INITIALIZER;
 int hitStonewall;
 char ***omp_data;
 char ***omp_coding;
-int omp_thread_num = 4;
+int omp_thread_num = 8;
 ec_decode_thread_args ec_decode_arg;
 int decode_sum = 0;
 int decode_res = 0;
@@ -3062,11 +3062,11 @@ ec_collective_thread(ec_read_thread_args *arg)
 void *
 ec_decode_thread(int *target){
     
-    double decode_startTime;
-    double decode_endTime;
+    //double decode_startTime;
+    //double decode_endTime;
     enum Coding_Technique method = ec_decode_arg.method;
     //int decode_res_local = 0;
-    decode_startTime = GetTimeStamp();
+    //decode_startTime = GetTimeStamp();
     if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
     {
         decode_res = jerasure_matrix_decode(ec_decode_arg.k, ec_decode_arg.m, ec_decode_arg.w, ec_decode_arg.ec_matrix, 1, ec_decode_arg.erasures, omp_data[*target], omp_coding[*target], ec_decode_arg.ec_blocksize);
@@ -3075,8 +3075,8 @@ ec_decode_thread(int *target){
     {
         decode_res = jerasure_schedule_decode_lazy(ec_decode_arg.k, ec_decode_arg.m, ec_decode_arg.w, ec_decode_arg.ec_bitmatrix, ec_decode_arg.erasures, omp_data[*target], omp_coding[*target], ec_decode_arg.ec_blocksize, ec_decode_arg.ec_packetsize, 1);
     }
-    decode_endTime = GetTimeStamp();
-    fprintf(stdout,"in decode thread, time is %lf", decode_endTime-decode_startTime);
+    //decode_endTime = GetTimeStamp();
+    //fprintf(stdout,"in decode thread, time is %lf\n", decode_endTime-decode_startTime);
     pthread_mutex_lock(&lockOfDecodeSum);
     decode_sum++;
     pthread_mutex_unlock(&lockOfDecodeSum);
@@ -3570,7 +3570,7 @@ WriteOrRead_ec(IOR_param_t *test,
                     for (j = 0; j < num_iteration; j++)
                     {
                         int target = j%omp_thread_num;
-                        fprintf(stdout, "add worker\n");
+                        //fprintf(stdout, "add worker\n");
                         pool_add_worker(ec_decode_thread, &target);
                     }
 
