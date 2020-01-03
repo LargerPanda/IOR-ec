@@ -3560,7 +3560,9 @@ WriteOrRead_ec(IOR_param_t *test,
                     // pool_destroy();
                     int omp_id=0;
                     i=0;
-
+                    double omp_startTime;
+                    double omp_endTime;
+                    int num_total=0;
                     //i = jerasure_schedule_decode_lazy(k, m, w, ec_bitmatrix, erasures, omp_data[omp_id], omp_coding[omp_id], ec_blocksize, ec_packetsize, 1);
                     
                     if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
@@ -3575,11 +3577,15 @@ WriteOrRead_ec(IOR_param_t *test,
                     }
                     else if (method == Cauchy_Orig || method == Cauchy_Good || method == Liberation || method == Blaum_Roth || method == Liber8tion)
                     {
-                        #pragma omp parallel for reduction(+:i) num_threads(omp_thread_num) private(omp_id)
+                        #pragma omp parallel for reduction(+:i) num_threads(omp_thread_num) private(omp_id,omp_startTime,omp_endTime)
                         for (j = 0; j < num_iteration; j++){
                             omp_id = omp_get_thread_num();
-                            fprintf(stdout,"ompid = %d\n", omp_id);
+                            //fprintf(stdout,"ompid = %d\n", omp_id);
+                            omp_startTime = GetTimeStamp();
                             i = jerasure_schedule_decode_lazy(k, m, w, ec_bitmatrix, erasures, omp_data[omp_id], omp_coding[omp_id], ec_blocksize, ec_packetsize, 1);
+                            omp_endTime = GetTimeStamp();
+                            num_total++;
+                            fprintf(stdout, "time = %lf\n", omp_endTime-omp_startTime);
                         }
                            
                     }
@@ -3593,7 +3599,7 @@ WriteOrRead_ec(IOR_param_t *test,
                     {
                         if (test->ec_verbose >= VERBOSE_0)
                         {
-                            fprintf(stdout, "decode success for %d times!\n", j);
+                            fprintf(stdout, "decode success for %d times!\n", num_total);
                         }
                     }
                     pthread_mutex_unlock(&lockOfNT);
