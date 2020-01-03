@@ -3362,7 +3362,8 @@ WriteOrRead_ec(IOR_param_t *test,
 
                     int j;
                     int l;
-                    int omp_res = 0;
+                    int omp_res;
+                    int opm_id;
                     int omp_num = 8;
                     int z;
                     char ***omp_data = (char ***)malloc(sizeof(char **) * 8);
@@ -3395,16 +3396,16 @@ WriteOrRead_ec(IOR_param_t *test,
                     {
                         #pragma omp parallel for reduction(+:omp_res) num_threads(8) private(omp_id)
                         for (j = 0; j < num_iteration; j++){
-                            int omp_id = omp_get_thread_num();
+                            omp_id = omp_get_thread_num();
                             omp_res = jerasure_matrix_decode(k, m, w, ec_matrix, 1, erasures, omp_data[omp_id], omp_coding[omp_id], ec_blocksize);
                         }
                     }
                     else if (method == Cauchy_Orig || method == Cauchy_Good || method == Liberation || method == Blaum_Roth || method == Liber8tion)
                     {
-                        #pragma omp parallel for reduction(+:opm_res) num_threads(8) private(omp_id)
+                        #pragma omp parallel for reduction(+:omp_res) num_threads(8) private(omp_id)
                         for (j = 0; j < num_iteration; j++)
                         {
-                            int omp_id = omp_get_thread_num();
+                            omp_id = omp_get_thread_num();
                             omp_res = jerasure_schedule_decode_lazy(k, m, w, ec_bitmatrix, erasures, omp_data[omp_id], omp_coding[omp_id], ec_blocksize, ec_packetsize, 1);
                         }
             
