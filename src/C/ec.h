@@ -21,6 +21,7 @@
 #include <cauchy.h>
 #include <liberation.h>
 #include <pthread.h>
+#include "thread_pool.h"
 //#include <timing.h>
 #define IMMEDIATE_EC 0
 #define POST_PARALLELISM 5
@@ -43,5 +44,18 @@ typedef struct ec_read_thread_args
     /*ec control parameters*/
 } ec_read_thread_args;
 
+typedef struct ec_decode_thread_args
+{
+
+    enum Coding_Technique method;
+    int k;
+    int m;
+    int w;
+    int *ec_matrix = NULL;
+    int *ec_bitmatrix = NULL;
+    int *erasures;
+    IOR_offset_t ec_blocksize;
+    int ec_packetsize;
+}ec_decode_thread_args;
 
 #endif // _EC_H

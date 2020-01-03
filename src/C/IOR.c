@@ -2814,6 +2814,11 @@ int *dataLeft;
 volatile int numTransferred;
 pthread_mutex_t lockOfNT = PTHREAD_MUTEX_INITIALIZER;
 int hitStonewall;
+char ***omp_data;
+char ***omp_coding;
+int decode_thread_num = 8;
+ec_decode_thread_args ec_decode_arg;
+int decode_res = 0;
 /*****************thread parameters****************/
 
 
@@ -2916,6 +2921,22 @@ ec_collective_thread(ec_read_thread_args *arg)
 
     /****************is_straggler******************/
     ec_timers[id] += transferTime;
+}
+
+
+void *
+ec_decode_thread(int target){
+    
+    enum Coding_Technique method = ec_decode_arg.method;
+    
+    if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
+    {
+        decode_res = jerasure_matrix_decode(ec_decode_arg.k, ec_decode_arg.m, ec_decode_arg.w, ec_decode_arg.ec_matrix, 1, ec_decode_arg.erasures, omp_data[i], omp_coding[i], ec_decode_arg.ec_blocksize);
+    }
+    else if (method == Cauchy_Orig || method == Cauchy_Good || method == Liberation || method == Blaum_Roth || method == Liber8tion)
+    {
+        decode_res = jerasure_schedule_decode_lazy(ec_decode_arg.k, ec_decode_arg.m, ec_decode_arg.w, ec_decode_arg.ec_bitmatrix, ec_decode_arg.erasures, omp_data[i], omp_coding[i], ec_decode_arg.ec_blocksize, ec_decode_arg.ec_packetsize, 1);
+    }
 }
 
 IOR_offset_t
@@ -3360,23 +3381,43 @@ WriteOrRead_ec(IOR_param_t *test,
 
                     //reconstruct for njum_reconstruct times
                     int j;
-                    if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
-                    {
-                        for (j = 0; j < num_iteration; j++){
-                            i = jerasure_matrix_decode(k, m, w, ec_matrix, 1, erasures, ec_data, ec_coding, ec_blocksize);
+                    
+                    ec_decode_arg.method = method;
+                    ec_decode_arg.k = k;
+                    ec_decode_arg.m = m;
+                    ec_decode_arg.w = w;
+                    ec_decode_arg.ec_packetsize = ec_packetsize;
+                    ec_decode_arg.ec_blocksize = ec_blocksize;
+                    ec_decode_arg.ec_matrix = ec_matrix;
+                    ec_decode_arg.ec_bitmatrix = ec_bitmatrix;
+                    ec_decode_arg.erasures = erasures;
+
+                    omp_data = (char ***)malloc(sizeof(char**)*decode_thread_num);
+                    omp_coding = (char ***)malloc(sizeof(char**)*decode_thread_num);
+
+                    for(j=0;i<decode_thread_num;j++){
+                        omp_data[j] = (char**)malloc(sizeof(char*)*k);
+                        omp_coding[j] = (cahr**)malloc(sizeof(char*)*m);
+
+                        for(i=0;i<k;i++){
+                            memcpy(omp_data[j][i],ec_data[i]);
                         }
-                    }
-                    else if (method == Cauchy_Orig || method == Cauchy_Good || method == Liberation || method == Blaum_Roth || method == Liber8tion)
-                    {
-                        
-                        for (j = 0; j < num_iteration; j++)
-                        {
-                            i = jerasure_schedule_decode_lazy(k, m, w, ec_bitmatrix, erasures, ec_data, ec_coding, ec_blocksize, ec_packetsize, 1);
+
+                        for(i=0;i<m;i++){
+                            memcpy(omp_coding[j][i],ec_coding[i]);
                         }
-            
                     }
 
-                    if (i == -1)
+                    pool_init(decode_thread_num);
+                       
+                    for (j = 0; j < num_iteration; j++)
+                    {
+                        pool_add_worker(ec_decode_thread, j%decode_thread_num);
+                    }
+                    sleep(5);
+                    pool_destroy();
+
+                    if (decode_res == -1)
                     {
                         pthread_mutex_unlock(&lockOfNT);
                         ERR("decode failed!");
@@ -3479,8 +3520,8 @@ print_info:
         {
             fprintf(stdout, "#read time of stripe %d : %lf\n", i, ec_timers[i]);
         }
-        fprintf(stdout, "#Total read time of %d stripes: %lf\n", total_stripe_num, ec_endTime - ec_startTime);
-        fprintf(stdout, "#EC strategy time of %d : %lf\n", test->ec_strategy, ec_strategy_endTime - ec_strategy_startTime);
+        fprintf(stdout, "#Total read time of %d stripes: %lf\n", total_stripe_num, ec_endTime - ec_startTime-5);
+        fprintf(stdout, "#EC strategy time of %d : %lf\n", test->ec_strategy, ec_strategy_endTime - ec_strategy_startTime-5);
     }
     
 
