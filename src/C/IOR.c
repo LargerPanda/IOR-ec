@@ -3060,8 +3060,11 @@ ec_collective_thread(ec_read_thread_args *arg)
 void *
 ec_decode_thread(int target){
     
+    double decode_startTime;
+    double decode_endTime;
     enum Coding_Technique method = ec_decode_arg.method;
     
+    decode_startTime = GetTimeStamp();
     if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
     {
         decode_res = jerasure_matrix_decode(ec_decode_arg.k, ec_decode_arg.m, ec_decode_arg.w, ec_decode_arg.ec_matrix, 1, ec_decode_arg.erasures, omp_data[target], omp_coding[target], ec_decode_arg.ec_blocksize);
@@ -3070,6 +3073,8 @@ ec_decode_thread(int target){
     {
         decode_res = jerasure_schedule_decode_lazy(ec_decode_arg.k, ec_decode_arg.m, ec_decode_arg.w, ec_decode_arg.ec_bitmatrix, ec_decode_arg.erasures, omp_data[target], omp_coding[target], ec_decode_arg.ec_blocksize, ec_decode_arg.ec_packetsize, 1);
     }
+    decode_endTime = GetTimeStamp();
+    fprintf(stdout,"in decode thread, time is %lf", decode_endTime);
 }
 
 IOR_offset_t
