@@ -24,7 +24,6 @@ def stress_generator(n, s, t):
           str(n))
     while True:
         sleepT = 0
-        i = n
         directory = choice(nodeList)
         hdd = S[s]
         stressTime = t
