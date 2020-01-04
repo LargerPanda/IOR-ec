@@ -2988,7 +2988,7 @@ ec_read_thread(ec_read_thread_args* arg)
     {
         offset = offsetArray[pairCnt];
         offset = offset / arg->test->ec_k;
-        XferStartTime = GetTimeStamp();
+        XferStartTime = GetTimeStamp() - startTime;
         if (id < k)
         {
             transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], (arg->ec_data)[id], arg->test->ec_stripe_size, arg->test, offset);
@@ -2997,7 +2997,7 @@ ec_read_thread(ec_read_thread_args* arg)
         {
             transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], (arg->ec_coding)[id - k], arg->test->ec_stripe_size, arg->test, offset);
         }
-        XferEndTime = GetTimeStamp();
+        XferEndTime = GetTimeStamp() - startTime;
         fprintf(stdout, "#Xferid=%d,startTime=%0.2lf,endTIme=%0.2lf,duration=%2lf\n",id, XferStartTime,XferEndTime,XferEndTime-XferStartTime);
         pairCnt++;
         dataLeft[id]--;
