@@ -3040,7 +3040,7 @@ ec_collective_thread(ec_read_thread_args *arg)
     double times_over_threshold = 0;
     double times_below_threshold = 0;
     //double threshold = 0.02;
-    double upper_threshold = 0.02
+    double upper_threshold = 0.02;
     double lower_threshold = 0.01;
     startTime = GetTimeStamp();
     
