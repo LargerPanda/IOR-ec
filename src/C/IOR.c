@@ -3057,7 +3057,7 @@ ec_collective_thread(ec_read_thread_args *arg)
             transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], (arg->ec_coding)[id - k], arg->test->ec_stripe_size, arg->test, offset);
         }
         xfer_endTime = GetTimeStamp();
-        duration = xfer_startTime-xfer_endTime;
+        duration = xfer_endTime- xfer_startTime;
         fprintf(stdout, "thread %d duration: %0.4lf\n", id,duration);
         /****************is_straggler******************/
         if(duration > threshold && !isStraggler){
