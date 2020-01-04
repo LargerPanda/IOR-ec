@@ -3034,6 +3034,12 @@ ec_collective_thread(ec_read_thread_args *arg)
     int isOriginReader = id<k?1:0;
     int isStraggler = 0;
     int transferTime = 0;
+    double xfer_startTime = 0;
+    double xfer_endTime = 0;
+    double duration = 0;
+    double times_over_threshold = 0;
+    double times_below_threshold = 0;
+    double threshold = 0.013;
     startTime = GetTimeStamp();
     
 
@@ -3041,6 +3047,7 @@ ec_collective_thread(ec_read_thread_args *arg)
     {
         offset = offsetArray[pairCnt];
         offset = offset / arg->test->ec_k;
+        xfer_startTime = GetTimeStamp();
         if (id < k)
         {
             transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], (arg->ec_data)[id], arg->test->ec_stripe_size, arg->test, offset);
@@ -3049,6 +3056,25 @@ ec_collective_thread(ec_read_thread_args *arg)
         {
             transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], (arg->ec_coding)[id - k], arg->test->ec_stripe_size, arg->test, offset);
         }
+        xfer_endTime = GetTimeStamp();
+        duration = xfer_startTime-xfer_endTime;
+        /****************is_straggler******************/
+        if(duration > threshold && !isStraggler){
+            times_over_threshold++;
+        }else if(duration <threshold && isStraggler){
+            times_below_threshold++;
+        }
+        if(times_over_threshold>=10){
+            isStraggler = 1;
+            times_over_threshold = 0;
+            fprintf(stdout, "thread %d into straggler state\n",id);
+        }
+        if(times_below_threshold>=5){
+            isStraggler = 0;
+            times_below_threshold = 0;
+            fprintf(stdout, "thread %d quit straggler state\n",id);
+        }
+        /****************is_straggler******************/
         pairCnt++;
         dataLeft[id]--;
     }
@@ -3060,9 +3086,6 @@ ec_collective_thread(ec_read_thread_args *arg)
     pthread_mutex_unlock(&lockOfNT);
     endTime = GetTimeStamp();
     transferTime = endTime - startTime;
-    /****************is_straggler******************/
-
-    /****************is_straggler******************/
     ec_timers[id] += transferTime;
 }
 
