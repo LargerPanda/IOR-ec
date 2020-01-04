@@ -3071,6 +3071,7 @@ ec_collective_thread(ec_read_thread_args *arg)
             //fprintf(stdout, "thread %d into straggler state\n",id);
         }
         if(times_below_threshold>=5){
+            
             isStraggler = 0;
             times_below_threshold = 0;
             //fprintf(stdout, "thread %d quit straggler state\n",id);
