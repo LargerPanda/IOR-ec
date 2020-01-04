@@ -32,7 +32,7 @@ def stress_generator(n, s, t):
             stressTime) + "&"
         cmd = directory + " " + stressCmd
         #print("cmd is " + cmd)
-        print("ost" + str(i) + " is straggler, degree is " + hdd +
+        print(directory + " is straggler, degree is " + hdd +
               ", time is " + str(stressTime))
         sleepT = max(sleepT, stressTime)
         os.system(cmd)
