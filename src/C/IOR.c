@@ -3065,13 +3065,13 @@ ec_collective_thread(ec_read_thread_args *arg)
         }
         
         /****************is_straggler******************/
-        if(duration > upper_threshold && !isStraggler){ //不是straggler，等待进入
+        if(duration > threshold && !isStraggler){ //不是straggler，等待进入
             times_over_threshold++;
-        }else if(duration < lower_threshold && isStraggler){//是straggler，等待退出
+        }else if(duration < threshold && isStraggler){//是straggler，等待退出
             times_below_threshold++;
-        }else if(duration <= upper_threshold && !isStraggler){//不是straggler，进入状态清零
+        }else if(duration <= threshold && !isStraggler){//不是straggler，进入状态清零
             times_over_threshold = 0;
-        }else if(duration >= lower_threshold && isStraggler){//是straggler，退出状态清零
+        }else if(duration >= threshold && isStraggler){//是straggler，退出状态清零
             times_below_threshold = 0;
         }
         
