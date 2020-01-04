@@ -3058,7 +3058,10 @@ ec_collective_thread(ec_read_thread_args *arg)
         }
         xfer_endTime = GetTimeStamp();
         duration = xfer_endTime- xfer_startTime;
-        fprintf(stdout, "thread %d duration: %0.4lf\n", id,duration);
+        if(id==5){
+            fprintf(stdout, "thread %d duration: %0.4lf\n", id,duration);
+        }
+        
         /****************is_straggler******************/
         if(duration > threshold && !isStraggler){
             times_over_threshold++;
@@ -3071,7 +3074,7 @@ ec_collective_thread(ec_read_thread_args *arg)
             //fprintf(stdout, "thread %d into straggler state\n",id);
         }
         if(times_below_threshold>=5){
-            
+
             isStraggler = 0;
             times_below_threshold = 0;
             //fprintf(stdout, "thread %d quit straggler state\n",id);
