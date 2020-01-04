@@ -3012,6 +3012,8 @@ ec_read_thread(ec_read_thread_args* arg)
     ec_timers[id] += endTime - startTime;
 }
 
+
+
 void *
 ec_collective_thread(ec_read_thread_args *arg)
 {
