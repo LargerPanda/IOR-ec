@@ -3058,6 +3058,7 @@ ec_collective_thread(ec_read_thread_args *arg)
         }
         xfer_endTime = GetTimeStamp();
         duration = xfer_startTime-xfer_endTime;
+        fprintf(stdout, "thread %d duration: %0.4lf\n", id,duration);
         /****************is_straggler******************/
         if(duration > threshold && !isStraggler){
             times_over_threshold++;
