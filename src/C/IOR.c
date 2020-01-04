@@ -3039,7 +3039,8 @@ ec_collective_thread(ec_read_thread_args *arg)
     double duration = 0;
     double times_over_threshold = 0;
     double times_below_threshold = 0;
-    double threshold = 0.03;
+    double threshold = 0.02;
+    //double lower_threshold = 0.01;
     startTime = GetTimeStamp();
     
 
@@ -3047,7 +3048,7 @@ ec_collective_thread(ec_read_thread_args *arg)
     {
         offset = offsetArray[pairCnt];
         offset = offset / arg->test->ec_k;
-        xfer_startTime = GetTimeStamp();
+        xfer_startTime = GetTimeStamp()-startTime;
         if (id < k)
         {
             transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], (arg->ec_data)[id], arg->test->ec_stripe_size, arg->test, offset);
@@ -3056,7 +3057,7 @@ ec_collective_thread(ec_read_thread_args *arg)
         {
             transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], (arg->ec_coding)[id - k], arg->test->ec_stripe_size, arg->test, offset);
         }
-        xfer_endTime = GetTimeStamp();
+        xfer_endTime = GetTimeStamp()-startTime;
         duration = xfer_endTime- xfer_startTime;
         if(id==5){
             //fprintf(stdout, "thread %d duration: %0.4lf\n", id,duration);
@@ -3067,13 +3068,19 @@ ec_collective_thread(ec_read_thread_args *arg)
             times_over_threshold++;
         }else if(duration <threshold && isStraggler){
             times_below_threshold++;
+        }else if(duration <= threshold && !isStraggler){
+            times_over_threshold = 0;
+        }else if(duration >= threshold && !isStraggler){
+            times_below_threshold = 0;
         }
+        
+        
         if(times_over_threshold>=10){
             isStraggler = 1;
             times_over_threshold = 0;
             fprintf(stdout, "thread %d into straggler state\n",id);
         }
-        if(times_below_threshold>=50){
+        if(times_below_threshold>=10){
 
             isStraggler = 0;
             times_below_threshold = 0;
