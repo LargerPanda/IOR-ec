@@ -83,7 +83,7 @@
 #include <omp.h>
 #include <sys/types.h>
 #include <assert.h>
-#include <linux/list.h>
+#include "mylist.h"
 #ifndef _WIN32
 #   include <sys/time.h>                              /* gettimeofday() */
 #   include <sys/utsname.h>                           /* uname() */
