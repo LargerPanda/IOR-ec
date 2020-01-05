@@ -83,6 +83,7 @@
 #include <omp.h>
 #include <sys/types.h>
 #include <assert.h>
+#include <linux/list.h>
 #ifndef _WIN32
 #   include <sys/time.h>                              /* gettimeofday() */
 #   include <sys/utsname.h>                           /* uname() */
@@ -2947,13 +2948,25 @@ int *dataLeft;
 volatile int numTransferred;
 pthread_mutex_t lockOfNT = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t lockOfDecodeSum = PTHREAD_MUTEX_INITIALIZER;
+int decode_sum = 0;
+pthread_mutex_t lockOfHasStraggler = PTHREAD_MUTEX_INITIALIZER;
+volatile int hasStraggler;
+pthread_mutex_t lockOfRCListHead = PTHREAD_MUTEX_INITIALIZER;
 int hitStonewall;
 char ***omp_data;
 char ***omp_coding;
 int omp_thread_num = 8;
 ec_decode_thread_args ec_decode_arg;
-int decode_sum = 0;
 int decode_res = 0;
+
+LIST_HEAD(rcListHead);
+
+typedef struct rcBlock{
+    struct list_head list; //linux list head structure
+    IOR_offset_t start;
+    IOR_offset_t end;
+}rcBlock;
+
 /*****************thread parameters****************/
 
 
@@ -3012,8 +3025,6 @@ ec_read_thread(ec_read_thread_args* arg)
     ec_timers[id] += endTime - startTime;
 }
 
-
-
 void *
 ec_collective_thread(ec_read_thread_args *arg)
 {
@@ -3027,7 +3038,7 @@ ec_collective_thread(ec_read_thread_args *arg)
     IOR_offset_t offset;
     int num_reconstruct = (arg->test->blockSize / arg->test->transferSize) * arg->test->segmentCount;
     dataLeft[id] = num_reconstruct;
-    int pairCnt = 0;
+    IOR_offset_t pairCnt = 0;
     double startTime = 0;
     double endTime = 0;
 
@@ -3044,18 +3055,73 @@ ec_collective_thread(ec_read_thread_args *arg)
     double lower_threshold = 0.01;
     startTime = GetTimeStamp();
     
-
     while ((offsetArray[pairCnt] != -1) && !hitStonewall)
     {
         offset = offsetArray[pairCnt];
         offset = offset / arg->test->ec_k;
-        xfer_startTime = GetTimeStamp()-startTime;
+        
+        /*****************collective oeration*********************/
+        /****************is_straggler******************/
+        if (duration > upper_threshold && !isStraggler)
+        { //不是straggler，等待进入
+            times_over_threshold++;
+        }
+        else if (duration < lower_threshold && isStraggler)
+        { //是straggler，等待退出
+            times_below_threshold++;
+        }
+        else if (duration <= lower_threshold && !isStraggler)
+        { //不是straggler，进入状态清零
+            times_over_threshold = 0;
+        }
+        else if (duration >= upper_threshold && isStraggler)
+        { //是straggler，退出状态清零
+            times_below_threshold = 0;
+        }
+
+        if (times_over_threshold >= 10)
+        {
+            isStraggler = 1;
+            times_over_threshold = 0;
+            fprintf(stdout, "thread %d into straggler, offset: %ll\n", id, pairCnt);
+        }
+        if (times_below_threshold >= 5)
+        {
+            isStraggler = 0;
+            times_below_threshold = 0;
+            fprintf(stdout, "thread %d quit straggler, offset: %ll\n", id, pairCnt);
+        }
+        /****************is_straggler******************/
+
+        // pthread_mutex_lock(&lockOfHasStraggler);
+        // if(isOriginReader && isStraggler && !hasStraggler){//是k个stripe的reader，处于straggler状态，当前系统没有straggler
+        //     hasStraggler = 1;
+        //     pthread_mutex_unlock(&lockOfHasStraggler);
+
+        //     rcBlock tempBlock;
+        //     tempBlock.start = pairCnt;
+
+        //     pthread_mutex_lock(&lockOfRCListHead)
+        //     if(list_empty(&rcListHead)){
+        //         /***compute for own****/
+                
+        //         /*******/
+        //     }
+        //     pthread_mutex_unlock(&lockOfRCListHead)
+        // }else{
+        //     pthread_mutex_unlock(&lockOfHasStraggler)
+        // }
+        
+        /*****************collective oeration*********************/
+
         if (id < k)
         {
+            xfer_startTime = GetTimeStamp()-startTime;
             transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], (arg->ec_data)[id], arg->test->ec_stripe_size, arg->test, offset);
         }
         else
         {
+            xfer_startTime = GetTimeStamp() - startTime;
             transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], (arg->ec_coding)[id - k], arg->test->ec_stripe_size, arg->test, offset);
         }
         xfer_endTime = GetTimeStamp()-startTime;
@@ -3064,30 +3130,7 @@ ec_collective_thread(ec_read_thread_args *arg)
             //fprintf(stdout, "thread %d duration: %0.4lf\n", id,duration);
         }
         
-        /****************is_straggler******************/
-        if(duration > upper_threshold && !isStraggler){ //不是straggler，等待进入
-            times_over_threshold++;
-        }else if(duration < lower_threshold && isStraggler){//是straggler，等待退出
-            times_below_threshold++;
-        }else if(duration <= lower_threshold && !isStraggler){//不是straggler，进入状态清零
-            times_over_threshold = 0;
-        }else if(duration >= upper_threshold && isStraggler){//是straggler，退出状态清零
-            times_below_threshold = 0;
-        }
         
-        
-        if(times_over_threshold>=10){
-            isStraggler = 1;
-            times_over_threshold = 0;
-            fprintf(stdout, "thread %d into straggler state\n",id);
-        }
-        if(times_below_threshold>=5){
-
-            isStraggler = 0;
-            times_below_threshold = 0;
-            fprintf(stdout, "thread %d quit straggler state\n",id);
-        }
-        /****************is_straggler******************/
         pairCnt++;
         dataLeft[id]--;
     }
