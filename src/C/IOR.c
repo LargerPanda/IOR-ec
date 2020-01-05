@@ -3083,13 +3083,13 @@ ec_collective_thread(ec_read_thread_args *arg)
         {
             isStraggler = 1;
             times_over_threshold = 0;
-            fprintf(stdout, "thread %d into straggler, offset: %ll\n", id, pairCnt);
+            fprintf(stdout, "thread %d into straggler, offset: %lld\n", id, pairCnt);
         }
         if (times_below_threshold >= 5)
         {
             isStraggler = 0;
             times_below_threshold = 0;
-            fprintf(stdout, "thread %d quit straggler, offset: %ll\n", id, pairCnt);
+            fprintf(stdout, "thread %d quit straggler, offset: %lld\n", id, pairCnt);
         }
         /****************is_straggler******************/
 
