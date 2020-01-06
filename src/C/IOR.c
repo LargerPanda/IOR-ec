@@ -3161,6 +3161,9 @@ ec_collective_thread(ec_read_thread_args *arg)
                 hasStraggler = 0;
                 pthread_mutex_unlock(&lock_hasStraggler);
             }
+            pthread_mutex_lock(&lock_strategyIsReady);
+            strategyIsReady = 0;
+            pthread_mutex_unlock(&lock_strategyIsReady);
             fprintf(stdout, "thread %d quit straggler, offset: %lld\n", id, pairCnt);
         }
         /****************is_straggler******************/
@@ -3204,11 +3207,11 @@ ec_collective_thread(ec_read_thread_args *arg)
                     strategyIsReady = 1;
                     fprintf(stdout, "thread %d broadcast strategy\n", id);
                     pthread_cond_broadcast(&strategyReady);
-                    pthread_mutex_unlock(&lock_strategyIsReady);
-                    hasStraggler = 0;
-                    pthread_mutex_lock(&lock_strategyIsReady);
-                    strategyIsReady = 0;
-                    pthread_mutex_unlock(&lock_strategyIsReady);
+                    // pthread_mutex_unlock(&lock_strategyIsReady);
+                    // hasStraggler = 0;
+                    // pthread_mutex_lock(&lock_strategyIsReady);
+                    // strategyIsReady = 0;
+                    // pthread_mutex_unlock(&lock_strategyIsReady);
                     //fprintf(stdout, "not enough data to recompute, try to read parity stripes\n");
                 }else{
                     pthread_mutex_lock(&lock_strategyIsReady);
@@ -3222,9 +3225,6 @@ ec_collective_thread(ec_read_thread_args *arg)
                     pthread_cond_broadcast(&strategyReady);
                     pthread_mutex_unlock(&lock_strategyIsReady);
                     
-                    pthread_mutex_lock(&lock_strategyIsReady);
-                    strategyIsReady = 0;
-                    pthread_mutex_unlock(&lock_strategyIsReady);
                     /***decode***/
                     int j;
                     if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
