@@ -2994,8 +2994,8 @@ IOR_offset_t max_offset_of_stripes(int n, int m){
 
 IOR_offset_t kth_large_offset_of_stripes(int n, int k){
     //n个stripe中，第k大的数
-    IOR_offset_t *A;
-    memcpy(A,currentPosOfThread,sizeof(IOR_offset_t)*n);
+    IOR_offset_t *A = (IOR_offset_t*)malloc(sizeof(IOR_offset_t)*n);
+    memcpy(A, currentPosOfThread,sizeof(IOR_offset_t)*n);
     
     int i,j,temp;
     for(i=0;i<(n-1);i++){
