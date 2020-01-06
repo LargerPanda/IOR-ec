@@ -3330,9 +3330,9 @@ ec_collective_thread(ec_read_thread_args *arg)
                     struct timeval now;
                     struct timespec outtime;
                     int ret;
-                    outtime.tv_sec = now.tv_sec + 10;
-                    outtime.tv_nsec = now.tv_usec * 1000;
-                    gettimeofday(&now, NULL);
+                    outtime.tv_sec = time(NULL) + 10;
+                    outtime.tv_nsec = 0;
+                    //gettimeofday(&now, NULL);
 
                     pthread_mutex_lock(&lock_firstStraggler);
                     //while(firstStraggler){
