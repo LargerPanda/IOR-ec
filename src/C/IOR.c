@@ -3156,6 +3156,11 @@ ec_collective_thread(ec_read_thread_args *arg)
         {
             isStraggler = 0;
             times_below_threshold = 0;
+            if(currentStragger == id){
+                pthread_mutex_lock(&lock_hasStraggler);
+                hasStraggler = 0;
+                pthread_mutex_unlock(&lock_hasStraggler);
+            }
             fprintf(stdout, "thread %d quit straggler, offset: %lld\n", id, pairCnt);
         }
         /****************is_straggler******************/
@@ -3216,7 +3221,7 @@ ec_collective_thread(ec_read_thread_args *arg)
                     fprintf(stdout, "thread %d is going to recompute from %lld to %lld\n", id, comput_start_offset,comput_end_offset);
                     pthread_cond_broadcast(&strategyReady);
                     pthread_mutex_unlock(&lock_strategyIsReady);
-                    hasStraggler = 0;
+                    
                     pthread_mutex_lock(&lock_strategyIsReady);
                     strategyIsReady = 0;
                     pthread_mutex_unlock(&lock_strategyIsReady);
@@ -3259,6 +3264,7 @@ ec_collective_thread(ec_read_thread_args *arg)
             
                     fprintf(stdout,"RE-COMPUTE: thread id %d 's pairCnt change from %lld to %lld\n", id, pairCnt, next_pairCnt);
                     pairCnt = next_pairCnt;
+                    currentPosOfThread[id] = pairCnt;
                     continue;
                 }
                 
@@ -3289,6 +3295,7 @@ ec_collective_thread(ec_read_thread_args *arg)
                 if(next_pairCnt > pairCnt){
                     fprintf(stdout,"SLOW: thread %d 's pairCnt change from %lld to %lld\n", id, pairCnt, next_pairCnt);
                     pairCnt = next_pairCnt;
+                    currentPosOfThread[id] = pairCnt;
                     continue;
                 }                
 
@@ -3317,6 +3324,7 @@ ec_collective_thread(ec_read_thread_args *arg)
 
                 fprintf(stdout, "parity thread %d's pairCnt change from %lld to %lld\n", id, pairCnt, next_pairCnt);
                 pairCnt = next_pairCnt;
+                currentPosOfThread[id] = pairCnt;
                 continue;
             }else if(hasStraggler){
                 pthread_mutex_unlock(&lock_hasStraggler);
@@ -3333,6 +3341,7 @@ ec_collective_thread(ec_read_thread_args *arg)
                 {
                     fprintf(stdout, "SLOW: parity thread %d 's pairCnt change from %lld to %lld\n", id, pairCnt, next_pairCnt);
                     pairCnt = next_pairCnt;
+                    currentPosOfThread[id] = pairCnt;
                     continue;
                 }
             }else{
@@ -3373,6 +3382,7 @@ ec_collective_thread(ec_read_thread_args *arg)
                     {
                         fprintf(stdout, "SLOW: parity thread %d 's pairCnt change from %lld to %lld\n", id, pairCnt, next_pairCnt);
                         pairCnt = next_pairCnt;
+                        currentPosOfThread[id] = pairCnt;
                         continue;
                     }
                 }
