@@ -3177,8 +3177,8 @@ ec_collective_thread(ec_read_thread_args *arg)
                 
                 fprintf(stdout,"thread %d become straggler!\n",id);
                 int z;
-                for(z=0;z<(k+m-1);z++){
-                    fprintf(stdout, "thread %d's current position: %lld\n", id, currentPosOfThread[z]);
+                for(z=0;z<(k+m);z++){
+                    fprintf(stdout, "thread %d's current position: %lld\n", z, currentPosOfThread[z]);
                 }
                 pthread_cond_broadcast(&cond_hasStraggler);
                 pthread_mutex_unlock(&lock_hasStraggler);
