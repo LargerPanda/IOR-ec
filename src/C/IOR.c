@@ -3171,6 +3171,7 @@ ec_collective_thread(ec_read_thread_args *arg)
                 pthread_mutex_lock(&lock_firstStraggler);//active parity
                 if(firstStraggler){
                     firstStraggler = 0;
+                    fprintf(stdout,"thread %d try to active parity read!\n",id);
                     pthread_cond_broadcast(&active_parity);
                 }
                 pthread_mutex_unlock(&lock_firstStraggler);
@@ -3347,6 +3348,8 @@ ec_collective_thread(ec_read_thread_args *arg)
                         firstStraggler = 0;
                         pthread_mutex_unlock(&lock_firstStraggler);
                         break;
+                    }else{
+                        fprintf(stdout, "parith thread %d gets the first straggler\n", id);
                     }
                     //}
                     pthread_mutex_unlock(&lock_firstStraggler);
