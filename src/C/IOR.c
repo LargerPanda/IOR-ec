@@ -3247,7 +3247,7 @@ ec_collective_thread(ec_read_thread_args *arg)
             
                     fprintf(stdout,"RE-COMPUTE: thread id %d 's pairCnt change from %lld to %lld\n", id, pairCnt, next_pairCnt);
                     pairCnt = next_pairCnt;
-                    goto End;
+                    continue;
                 }
                 
                 /******prepare strategy*******/
@@ -3275,6 +3275,7 @@ ec_collective_thread(ec_read_thread_args *arg)
                 if(next_pairCnt > pairCnt){
                     fprintf(stdout,"SLOW: thread %d 's pairCnt change from %lld to %lld\n", id, pairCnt, next_pairCnt);
                     pairCnt = next_pairCnt;
+                    continue;
                 }                
 
             }else{
@@ -3302,7 +3303,7 @@ ec_collective_thread(ec_read_thread_args *arg)
 
                 fprintf(stdout, "parity thread %d's pairCnt change from %lld to %lld\n", id, pairCnt, next_pairCnt);
                 pairCnt = next_pairCnt;
-                goto End;
+                continue;
             }else if(hasStraggler){
                 pthread_mutex_unlock(&lock_hasStraggler);
                 /*wait for straggler thread making strategy*/
@@ -3318,10 +3319,11 @@ ec_collective_thread(ec_read_thread_args *arg)
                 {
                     fprintf(stdout, "SLOW: parity thread %d 's pairCnt change from %lld to %lld\n", id, pairCnt, next_pairCnt);
                     pairCnt = next_pairCnt;
+                    continue;
                 }
             }else{
                 pthread_mutex_unlock(&lock_hasStraggler);
-                
+
                 if(firstStraggler){
                     pthread_mutex_lock(&lock_firstStraggler);
                     while(firstStraggler){
@@ -3342,6 +3344,7 @@ ec_collective_thread(ec_read_thread_args *arg)
                     {
                         fprintf(stdout, "SLOW: parity thread %d 's pairCnt change from %lld to %lld\n", id, pairCnt, next_pairCnt);
                         pairCnt = next_pairCnt;
+                        continue;
                     }
                 }
 
@@ -3371,7 +3374,6 @@ ec_collective_thread(ec_read_thread_args *arg)
         }
         
         // dataLeft[id]--;
-    End:
     }
     //fprintf(stdout, "reading file%d complete, size: %lld\n", id, transferred_size);
 
