@@ -3372,7 +3372,7 @@ ec_collective_thread(ec_read_thread_args *arg)
         xfer_endTime = GetTimeStamp()-startTime;
         duration = xfer_endTime- xfer_startTime;
         if(id==5){
-            fprintf(stdout, "thread %d duration: %0.4lf\n pairCnt = %lld", id,duration,pairCnt);
+            fprintf(stdout, "thread %d duration: %0.4lf pairCnt = %lld\n", id,duration,pairCnt);
         }
         
         // dataLeft[id]--;
