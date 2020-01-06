@@ -3327,11 +3327,23 @@ ec_collective_thread(ec_read_thread_args *arg)
                 pthread_mutex_unlock(&lock_hasStraggler);
 
                 if(firstStraggler){
+                    struct timeval now;
+                    struct timespec outtime;
+                    int ret;
+                    outtime.tv_sec = now.tv_sec + 10;
+                    outtime.tv_nsec = now.tv_usec * 1000;
+                    gettimeofday(&now, NULL);
+
                     pthread_mutex_lock(&lock_firstStraggler);
-                    while(firstStraggler){
-                        fprintf(stdout, "parity thread %d is waiting for first straggler\n", id);
-                        pthread_cond_wait(&active_parity, &lock_firstStraggler);
+                    //while(firstStraggler){
+                    fprintf(stdout, "parity thread %d is waiting for first straggler\n", id);
+                    ret = pthread_cond_timedwait(&active_parity, &lock_firstStraggler, &outtime);
+                    if(ret!=0){
+                        fprintf(stdout, "parith thread %d don't wait anymore\n", id);
+                        firstStraggler = 0;
+                        break;
                     }
+                    //}
                     pthread_mutex_unlock(&lock_firstStraggler);
                     
                     pthread_mutex_lock(&lock_strategyIsReady);
