@@ -3239,11 +3239,11 @@ ec_collective_thread(ec_read_thread_args *arg)
                     }
                     pthread_mutex_unlock(&lock_hasStraggler);
                     fprintf(stdout, "thread %d meet thread %d straggler\n", id, currentStragger);
-                    pthread_mutex_lock(&lock_strategyReady);
+                    pthread_mutex_lock(&lock_strategyIsReady);
                     while (!strategyIsReady){
-                        pthread_cond_wait(&strategyReady, &lock_strategyReady);
+                        pthread_cond_wait(&strategyReady, &lock_strategyIsReady);
                     }
-                    pthread_mutex_unlock(&lock_strategyReady);
+                    pthread_mutex_unlock(&lock_strategyIsReady);
             
                     fprintf(stdout,"RE-COMPUTE: thread id %d 's pairCnt change from %lld to %lld\n", id, pairCnt, next_pairCnt);
                     pairCnt = next_pairCnt;
