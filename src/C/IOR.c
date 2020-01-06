@@ -3615,7 +3615,7 @@ WriteOrRead_ec(IOR_param_t *test,
         //fprintf(stdout, "break at 2963\n");
         for (i = 0; i < k; i++)
         {
-            sampe_data[i] = buffer + (i * ec_blocksize);
+            sample_data[i] = buffer + (i * ec_blocksize);
         }
 
         switch (method)
