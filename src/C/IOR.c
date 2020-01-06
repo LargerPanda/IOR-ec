@@ -2949,17 +2949,77 @@ volatile int numTransferred;
 pthread_mutex_t lockOfNT = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t lockOfDecodeSum = PTHREAD_MUTEX_INITIALIZER;
 int decode_sum = 0;
-pthread_mutex_t lockOfHasStraggler = PTHREAD_MUTEX_INITIALIZER;
+
+/*********for collecitve thread*********/
+pthread_mutex_t lock_hasStraggler = PTHREAD_MUTEX_INITIALIZER;
 volatile int hasStraggler;
-pthread_mutex_t lockOfRCListHead = PTHREAD_MUTEX_INITIALIZER;
+volatile int currentStragger;
+pthread_mutex_t lock_firstStraggler = PTHREAD_MUTEX_INITIALIZER;
+volatile int firstStraggler = 1;
+pthread_mutex_t lock_rcListHead = PTHREAD_MUTEX_INITIALIZER;
+LIST_HEAD(rcListHead);
+pthread_mutex_t lock_strategyIsReady  =PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t strategyReady = PTHREAD_COND_INITIALIZER;
+pthread_cond_t cond_hasStraggler = PTHREAD_COND_INITIALIZER;
+pthread_cond_t active_parity = PTHREAD_COND_INITIALIZER;
+int strategyIsReady;
+IOR_offset_t *currentPosOfThread;
+IOR_offset_t next_pairCnt;
+
+char **sample_data = NULL;
+char **sample_coding = NULL;
+int *sample_matrix = NULL;
+int *sample_bitmatrix = NULL;
+int **sample_schedule = NULL;
+
+IOR_offset_t min_offset_of_stripes(int n, int m){
+    //min offset of stripes from n to m
+    int i;
+    IOR_offset_t res = currentPosOfThread[n];
+    for(i=n+1; i<=m;i++){
+        res = MIN(res,currentPosOfThread[n]);
+    }
+    return res;
+}
+
+IOR_offset_t max_offset_of_stripes(int n, int m){
+    int i;
+    IOR_offset_t res = currentPosOfThread[n];
+    for(i=n+1; i<=m;i++){
+        res = MAX(res,currentPosOfThread[n]);
+    }
+    return res;
+}
+
+IOR_offset_t kth_large_offset_of_stripes(int n, int k){
+    //n个stripe中，第k大的数
+    IOR_offset_t *A;
+    memcpy(A,currentPosOfThread,sizeof(IOR_offset_t)*n);
+    
+    int i,j,temp;
+    for(i=0;i<(n-1);i++){
+        for(j=i;j<(n-1);j++){
+            if(A[i]<A[j]){
+                temp = A[i];
+                A[i] = A[j];
+                A[j] = temp;
+            }
+        }
+        if(i==(k-1)){
+            return A[i];
+        }
+    }
+}
+/*********for collecitve thread*********/
+
 int hitStonewall;
 char ***omp_data;
 char ***omp_coding;
 int omp_thread_num = 8;
 ec_decode_thread_args ec_decode_arg;
 int decode_res = 0;
+int sample_erasures[] = [0,1,-1];
 
-LIST_HEAD(rcListHead);
 
 typedef struct rcBlock{
     struct list_head list; //linux list head structure
@@ -3030,12 +3090,17 @@ ec_collective_thread(ec_read_thread_args *arg)
 {
     int id = arg->id;
     int k = arg->test->ec_k;
+    int m = arg->test->ec_m;
+    enum Coding_Technique method = arg->test->ec_method;
+    IOR_offset_t ec_blocksize = arg->test->ec_stripe_size;
+    int ec_packetsize = arg->test->ec_packetsize;
     //void *fd = arg->fds->fd[id];
     //fprintf(stdout,"reading file%...\n",id);
 
     IOR_offset_t transferred_size = 0;
     IOR_offset_t *offsetArray = arg->offSetArray;
     IOR_offset_t offset;
+
     int num_reconstruct = (arg->test->blockSize / arg->test->transferSize) * arg->test->segmentCount;
     dataLeft[id] = num_reconstruct;
     IOR_offset_t pairCnt = 0;
@@ -3093,24 +3158,195 @@ ec_collective_thread(ec_read_thread_args *arg)
         }
         /****************is_straggler******************/
 
-        // pthread_mutex_lock(&lockOfHasStraggler);
-        // if(isOriginReader && isStraggler && !hasStraggler){//是k个stripe的reader，处于straggler状态，当前系统没有straggler
-        //     hasStraggler = 1;
-        //     pthread_mutex_unlock(&lockOfHasStraggler);
+        /*****************collective oeration*********************/
+        if(id < k){
+            pthread_mutex_lock(&lock_hasStraggler);
+            if(isStraggler && !hasStraggler){
 
-        //     rcBlock tempBlock;
-        //     tempBlock.start = pairCnt;
+                hasStraggler = 1;//thread id will be the straggler
+                currentStragger = id;
 
-        //     pthread_mutex_lock(&lockOfRCListHead)
-        //     if(list_empty(&rcListHead)){
-        //         /***compute for own****/
+                pthread_mutex_lock(&lock_firstStraggler);//active parity
+                if(firstStraggler){
+                    firstStraggler = 0;
+                    pthread_cond_broadcast(&active_parity);
+                }
+                pthread_mutex_unlock(&lock_firstStraggler);
                 
-        //         /*******/
-        //     }
-        //     pthread_mutex_unlock(&lockOfRCListHead)
-        // }else{
-        //     pthread_mutex_unlock(&lockOfHasStraggler)
-        // }
+                fprintf(stdout,"thread %d become straggler!\n",id);
+                pthread_cond_broadcast(&cond_hasStraggler);
+                pthread_mutex_unlock(&lock_hasStraggler);
+                
+                /******prepare strategy*******/
+                IOR_offset_t comput_start_offset = min_offset_of_stripes(0,k-1);
+                IOR_offset_t comput_end_offset;
+                if(comput_start_offset >= max_offset_of_stripes(k,k+m-1)){
+                    //continue to read
+                    //try to read parity stripes
+                    pthread_mutex_lock(&lock_strategyIsReady);
+                    next_pairCnt = kth_large_offset_of_stripes(k + m, k);
+                    strategyIsReady = 1;
+                    pthread_cond_broadcast(&strategyReady);
+                    pthread_mutex_unlock(&lock_strategyIsReady);
+                    hasStraggler = 0;
+                    pthread_mutex_lock(&lock_strategyIsReady);
+                    strategyIsReady = 0;
+                    pthread_mutex_unlock(&lock_strategyIsReady);
+                    fprintf(stdout, "not enough data to recompute, try to parity stripes\n");
+                }else{
+                    pthread_mutex_lock(&lock_strategyIsReady);
+                    /*********compute********/
+                    comput_end_offset = kth_large_offset_of_stripes(k+m, k);
+                    IOR_offset_t count = comput_end_offset-comput_start_offset;
+                    next_pairCnt = comput_end_offset;
+                    /*********compute********/
+                    strategyIsReady = 1;
+                    fprintf(stdout, "thread %d is going to recompute from %lld to %lld\n", id, comput_start_offset,comput_end_offset);
+                    pthread_cond_broadcast(&strategyReady);
+                    pthread_mutex_unlock(&lock_strategyIsReady);
+                    hasStraggler = 0;
+                    pthread_mutex_lock(&lock_strategyIsReady);
+                    strategyIsReady = 0;
+                    pthread_mutex_unlock(&lock_strategyIsReady);
+                    /***decode***/
+                    int j;
+                    if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
+                    {
+                        for (j = 0; j < count; j++)
+                        {
+                            //decode_startTime = GetTimeStamp();
+                            jerasure_matrix_decode(k, m, w, sample_matrix, 1, sample_erasures, sample_data, sample_coding, ec_blocksize);
+                            //decode_endTime = GetTimeStamp();
+                            //fprintf(stdout,"time = %lf\n",decode_endTime-decode_startTime);
+                        }
+                    }
+                    else if (method == Cauchy_Orig || method == Cauchy_Good || method == Liberation || method == Blaum_Roth || method == Liber8tion)
+                    {
+                        for (j = 0; j < count; j++)
+                        {
+                            //decode_startTime = GetTimeStamp();
+                            jerasure_schedule_decode_lazy(k, m, w, sample_bitmatrix, sample_erasures, sample_data, sample_coding, ec_blocksize, ec_packetsize, 1);
+                            //decode_endTime = GetTimeStamp();
+                            //fprintf(stdout,"time = %lf\n",decode_endTime-decode_startTime);
+                        }
+                    }
+                    fprintf(stdout, "thread %d decode complete, current ready offset: %lld\n", id, comput_end_offset);
+                    /***decode***/
+
+                    pthread_mutex_lock(&lock_hasStraggler);
+                    while(!hasStraggler){
+                        pthread_cond_wait(&cond_hasStraggler,&lock_hasStraggler);
+                    }
+                    pthread_mutex_unlock(&lock_hasStraggler);
+                    fprintf(stdout, "thread %d meet thread %d straggler\n", id, currentStragger);
+                    pthread_mutex_lock(&lock_strategyReady);
+                    while (!strategyIsReady){
+                        pthread_cond_wait(&strategyReady, &lock_strategyReady);
+                    }
+                    pthread_mutex_unlock(&lock_strategyReady);
+            
+                    fprintf(stdout,"RE-COMPUTE: thread id %d 's pairCnt change from %lld to %lld\n", id, pairCnt, next_pairCnt);
+                    pairCnt = next_pairCnt;
+                    goto End;
+                }
+                
+                /******prepare strategy*******/
+                // if(min(0-(k-1))>max(k,k+m-1)){
+                //     continue to read;
+                //     notify id >=k read at paircount;
+                //     readyOffset = min(0-k);
+                // }else{
+                //     compute();
+                //     everyone read at kth large of (0-(k+m-1));
+
+                // }
+                // next_read = the kth large of (0-(k+m-1));
+            }else if(hasStraggler){
+                //another thread is straggler, just read no matter is straggler or not
+                pthread_mutex_unlock(&lock_hasStraggler);
+                /*wait for straggler thread making strategy*/
+                pthread_mutex_lock(&lock_strategyReady);
+                while(!strategyIsReady){
+                    pthread_cond_wait(&strategyReady,&lock_strategyReady);
+                }
+                fprintf(stdout,"thread %d gets the strategy of thread %d\n", id, currentStragger);    
+                pthread_mutex_unlock(&lock_strategyReady);
+
+                if(next_pairCnt > pairCnt){
+                    fprintf(stdout,"SLOW: thread %d 's pairCnt change from %lld to %lld\n", id, pairCnt, next_pairCnt);
+                    pairCnt = next_pairCnt;
+                }                
+
+            }else{
+                //is not straggler && do not has straggler, just read
+                pthread_mutex_unlock(&lock_hasStraggler);
+            }
+            
+        }else{//id>=k
+            //logic of parity stripes
+            pthread_mutex_lock(&lock_hasStraggler);
+            if(isStraggler && !hasStraggler){
+                fprintf(stdout, "dismiss parity thread %d's straggler and stop I/O\n", id);
+                while (!hasStraggler)
+                {
+                    pthread_cond_wait(&cond_hasStraggler, &lock_hasStraggler);
+                }
+                pthread_mutex_unlock(&lock_hasStraggler);
+                fprintf(stdout, "parity thread %d meet thread %d straggler\n", id, currentStragger);
+                pthread_mutex_lock(&lock_strategyReady);
+                while (!strategyIsReady)
+                {
+                    pthread_cond_wait(&strategyReady, &lock_strategyReady);
+                }
+                pthread_mutex_unlock(&lock_strategyReady);
+
+                fprintf(stdout, "parity thread %d's pairCnt change from %lld to %lld\n", id, pairCnt, next_pairCnt);
+                pairCnt = next_pairCnt;
+                goto End;
+            }else if(hasStraggler){
+                pthread_mutex_unlock(&lock_hasStraggler);
+                /*wait for straggler thread making strategy*/
+                pthread_mutex_lock(&lock_strategyReady);
+                while (!strategyIsReady)
+                {
+                    pthread_cond_wait(&strategyReady, &lock_strategyReady);
+                }
+                fprintf(stdout, "parith thread %d gets the strategy of thread %d\n", id, currentStragger);
+                pthread_mutex_unlock(&lock_strategyReady);
+
+                if (next_pairCnt > pairCnt)
+                {
+                    fprintf(stdout, "SLOW: parity thread %d 's pairCnt change from %lld to %lld\n", id, pairCnt, next_pairCnt);
+                    pairCnt = next_pairCnt;
+                }
+            }else{
+                pthread_mutex_unlock(&lock_hasStraggler);
+                
+                if(firstStraggler){
+                    pthread_mutex_lock(&lock_firstStraggler);
+                    while(firstStraggler){
+                        fprintf(stdout, "parity thread %d is waiting for first straggler\n", id);
+                        pthread_cond_wait(&active_parity, &lock_firstStraggler);
+                    }
+                    pthread_mutex_unlock(&lock_firstStraggler);
+                    
+                    pthread_mutex_lock(&lock_strategyReady);
+                    while (!strategyIsReady)
+                    {
+                        pthread_cond_wait(&strategyReady, &lock_strategyReady);
+                    }
+                    fprintf(stdout, "parith thread %d gets the strategy of thread %d\n", id, currentStragger);
+                    pthread_mutex_unlock(&lock_strategyReady);
+
+                    if (next_pairCnt > pairCnt)
+                    {
+                        fprintf(stdout, "SLOW: parity thread %d 's pairCnt change from %lld to %lld\n", id, pairCnt, next_pairCnt);
+                        pairCnt = next_pairCnt;
+                    }
+                }
+
+            }
+        }
         
         /*****************collective oeration*********************/
 
@@ -3118,11 +3354,15 @@ ec_collective_thread(ec_read_thread_args *arg)
         {
             xfer_startTime = GetTimeStamp()-startTime;
             transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], (arg->ec_data)[id], arg->test->ec_stripe_size, arg->test, offset);
+            pairCnt++;
+            currentPosOfThread[id]++;
         }
         else
         {
             xfer_startTime = GetTimeStamp() - startTime;
             transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], (arg->ec_coding)[id - k], arg->test->ec_stripe_size, arg->test, offset);
+            pairCnt++;
+            currentPosOfThread[id]++;
         }
         xfer_endTime = GetTimeStamp()-startTime;
         duration = xfer_endTime- xfer_startTime;
@@ -3130,16 +3370,15 @@ ec_collective_thread(ec_read_thread_args *arg)
             //fprintf(stdout, "thread %d duration: %0.4lf\n", id,duration);
         }
         
-        
-        pairCnt++;
-        dataLeft[id]--;
+        // dataLeft[id]--;
+    End:
     }
     //fprintf(stdout, "reading file%d complete, size: %lld\n", id, transferred_size);
 
-    pthread_mutex_lock(&lockOfNT);
-    tranferDone[id] = 1;
-    numTransferred += 1;
-    pthread_mutex_unlock(&lockOfNT);
+    // pthread_mutex_lock(&lockOfNT);
+    // tranferDone[id] = 1;
+    // numTransferred += 1;
+    // pthread_mutex_unlock(&lockOfNT);
     endTime = GetTimeStamp();
     transferTime = endTime - startTime;
     ec_timers[id] += transferTime;
@@ -3324,6 +3563,90 @@ WriteOrRead_ec(IOR_param_t *test,
         fprintf(stdout, "break 2998\n"); 
     }else if(access == READ){
 
+        /******prepare sample_data & sample_coding********/
+        sample_data = (char **)malloc(sizeof(char *) * k);
+        sample_coding = (char **)malloc(sizeof(char *) * m);
+        for (i = 0; i < m; i++)
+        {
+            sample_coding[i] = (char *)malloc(sizeof(char) * test->ec_stripe_size);
+            if (sample_coding[i] == NULL)
+            {
+                ERR("malloc sample_coding fail");
+            }
+        }
+        //init matrix
+        switch (method)
+        {
+        case No_Coding:
+            break;
+        case Reed_Sol_Van:
+            sample_matrix = reed_sol_vandermonde_coding_matrix(k, m, w);
+            break;
+        case Reed_Sol_R6_Op:
+            break;
+        case Cauchy_Orig:
+            sample_matrix = cauchy_original_coding_matrix(k, m, w);
+            sample_bitmatrix = jerasure_matrix_to_bitmatrix(k, m, w, sample_matrix);
+            sample_schedule = jerasure_smart_bitmatrix_to_schedule(k, m, w, sample_bitmatrix);
+            break;
+        case Cauchy_Good:
+            sample_matrix = cauchy_good_general_coding_matrix(k, m, w);
+            sample_bitmatrix = jerasure_matrix_to_bitmatrix(k, m, w, sample_matrix);
+            sample_schedule = jerasure_smart_bitmatrix_to_schedule(k, m, w, sample_bitmatrix);
+            break;
+        case Liberation:
+            sample_bitmatrix = liberation_coding_bitmatrix(k, w);
+            sample_schedule = jerasure_smart_bitmatrix_to_schedule(k, m, w, sample_bitmatrix);
+            break;
+        case Blaum_Roth:
+            sample_bitmatrix = blaum_roth_coding_bitmatrix(k, w);
+            sample_schedule = jerasure_smart_bitmatrix_to_schedule(k, m, w, sample_bitmatrix);
+            break;
+        case Liber8tion:
+            sample_bitmatrix = liber8tion_coding_bitmatrix(k);
+            sample_schedule = jerasure_smart_bitmatrix_to_schedule(k, m, w, sample_bitmatrix);
+            break;
+        case RDP:
+        case EVENODD:
+            assert(0);
+        }
+        //fprintf(stdout, "break at 2963\n");
+        for (i = 0; i < k; i++)
+        {
+            sampe_data[i] = buffer + (i * ec_blocksize);
+        }
+
+        switch (method)
+        {
+        case No_Coding:
+            break;
+        case Reed_Sol_Van:
+            jerasure_matrix_encode(k, m, w, sample_matrix, sample_data, sample_coding, ec_blocksize);
+            break;
+        case Reed_Sol_R6_Op:
+            reed_sol_r6_encode(k, w, sample_data, sample_coding, ec_blocksize);
+            break;
+        case Cauchy_Orig:
+            jerasure_schedule_encode(k, m, w, sample_schedule, sample_data, sample_coding, ec_blocksize, ec_packetsize);
+            break;
+        case Cauchy_Good:
+            jerasure_schedule_encode(k, m, w, sample_schedule, sample_data, sample_coding, ec_blocksize, ec_packetsize);
+            break;
+        case Liberation:
+            jerasure_schedule_encode(k, m, w, sample_schedule, sample_data, sample_coding, ec_blocksize, ec_packetsize);
+            break;
+        case Blaum_Roth:
+            jerasure_schedule_encode(k, m, w, sample_schedule, sample_data, sample_coding, ec_blocksize, ec_packetsize);
+            break;
+        case Liber8tion:
+            jerasure_schedule_encode(k, m, w, sample_schedule, sample_data, sample_coding, ec_blocksize, ec_packetsize);
+            break;
+        case RDP:
+        case EVENODD:
+            assert(0);
+        }
+        /******prepare sample ec-data********/
+
         ec_startTime = GetTimeStamp();
 
         ec_timers = (double *)malloc(sizeof(double) * total_stripe_num);
@@ -3333,6 +3656,9 @@ WriteOrRead_ec(IOR_param_t *test,
         memset(tranferDone,0,sizeof(int) * total_stripe_num);
         dataLeft = (int *)malloc(sizeof(int) * total_stripe_num);
         memset(tranferDone, 0, sizeof(int) * total_stripe_num);
+
+        currentPosOfThread = (IOR_offset_t*)malloc(sizeof(IOR_offset_t)*total_stripe_num);
+        memset(currentPosOfThread,0,sizeof(IOR_offset_t)*total_stripe_num);
 
         ec_data = (char **)malloc(sizeof(char *) * k);
         ec_coding = (char **)malloc(sizeof(char *) * m);
@@ -3382,6 +3708,7 @@ WriteOrRead_ec(IOR_param_t *test,
             case Liber8tion:
                 ec_bitmatrix = liber8tion_coding_bitmatrix(k);
         }
+
 
         for (i = 0; i < total_stripe_num; i++)
         {
