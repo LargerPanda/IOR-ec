@@ -3185,21 +3185,26 @@ ec_collective_thread(ec_read_thread_args *arg)
                 pthread_mutex_unlock(&lock_hasStraggler);
                 
                 /******prepare strategy*******/
+                fprintf(stdout, "thread %d is preparing strategy\n", id);
                 IOR_offset_t comput_start_offset = min_offset_of_stripes(0,k-1);
+                fprintf(stdout, "compute_strat_offset = %lld\n", comput_start_offset);
                 IOR_offset_t comput_end_offset;
                 if(comput_start_offset >= max_offset_of_stripes(k,k+m-1)){
                     //continue to read
+                    fprintf(stdout, "not enough data to recompute\n");
                     //try to read parity stripes
                     pthread_mutex_lock(&lock_strategyIsReady);
                     next_pairCnt = kth_large_offset_of_stripes(k + m, k);
+                    fprintf(stdout, "thread has made strategy, next read offset: %lld\n", next_pairCnt);
                     strategyIsReady = 1;
+                    fprintf(stdout, "thread %d broadcast strategy\n", id);
                     pthread_cond_broadcast(&strategyReady);
                     pthread_mutex_unlock(&lock_strategyIsReady);
                     hasStraggler = 0;
                     pthread_mutex_lock(&lock_strategyIsReady);
                     strategyIsReady = 0;
                     pthread_mutex_unlock(&lock_strategyIsReady);
-                    fprintf(stdout, "not enough data to recompute, try to parity stripes\n");
+                    //fprintf(stdout, "not enough data to recompute, try to read parity stripes\n");
                 }else{
                     pthread_mutex_lock(&lock_strategyIsReady);
                     /*********compute********/
@@ -3270,10 +3275,12 @@ ec_collective_thread(ec_read_thread_args *arg)
                 // next_read = the kth large of (0-(k+m-1));
             }else if(hasStraggler){
                 //another thread is straggler, just read no matter is straggler or not
+                fprintf(stdout, "thread %d aware straggler of thread %d\n", id, currentStragger);
                 pthread_mutex_unlock(&lock_hasStraggler);
                 /*wait for straggler thread making strategy*/
                 pthread_mutex_lock(&lock_strategyIsReady);
                 while(!strategyIsReady){
+                    fprintf(stdout, "thread %d is waiting for strategy\n", id);
                     pthread_cond_wait(&strategyReady,&lock_strategyIsReady);
                 }
                 fprintf(stdout,"thread %d gets the strategy of thread %d\n", id, currentStragger);    
