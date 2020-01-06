@@ -2971,6 +2971,7 @@ char **sample_coding = NULL;
 int *sample_matrix = NULL;
 int *sample_bitmatrix = NULL;
 int **sample_schedule = NULL;
+int sample_erasures[] = {0,1,-1};
 
 IOR_offset_t min_offset_of_stripes(int n, int m){
     //min offset of stripes from n to m
@@ -3018,7 +3019,7 @@ char ***omp_coding;
 int omp_thread_num = 8;
 ec_decode_thread_args ec_decode_arg;
 int decode_res = 0;
-int sample_erasures[] = [0,1,-1];
+
 
 
 typedef struct rcBlock{
@@ -3091,6 +3092,7 @@ ec_collective_thread(ec_read_thread_args *arg)
     int id = arg->id;
     int k = arg->test->ec_k;
     int m = arg->test->ec_m;
+    int w = arg->test->ec_w;
     enum Coding_Technique method = arg->test->ec_method;
     IOR_offset_t ec_blocksize = arg->test->ec_stripe_size;
     int ec_packetsize = arg->test->ec_packetsize;
