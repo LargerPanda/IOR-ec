@@ -3265,12 +3265,12 @@ ec_collective_thread(ec_read_thread_args *arg)
                 //another thread is straggler, just read no matter is straggler or not
                 pthread_mutex_unlock(&lock_hasStraggler);
                 /*wait for straggler thread making strategy*/
-                pthread_mutex_lock(&lock_strategyReady);
+                pthread_mutex_lock(&lock_strategyIsReady);
                 while(!strategyIsReady){
                     pthread_cond_wait(&strategyReady,&lock_strategyReady);
                 }
                 fprintf(stdout,"thread %d gets the strategy of thread %d\n", id, currentStragger);    
-                pthread_mutex_unlock(&lock_strategyReady);
+                pthread_mutex_unlock(&lock_strategyIsReady);
 
                 if(next_pairCnt > pairCnt){
                     fprintf(stdout,"SLOW: thread %d 's pairCnt change from %lld to %lld\n", id, pairCnt, next_pairCnt);
@@ -3294,12 +3294,12 @@ ec_collective_thread(ec_read_thread_args *arg)
                 }
                 pthread_mutex_unlock(&lock_hasStraggler);
                 fprintf(stdout, "parity thread %d meet thread %d straggler\n", id, currentStragger);
-                pthread_mutex_lock(&lock_strategyReady);
+                pthread_mutex_lock(&lock_strategyIsReady);
                 while (!strategyIsReady)
                 {
                     pthread_cond_wait(&strategyReady, &lock_strategyReady);
                 }
-                pthread_mutex_unlock(&lock_strategyReady);
+                pthread_mutex_unlock(&lock_strategyIsReady);
 
                 fprintf(stdout, "parity thread %d's pairCnt change from %lld to %lld\n", id, pairCnt, next_pairCnt);
                 pairCnt = next_pairCnt;
@@ -3307,13 +3307,13 @@ ec_collective_thread(ec_read_thread_args *arg)
             }else if(hasStraggler){
                 pthread_mutex_unlock(&lock_hasStraggler);
                 /*wait for straggler thread making strategy*/
-                pthread_mutex_lock(&lock_strategyReady);
+                pthread_mutex_lock(&lock_strategyIsReady);
                 while (!strategyIsReady)
                 {
                     pthread_cond_wait(&strategyReady, &lock_strategyReady);
                 }
                 fprintf(stdout, "parith thread %d gets the strategy of thread %d\n", id, currentStragger);
-                pthread_mutex_unlock(&lock_strategyReady);
+                pthread_mutex_unlock(&lock_strategyIsReady);
 
                 if (next_pairCnt > pairCnt)
                 {
@@ -3332,13 +3332,13 @@ ec_collective_thread(ec_read_thread_args *arg)
                     }
                     pthread_mutex_unlock(&lock_firstStraggler);
                     
-                    pthread_mutex_lock(&lock_strategyReady);
+                    pthread_mutex_lock(&lock_strategyIsReady);
                     while (!strategyIsReady)
                     {
                         pthread_cond_wait(&strategyReady, &lock_strategyReady);
                     }
                     fprintf(stdout, "parith thread %d gets the strategy of thread %d\n", id, currentStragger);
-                    pthread_mutex_unlock(&lock_strategyReady);
+                    pthread_mutex_unlock(&lock_strategyIsReady);
 
                     if (next_pairCnt > pairCnt)
                     {
