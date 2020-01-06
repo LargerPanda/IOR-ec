@@ -3285,10 +3285,10 @@ ec_collective_thread(ec_read_thread_args *arg)
                 pthread_mutex_unlock(&lock_hasStraggler);
                 /*wait for straggler thread making strategy*/
                 pthread_mutex_lock(&lock_strategyIsReady);
-                while(!strategyIsReady){
+                //while(!strategyIsReady){
                     fprintf(stdout, "thread %d is waiting for strategy\n", id);
                     pthread_cond_wait(&strategyReady,&lock_strategyIsReady);
-                }
+                //}
                 fprintf(stdout,"thread %d gets the strategy of thread %d\n", id, currentStragger);    
                 pthread_mutex_unlock(&lock_strategyIsReady);
 
@@ -3351,7 +3351,7 @@ ec_collective_thread(ec_read_thread_args *arg)
                     struct timeval now;
                     struct timespec outtime;
                     int ret;
-                    outtime.tv_sec = time(NULL) + 10;
+                    outtime.tv_sec = time(NULL) + 20;
                     outtime.tv_nsec = 0;
                     //gettimeofday(&now, NULL);
 
