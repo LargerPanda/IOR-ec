@@ -3267,7 +3267,7 @@ ec_collective_thread(ec_read_thread_args *arg)
                 /*wait for straggler thread making strategy*/
                 pthread_mutex_lock(&lock_strategyIsReady);
                 while(!strategyIsReady){
-                    pthread_cond_wait(&strategyReady,&lock_strategyReady);
+                    pthread_cond_wait(&strategyReady,&lock_strategyIsReady);
                 }
                 fprintf(stdout,"thread %d gets the strategy of thread %d\n", id, currentStragger);    
                 pthread_mutex_unlock(&lock_strategyIsReady);
@@ -3297,7 +3297,7 @@ ec_collective_thread(ec_read_thread_args *arg)
                 pthread_mutex_lock(&lock_strategyIsReady);
                 while (!strategyIsReady)
                 {
-                    pthread_cond_wait(&strategyReady, &lock_strategyReady);
+                    pthread_cond_wait(&strategyReady, &lock_strategyIsReady);
                 }
                 pthread_mutex_unlock(&lock_strategyIsReady);
 
@@ -3310,7 +3310,7 @@ ec_collective_thread(ec_read_thread_args *arg)
                 pthread_mutex_lock(&lock_strategyIsReady);
                 while (!strategyIsReady)
                 {
-                    pthread_cond_wait(&strategyReady, &lock_strategyReady);
+                    pthread_cond_wait(&strategyReady, &lock_strategyIsReady);
                 }
                 fprintf(stdout, "parith thread %d gets the strategy of thread %d\n", id, currentStragger);
                 pthread_mutex_unlock(&lock_strategyIsReady);
@@ -3335,7 +3335,7 @@ ec_collective_thread(ec_read_thread_args *arg)
                     pthread_mutex_lock(&lock_strategyIsReady);
                     while (!strategyIsReady)
                     {
-                        pthread_cond_wait(&strategyReady, &lock_strategyReady);
+                        pthread_cond_wait(&strategyReady, &lock_strategyIsReady);
                     }
                     fprintf(stdout, "parith thread %d gets the strategy of thread %d\n", id, currentStragger);
                     pthread_mutex_unlock(&lock_strategyIsReady);
