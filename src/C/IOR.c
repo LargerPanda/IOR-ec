@@ -3341,6 +3341,7 @@ ec_collective_thread(ec_read_thread_args *arg)
                     if(ret!=0){
                         fprintf(stdout, "parith thread %d don't wait anymore\n", id);
                         firstStraggler = 0;
+                        pthread_mutex_unlock(&lock_firstStraggler);
                         break;
                     }
                     //}
