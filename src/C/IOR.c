@@ -3683,7 +3683,7 @@ ec_collective_thread2(ec_read_thread_args *arg)
             }
 
         }else{//status = normal
-            if(id==RC_id && RC_flag = 1){
+            if(id==RC_id && RC_flag == 1){
                 fprintf(stdout,"start recomputing...\n");
                 //clear status
                 isStraggler = 0;
