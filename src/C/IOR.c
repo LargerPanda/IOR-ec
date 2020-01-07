@@ -3898,7 +3898,7 @@ ec_collective_thread3(ec_read_thread_args *arg)
                     //fprintf(stdout,"time = %lf\n",decode_endTime-decode_startTime);
                 
                 }
-                pairCnt++
+                pairCnt++;
                 currentPosOfThread[id]++;
                 //fprintf(stdout, "thread %d decode complete, current ready offset: %lld\n", id, pairCnt);
                 /***decode***/
