@@ -3649,7 +3649,7 @@ ec_collective_thread2(ec_read_thread_args *arg)
                     while (1)
                     {
                         pthread_mutex_lock(&lock_response_number);
-                        if(response_number == (k+m-1)){
+                        if(response_number == (leftThreads-1)){
                             fprintf(stdout, "thread %d: broadcasting success!\n", id);
                             pthread_mutex_unlock(&lock_response_number);
                             break;
