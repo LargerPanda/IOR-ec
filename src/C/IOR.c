@@ -2969,6 +2969,7 @@ int strategyIsReady;
 IOR_offset_t *currentPosOfThread;
 int* strategyReceived;
 IOR_offset_t next_pairCnt;
+int leftThreads;
 
 volatile int start_strategy;
 pthread_mutex_t lock_start_strategy = PTHREAD_MUTEX_INITIALIZER;
@@ -3615,7 +3616,7 @@ ec_collective_thread2(ec_read_thread_args *arg)
                     while (1)
                     {
                         pthread_mutex_lock(&lock_response_number);
-                        if(response_number == (k+m-1)){
+                        if(response_number == (leftThreads-1)){
                             fprintf(stdout, "thread %d: broadcasting success!\n", id);
                             pthread_mutex_unlock(&lock_response_number);
                             break;
@@ -3764,6 +3765,7 @@ ec_collective_thread2(ec_read_thread_args *arg)
         duration = xfer_endTime - xfer_startTime;
         if (pairCnt == 8192)
         {
+            leftThreads--;
             fprintf(stdout, "thread %d duration: %0.4lf pairCnt = %lld\n", id, duration, pairCnt);
         }
 
@@ -4058,6 +4060,7 @@ WriteOrRead_ec(IOR_param_t *test,
         memset(strategyReceived,0,sizeof(int)*total_stripe_num);
         parity_hangup = (int*)malloc(sizeof(int) * m);
         memset(parity_hangup,0,sizeof(int)*m);
+        leftThreads = total_stripe_num;
 
         ec_data = (char **)malloc(sizeof(char *) * k);
         ec_coding = (char **)malloc(sizeof(char *) * m);
