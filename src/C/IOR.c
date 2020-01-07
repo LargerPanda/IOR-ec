@@ -2970,6 +2970,16 @@ IOR_offset_t *currentPosOfThread;
 int* strategyReceived;
 IOR_offset_t next_pairCnt;
 
+volatile int start_strategy;
+pthread_mutex_t lock_start_strategy = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t cond_start_strategy = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t lock_response_number = PTHREAD_MUTEX_INITIALIZER;
+int response_number;
+int *parity_hangup;
+int RC_flag;
+int RC_id = -1;
+IOR_offset_t RC_count;
+
 char **sample_data = NULL;
 char **sample_coding = NULL;
 int *sample_matrix = NULL;
@@ -3475,6 +3485,293 @@ ec_collective_thread(ec_read_thread_args *arg)
     ec_timers[id] += transferTime;
 }
 
+void *
+ec_collective_thread2(ec_read_thread_args *arg)
+{
+    int id = arg->id;
+    int k = arg->test->ec_k;
+    int m = arg->test->ec_m;
+    int w = arg->test->ec_w;
+    enum Coding_Technique method = arg->test->ec_method;
+    IOR_offset_t ec_blocksize = arg->test->ec_stripe_size;
+    int ec_packetsize = arg->test->ec_packetsize;
+    //void *fd = arg->fds->fd[id];
+    //fprintf(stdout,"reading file%...\n",id);
+
+    IOR_offset_t transferred_size = 0;
+    IOR_offset_t *offsetArray = arg->offSetArray;
+    IOR_offset_t offset;
+
+    int num_reconstruct = (arg->test->blockSize / arg->test->transferSize) * arg->test->segmentCount;
+    dataLeft[id] = num_reconstruct;
+    IOR_offset_t pairCnt = 0;
+    double startTime = 0;
+    double endTime = 0;
+
+    int isOriginReader = id < k ? 1 : 0;
+    int isStraggler = 0;
+    int transferTime = 0;
+    double xfer_startTime = 0;
+    double xfer_endTime = 0;
+    double duration = 0;
+    double times_over_threshold = 0;
+    double times_below_threshold = 0;
+    //double threshold = 0.02;
+    double upper_threshold = 0.02;
+    double lower_threshold = 0.01;
+    startTime = GetTimeStamp();
+
+    while ((offsetArray[pairCnt] != -1) && !hitStonewall)
+    {
+        offset = offsetArray[pairCnt];
+        offset = offset / arg->test->ec_k;
+
+        /*****************collective oeration*********************/
+        /****************is_straggler******************/
+        if (duration > upper_threshold && !isStraggler)
+        { //不是straggler，等待进入
+            times_over_threshold++;
+        }
+        else if (duration < lower_threshold && isStraggler)
+        { //是straggler，等待退出
+            times_below_threshold++;
+        }
+        else if (duration <= lower_threshold && !isStraggler)
+        { //不是straggler，进入状态清零
+            times_over_threshold = 0;
+        }
+        else if (duration >= upper_threshold && isStraggler)
+        { //是straggler，退出状态清零
+            times_below_threshold = 0;
+        }
+
+        if (times_over_threshold >= 10)
+        {
+            isStraggler = 1;
+            times_over_threshold = 0;
+            fprintf(stdout, "thread %d into straggler, offset: %lld\n", id, pairCnt);
+        }
+        if (times_below_threshold >= 5)
+        {
+            isStraggler = 0;
+            times_below_threshold = 0;
+            if (currentStragger == id)
+            {
+                pthread_mutex_lock(&lock_hasStraggler);
+                hasStraggler = 0;
+                currentStragger = -1;
+                pthread_mutex_unlock(&lock_hasStraggler);
+            }
+            fprintf(stdout, "thread %d quit straggler, offset: %lld\n", id, pairCnt);
+        }
+        /****************is_straggler******************/
+
+        /*****************collective oeration*********************/
+        pthread_mutex_lock(&lock_hasStraggler);
+        if(isStraggler && !hasStraggler){
+            fprintf(stdout, "thread %d meets stress and there is no straggler currently.\n", id);
+            
+            hasStraggler = 1;
+            currentStragger = id;
+            fprintf(stdout, "thread %d will be the stragger.\n", id);
+            current_stage = STRATEGY_STAGE;
+            fprintf(stdout, "enter into strategy stage.\n", id);
+            pthread_cond_broadcast(&cond_hasStraggler);
+            fprintf(stdout, "wake up threads waiting for straggler\n", id);
+            pthread_mutex_unlock(&lock_hasStraggler);
+        }else{
+            pthread_mutex_unlock(&lock_hasStraggler);
+        }
+        
+        if(current_stage == STRATEGY_STAGE){
+            if(id == currentStragger){
+                fprintf(stdout, "thread %d is strategy maker, making strategy...\n", id);
+                IOR_offset_t min_stripe_offset = min_offset_of_stripes(0,k-1);
+                fprintf(stdout, "min_stripe_offset = %lld\n", min_stripe_offset);
+                IOR_offset_t kth_large_stripe_offset;
+                if(min_stripe_offset >= max_offset_of_stripes(k,k+m-1)){
+                    fprintf(stdout, "stripe reader is faster\n");
+                    next_pairCnt = kth_large_offset_of_stripes(k+m,k);
+                    fprintf(stdout, "all readers should read at least from %lld\n", next_pairCnt);
+                    if(id>=k){
+                        fprintf(stdout,"hang up parity reader since no compute & slower\n");
+                        parity_hangup[id-k] = 1;
+                    }
+                    pairCnt = MAX(pairCnt, next_pairCnt); //set pairCnt to larger one
+                    currentPosOfThread[id] = pairCnt;
+                    //fprintf(stdout, "thread %d: try to make parity reader work.\n", id);
+                    fprintf(stdout, "thread %d: strategy is ready, broadcasting...\n", id);
+                    pthread_mutex_lock(&lock_strategyIsReady);
+                    strategyIsReady = 1;
+                    pthread_cond_broadcast(&strategyReady);
+                    pthread_mutex_unlock(&lock_strategyIsReady);
+                    fprintf(stdout, "thread %d: waiting for response...\n", id);
+                    while (1)
+                    {
+                        pthread_mutex_lock(&lock_response_number);
+                        if(response_number == (k+m-1)){
+                            fprintf(stdout, "thread %d: broadcasting success!\n", id);
+                            pthread_mutex_unlock(&lock_response_number);
+                            break;
+                        }
+                        pthread_mutex_unlock(&lock_response_number);
+                    }
+                    pthread_mutex_lock(&start_strategy);
+                    strategyIsReady = 0;
+                    current_stage = NORMAL_STAGE;
+                    response_number = 0;
+                    pthread_cond_broadcast(&cond_start_strategy);
+                    pthread_mutex_unlock(&start_strategy);
+                    continue;
+                }else{
+                    kth_large_stripe_offset = kth_large_offset_of_stripes(k+m,k);
+                    RC_count = kth_large_stripe_offset - min_stripe_offset;
+                    next_pairCnt = kth_large_stripe_offset;
+                    fprintf(stdout, "thread %d: try to recompute from %lld to %lld.\n", id, min_stripe_offset,kth_large_stripe_offset);
+                    RC_flag = 1;
+                    RC_id = id;
+                    fprintf(stdout, "all readers should read at least from %lld\n", next_pairCnt);
+                    pairCnt = MAX(pairCnt, next_pairCnt);
+                    currentPosOfThread[id] = pairCnt;
+                    fprintf(stdout, "thread %d: strategy is ready, broadcasting...\n", id);
+                    pthread_mutex_lock(&lock_strategyIsReady);
+                    strategyIsReady = 1;
+                    pthread_cond_broadcast(&strategyReady);
+                    pthread_mutex_unlock(&lock_strategyIsReady);
+                    fprintf(stdout, "thread %d: waiting for response...\n", id);
+                    while (1)
+                    {
+                        pthread_mutex_lock(&lock_response_number);
+                        if(response_number == (k+m-1)){
+                            fprintf(stdout, "thread %d: broadcasting success!\n", id);
+                            pthread_mutex_unlock(&lock_response_number);
+                            break;
+                        }
+                        pthread_mutex_unlock(&lock_response_number);
+                    }
+                    pthread_mutex_lock(&start_strategy);
+                    strategyIsReady = 0;
+                    current_stage = NORMAL_STAGE;
+                    response_number = 0;
+                    pthread_cond_broadcast(&cond_start_strategy);
+                    pthread_mutex_unlock(&start_strategy);
+                    continue;
+                }
+
+            }else{//strategy receiver
+                fprintf(stdout, "thread %d:waiting for strategy...\n", id);
+                pthread_mutex_lock(&lock_strategyIsReady);
+                while (!strategyIsReady)
+                {
+                    pthread_cond_wait(&strategyReady, &lock_strategyIsReady);
+                }
+                fprintf(stdout, "thread %d:strategy received!\n", id);
+                pairCnt = MAX(pairCnt, next_pairCnt);
+                currentPosOfThread[id] = pairCnt;
+                fprintf(stdout, "thread %d:current position: %lld\n", id, currentPosOfThread[id]);
+                pthread_mutex_lock(&lock_response_number);
+                response_number++;
+                pthread_mutex_unlock(&lock_response_number);
+                pthread_mutex_unlock(&lock_strategyIsReady);
+
+                fprintf(stdout, "thread %d:waiting for start signal...\n", id);
+                pthread_mutex_lock(&lock_start_strategy);
+                pthread_cond_wait(&cond_start_strategy, &lock_start_strategy);
+                fprintf(stdout, "thread %d:start strategy!\n", id);
+                pthread_mutex_unlock(&lock_start_strategy);
+                continue;
+            }
+
+        }else{//status = normal
+            if(id==RC_id && RC_flag = 1){
+                fprintf(stdout,"start recomputing...\n");
+                //clear status
+                isStraggler = 0;
+                RC_flag = 0;
+                RC_id = -1;
+                times_over_threshold = 0;
+                times_below_threshold = 0;
+                pthread_mutex_lock(&lock_hasStraggler);
+                hasStraggler = 0;
+                currentStragger = -1;
+                pthread_mutex_unlock(&lock_hasStraggler);
+                /***decode***/
+                int j;
+                if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
+                {
+                    for (j = 0; j < RC_count; j++)
+                    {
+                        //decode_startTime = GetTimeStamp();
+                        jerasure_matrix_decode(k, m, w, sample_matrix, 1, sample_erasures, sample_data, sample_coding, ec_blocksize);
+                        //decode_endTime = GetTimeStamp();
+                        //fprintf(stdout,"time = %lf\n",decode_endTime-decode_startTime);
+                    }
+                }
+                else if (method == Cauchy_Orig || method == Cauchy_Good || method == Liberation || method == Blaum_Roth || method == Liber8tion)
+                {
+                    for (j = 0; j < RC_count; j++)
+                    {
+                        //decode_startTime = GetTimeStamp();
+                        jerasure_schedule_decode_lazy(k, m, w, sample_bitmatrix, sample_erasures, sample_data, sample_coding, ec_blocksize, ec_packetsize, 1);
+                        //decode_endTime = GetTimeStamp();
+                        //fprintf(stdout,"time = %lf\n",decode_endTime-decode_startTime);
+                    }
+                }
+                fprintf(stdout, "thread %d decode complete, current ready offset: %lld\n", id, pairCnt);
+                /***decode***/
+                pairCnt = next_pairCnt; //keep up with the latest
+                continue;
+            }else if(id<k){
+                continue;
+            }else if(id>=k){
+                if(parity_hangup[id-k]==0){
+                    continue;
+                }else{
+                    parity_hangup[id-k] = 0;
+                    pthread_mutex_lock(&lock_hasStraggler);
+                    fprintf(stdout,"thread %d hang up until next straggler...\n", id);
+                    pthread_cond_wait(&cond_hasStraggler, &lock_hasStraggler);
+                    pthread_mutex_unlock(&lock_hasStraggler);
+                    fprintf(stdout, "thread %d: wake up!\n", id);
+                    continue;
+                }
+            }
+        }
+        /*****************collective oeration*********************/
+
+        if (id < k)
+        {
+            xfer_startTime = GetTimeStamp() - startTime;
+            transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], (arg->ec_data)[id], arg->test->ec_stripe_size, arg->test, offset);
+            pairCnt++;
+            currentPosOfThread[id]++;
+        }
+        else
+        {
+            xfer_startTime = GetTimeStamp() - startTime;
+            transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], (arg->ec_coding)[id - k], arg->test->ec_stripe_size, arg->test, offset);
+            pairCnt++;
+            currentPosOfThread[id]++;
+        }
+        xfer_endTime = GetTimeStamp() - startTime;
+        duration = xfer_endTime - xfer_startTime;
+        if (pairCnt == 8192)
+        {
+            fprintf(stdout, "thread %d duration: %0.4lf pairCnt = %lld\n", id, duration, pairCnt);
+        }
+
+        // dataLeft[id]--;
+    }
+    //fprintf(stdout, "reading file%d complete, size: %lld\n", id, transferred_size);
+
+    // pthread_mutex_lock(&lockOfNT);
+    // tranferDone[id] = 1;
+    // numTransferred += 1;
+    // pthread_mutex_unlock(&lockOfNT);
+    endTime = GetTimeStamp();
+    transferTime = endTime - startTime;
+    ec_timers[id] += transferTime;
+}
 
 void *
 ec_decode_thread(int *target){
@@ -3752,6 +4049,8 @@ WriteOrRead_ec(IOR_param_t *test,
         memset(currentPosOfThread,0,sizeof(IOR_offset_t)*total_stripe_num);
         strategyReceived = (int *)malloc(sizeof(int)*total_stripe_num);
         memset(strategyReceived,0,sizeof(int)*total_stripe_num);
+        parity_hangup = (int*)malloc(sizeof(int) * m);
+        memset(parity_hangup,0,sizeof(int)*m);
 
         ec_data = (char **)malloc(sizeof(char *) * k);
         ec_coding = (char **)malloc(sizeof(char *) * m);
@@ -3830,7 +4129,7 @@ WriteOrRead_ec(IOR_param_t *test,
         if(test->ec_strategy == COLLECTIVE_THREAD){
             for (i = 0; i < total_stripe_num; i++)
             {
-                pthread_create(&threads[i], NULL, ec_collective_thread, &ec_read_args[i]);
+                pthread_create(&threads[i], NULL, ec_collective_thread2, &ec_read_args[i]);
             }
         }else{
             for (i = 0; i < total_stripe_num; i++)
