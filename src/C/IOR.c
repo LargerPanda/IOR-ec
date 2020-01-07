@@ -2970,8 +2970,9 @@ IOR_offset_t *currentPosOfThread;
 int* strategyReceived;
 IOR_offset_t next_pairCnt;
 int leftThreads;
+int start_flag;
 
-volatile int start_strategy;
+    volatile int start_strategy;
 pthread_mutex_t lock_start_strategy = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cond_start_strategy = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t lock_response_number = PTHREAD_MUTEX_INITIALIZER;
@@ -3627,6 +3628,7 @@ ec_collective_thread2(ec_read_thread_args *arg)
                     strategyIsReady = 0;
                     current_stage = NORMAL_STAGE;
                     response_number = 0;
+                    start_flag = 1;
                     pthread_cond_broadcast(&cond_start_strategy);
                     pthread_mutex_unlock(&start_strategy);
                     continue;
@@ -3660,6 +3662,7 @@ ec_collective_thread2(ec_read_thread_args *arg)
                     strategyIsReady = 0;
                     current_stage = NORMAL_STAGE;
                     response_number = 0;
+                    start_flag = 1;
                     pthread_cond_broadcast(&cond_start_strategy);
                     pthread_mutex_unlock(&start_strategy);
                     continue;
@@ -3683,7 +3686,9 @@ ec_collective_thread2(ec_read_thread_args *arg)
 
                 fprintf(stdout, "thread %d:waiting for start signal...\n", id);
                 pthread_mutex_lock(&lock_start_strategy);
-                pthread_cond_wait(&cond_start_strategy, &lock_start_strategy);
+                while(!start_flag){
+                    pthread_cond_wait(&cond_start_strategy, &lock_start_strategy);
+                }
                 fprintf(stdout, "thread %d:start strategy!\n", id);
                 pthread_mutex_unlock(&lock_start_strategy);
                 continue;
@@ -3738,7 +3743,9 @@ ec_collective_thread2(ec_read_thread_args *arg)
                     pthread_mutex_lock(&lock_hasStraggler);
                     hasStraggler = 0;
                     fprintf(stdout,"thread %d hang up until next straggler...\n", id);
-                    pthread_cond_wait(&cond_hasStraggler, &lock_hasStraggler);
+                    while(!hasStraggler){
+                        pthread_cond_wait(&cond_hasStraggler, &lock_hasStraggler);
+                    }
                     pthread_mutex_unlock(&lock_hasStraggler);
                     fprintf(stdout, "thread %d: wake up!\n", id);
                     continue;
