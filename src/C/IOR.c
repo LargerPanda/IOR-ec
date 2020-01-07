@@ -3579,6 +3579,11 @@ ec_collective_thread2(ec_read_thread_args *arg)
             pthread_cond_broadcast(&cond_hasStraggler);
             fprintf(stdout, "wake up threads waiting for straggler\n", id);
             pthread_mutex_unlock(&lock_hasStraggler);
+            int z;
+            for (z = 0; z < (k + m); z++)
+            {
+                fprintf(stdout, "thread %d's current position: %lld\n", z, currentPosOfThread[z]);
+            }
         }else{
             pthread_mutex_unlock(&lock_hasStraggler);
         }
