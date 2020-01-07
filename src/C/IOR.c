@@ -3521,6 +3521,7 @@ ec_collective_thread2(ec_read_thread_args *arg)
     double lower_threshold = 0.01;
     startTime = GetTimeStamp();
 
+    fprintf(stdout,"break at 3524\n");
     while ((offsetArray[pairCnt] != -1) && !hitStonewall)
     {
         offset = offsetArray[pairCnt];
