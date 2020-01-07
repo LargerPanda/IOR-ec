@@ -3728,10 +3728,10 @@ ec_collective_thread2(ec_read_thread_args *arg)
                 pairCnt = next_pairCnt; //keep up with the latest
                 continue;
             }else if(id<k){
-                continue;
+                ;
             }else if(id>=k){
                 if(parity_hangup[id-k]==0){
-                    continue;
+                    ;
                 }else{
                     parity_hangup[id-k] = 0;
                     pthread_mutex_lock(&lock_hasStraggler);
