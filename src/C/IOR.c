@@ -3882,24 +3882,24 @@ ec_collective_thread3(ec_read_thread_args *arg)
             }
             
             if(pairCnt < kth_large_offset_of_stripes(k+m,k)){
-                if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
-                {
+                // if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
+                // {
                 
-                    //decode_startTime = GetTimeStamp();
-                    jerasure_matrix_decode(k, m, w, sample_matrix, 1, sample_erasures, sample_data, sample_coding, ec_blocksize);
-                    //decode_endTime = GetTimeStamp();
-                    //fprintf(stdout,"time = %lf\n",decode_endTime-decode_startTime);
+                //     //decode_startTime = GetTimeStamp();
+                //     jerasure_matrix_decode(k, m, w, sample_matrix, 1, sample_erasures, sample_data, sample_coding, ec_blocksize);
+                //     //decode_endTime = GetTimeStamp();
+                //     //fprintf(stdout,"time = %lf\n",decode_endTime-decode_startTime);
                 
-                }
-                else if (method == Cauchy_Orig || method == Cauchy_Good || method == Liberation || method == Blaum_Roth || method == Liber8tion)
-                {
+                // }
+                // else if (method == Cauchy_Orig || method == Cauchy_Good || method == Liberation || method == Blaum_Roth || method == Liber8tion)
+                // {
                 
-                    //decode_startTime = GetTimeStamp();
-                    jerasure_schedule_decode_lazy(k, m, w, sample_bitmatrix, sample_erasures, sample_data, sample_coding, ec_blocksize, ec_packetsize, 1);
-                    //decode_endTime = GetTimeStamp();
-                    //fprintf(stdout,"time = %lf\n",decode_endTime-decode_startTime);
+                //     //decode_startTime = GetTimeStamp();
+                //     jerasure_schedule_decode_lazy(k, m, w, sample_bitmatrix, sample_erasures, sample_data, sample_coding, ec_blocksize, ec_packetsize, 1);
+                //     //decode_endTime = GetTimeStamp();
+                //     //fprintf(stdout,"time = %lf\n",decode_endTime-decode_startTime);
                 
-                }
+                // }
                 pairCnt++;
                 currentPosOfThread[id]++;
                 //fprintf(stdout, "thread %d decode complete, current ready offset: %lld\n", id, pairCnt);
