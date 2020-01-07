@@ -3828,9 +3828,7 @@ ec_collective_thread3(ec_read_thread_args *arg)
     //fprintf(stdout, "break at 3524\n");
     while ((offsetArray[pairCnt] != -1) && !hitStonewall)
     {
-        offset = offsetArray[pairCnt];
-        offset = offset / arg->test->ec_k;
-
+       
         /*****************collective oeration*********************/
         /****************is_straggler******************/
         if (duration > upper_threshold && !isStraggler)
@@ -3879,6 +3877,10 @@ ec_collective_thread3(ec_read_thread_args *arg)
         while(id == RC_id){
         
             /***decode***/
+            if(pairCnt == 8192){
+                break;
+            }
+            
             if(pairCnt < kth_large_offset_of_stripes(k+m,k)){
                 if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
                 {
@@ -3904,11 +3906,16 @@ ec_collective_thread3(ec_read_thread_args *arg)
                 /***decode***/
             }
             
-            if(pairCnt == 8192){
-                break;
-            }
+            
         }
-        continue;
+
+        if(pairCnt == 8192){
+            break;
+        }
+
+        offset = offsetArray[pairCnt];
+        offset = offset / arg->test->ec_k;
+
         //fprintf(stdout, "thread %d stop compute, current offset %lld\n", id, pairCnt);
         /*****************collective oeration*********************/
         
