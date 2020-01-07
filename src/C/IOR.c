@@ -2987,7 +2987,7 @@ char **sample_coding = NULL;
 int *sample_matrix = NULL;
 int *sample_bitmatrix = NULL;
 int **sample_schedule = NULL;
-int sample_erasures[] = {0,1,-1};
+int sample_erasures[] = {0,-1};
 
 IOR_offset_t min_offset_of_stripes(int n, int m){
     //min offset of stripes from n to m
