@@ -3904,8 +3904,11 @@ ec_collective_thread3(ec_read_thread_args *arg)
                 /***decode***/
             }
             
-            
+            if(pairCnt == 8192){
+                break;
+            }
         }
+        continue;
         //fprintf(stdout, "thread %d stop compute, current offset %lld\n", id, pairCnt);
         /*****************collective oeration*********************/
         
