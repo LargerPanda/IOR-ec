@@ -3064,8 +3064,7 @@ ec_read_thread(ec_read_thread_args* arg)
     int pairCnt = 0;
     double startTime = 0;
     double endTime = 0;
-    double XferStartTime = 0;
-    double XferEndTime = 0;
+    double average_xfer_time = 0;
     startTime = GetTimeStamp();
     if (sleepFlag && id < k)
     {
@@ -3078,7 +3077,7 @@ ec_read_thread(ec_read_thread_args* arg)
     {
         offset = offsetArray[pairCnt];
         offset = offset / arg->test->ec_k;
-        XferStartTime = GetTimeStamp() - startTime;
+        //XferStartTime = GetTimeStamp() - startTime;
         if (id < k)
         {
             transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], (arg->ec_data)[id], arg->test->ec_stripe_size, arg->test, offset);
@@ -3087,8 +3086,8 @@ ec_read_thread(ec_read_thread_args* arg)
         {
             transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], (arg->ec_coding)[id - k], arg->test->ec_stripe_size, arg->test, offset);
         }
-        XferEndTime = GetTimeStamp() - startTime;
-        fprintf(stdout, "#Xferid=%d,startTime=%0.2lf,endTIme=%0.2lf,duration=%2lf\n",id, XferStartTime,XferEndTime,XferEndTime-XferStartTime);
+        //XferEndTime = GetTimeStamp() - startTime;
+        //fprintf(stdout, "#Xferid=%d,startTime=%0.2lf,endTIme=%0.2lf,duration=%2lf\n",id, XferStartTime,XferEndTime,XferEndTime-XferStartTime);
         pairCnt++;
         dataLeft[id]--;
     }
@@ -3099,6 +3098,8 @@ ec_read_thread(ec_read_thread_args* arg)
     numTransferred += 1;
     pthread_mutex_unlock(&lockOfNT);
     endTime = GetTimeStamp();
+    average_xfer_time = (endTime - startTime)/pairCnt;
+    fprintf(stdout, "average_xfer_time = %lf\n", average_xfer_time);
     ec_timers[id] += endTime - startTime;
 }
 
@@ -4405,6 +4406,7 @@ WriteOrRead_ec(IOR_param_t *test,
                     int j;
                     double decode_startTime;
                     double decode_endTime;
+                    double total_decode_time = 0;
                     if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
                     {
                         for(j = 0; j < num_iteration; j++){
@@ -4412,6 +4414,7 @@ WriteOrRead_ec(IOR_param_t *test,
                             i = jerasure_matrix_decode(k, m, w, ec_matrix, 1, erasures, ec_data, ec_coding, ec_blocksize);
                             decode_endTime = GetTimeStamp();
                             //fprintf(stdout,"time = %lf\n",decode_endTime-decode_startTime);
+                            total_decode_time += decode_endTime-decode_startTime;
                         }    
                             
                     }
@@ -4422,10 +4425,11 @@ WriteOrRead_ec(IOR_param_t *test,
                             i = jerasure_schedule_decode_lazy(k, m, w, ec_bitmatrix, erasures, ec_data, ec_coding, ec_blocksize, ec_packetsize, 1);
                             decode_endTime = GetTimeStamp();
                             //fprintf(stdout,"time = %lf\n",decode_endTime-decode_startTime);
+                            total_decode_time += decode_endTime-decode_startTime;
                         }
                     }
                     
-
+                    double average_decode_time = total_decode_time/j;
                     if (i == -1)
                     {
                         pthread_mutex_unlock(&lockOfNT);
@@ -4436,6 +4440,7 @@ WriteOrRead_ec(IOR_param_t *test,
                         if (test->ec_verbose >= VERBOSE_0)
                         {
                             fprintf(stdout, "decode success for %d times!\n", j);
+                            fprintf(stdout, "average_decode_time = %lf\n", average_decode_time);
                         }
                     }
                     pthread_mutex_unlock(&lockOfNT);
