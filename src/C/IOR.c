@@ -3735,6 +3735,7 @@ ec_collective_thread2(ec_read_thread_args *arg)
                 }else{
                     parity_hangup[id-k] = 0;
                     pthread_mutex_lock(&lock_hasStraggler);
+                    hasStraggler = 0;
                     fprintf(stdout,"thread %d hang up until next straggler...\n", id);
                     pthread_cond_wait(&cond_hasStraggler, &lock_hasStraggler);
                     pthread_mutex_unlock(&lock_hasStraggler);
