@@ -2982,7 +2982,7 @@ IOR_offset_t min_offset_of_stripes(int n, int m){
     int i;
     IOR_offset_t res = currentPosOfThread[n];
     for(i=n+1; i<=m;i++){
-        res = MIN(res,currentPosOfThread[n]);
+        res = MIN(res,currentPosOfThread[i]);
     }
     return res;
 }
@@ -3216,11 +3216,13 @@ ec_collective_thread(ec_read_thread_args *arg)
                     int res;
                     int i;
                     while(1){
+                        fprintf(stdout,"waiting for strategy received...\n");
                         res=1;
                         for(i=0;i<(k+m);i++){
                             res *= strategyReceived[i];
                         }
                         if(res){
+                            fprintf(stdout, "strategy received!!!!\n");
                             current_stage = NORMAL_STAGE;
                             memset(strategyReceived, 0 ,sizeof(int)*(k+m));
                             break;
@@ -3246,11 +3248,13 @@ ec_collective_thread(ec_read_thread_args *arg)
                     int res;
                     int i;
                     while(1){
+                        fprintf(stdout,"waiting for strategy received...\n");
                         res=1;
                         for(i=0;i<(k+m);i++){
-                            res*=strategyReceived[i];
+                            res *= strategyReceived[i];
                         }
                         if(res){
+                            fprintf(stdout, "strategy received!!!!\n");
                             current_stage = NORMAL_STAGE;
                             memset(strategyReceived, 0 ,sizeof(int)*(k+m));
                             break;
@@ -3292,7 +3296,12 @@ ec_collective_thread(ec_read_thread_args *arg)
                     while (!strategyIsReady){
                         pthread_cond_wait(&strategyReady, &lock_strategyIsReady);
                     }
+                    strategyReceived[id] = 1;
                     pthread_mutex_unlock(&lock_strategyIsReady);
+
+                    // pthread_mutex_lock(&lock_backToNormal);
+                    // pthread_cond_wait(&backToNormal,&lock_backToNormal);
+                    // pthread_mutex_unlock(&lock_backToNormal);
             
                     fprintf(stdout,"RE-COMPUTE: thread id %d 's pairCnt change from %lld to %lld\n", id, pairCnt, next_pairCnt);
                     pairCnt = next_pairCnt;
@@ -3324,6 +3333,10 @@ ec_collective_thread(ec_read_thread_args *arg)
                 fprintf(stdout,"thread %d gets the strategy of thread %d\n", id, currentStragger); 
                 strategyReceived[id] = 1;
                 pthread_mutex_unlock(&lock_strategyIsReady);
+                
+                // pthread_mutex_lock(&lock_backToNormal);
+                // pthread_cond_wait(&backToNormal,&lock_backToNormal);
+                // pthread_mutex_unlock(&lock_backToNormal);
 
                 if(next_pairCnt > pairCnt){
                     fprintf(stdout,"SLOW: thread %d 's pairCnt change from %lld to %lld\n", id, pairCnt, next_pairCnt);
