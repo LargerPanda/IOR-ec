@@ -3218,7 +3218,7 @@ ec_collective_thread(ec_read_thread_args *arg)
                     while(1){
                         res=1;
                         for(i=0;i<(k+m);i++){
-                            res*=strategyReceived;
+                            res *= strategyReceived[i];
                         }
                         if(res){
                             current_stage = NORMAL_STAGE;
@@ -3248,7 +3248,7 @@ ec_collective_thread(ec_read_thread_args *arg)
                     while(1){
                         res=1;
                         for(i=0;i<(k+m);i++){
-                            res*=strategyReceived;
+                            res*=strategyReceived[i];
                         }
                         if(res){
                             current_stage = NORMAL_STAGE;
