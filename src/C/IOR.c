@@ -2951,6 +2951,9 @@ pthread_mutex_t lockOfDecodeSum = PTHREAD_MUTEX_INITIALIZER;
 int decode_sum = 0;
 
 /*********for collecitve thread*********/
+#define STRATEGY_STAGE 1
+#define NORMAL_STAGE 0
+volatile int current_stage;
 pthread_mutex_t lock_hasStraggler = PTHREAD_MUTEX_INITIALIZER;
 volatile int hasStraggler;
 volatile int currentStragger;
@@ -2964,6 +2967,7 @@ pthread_cond_t cond_hasStraggler = PTHREAD_COND_INITIALIZER;
 pthread_cond_t active_parity = PTHREAD_COND_INITIALIZER;
 int strategyIsReady;
 IOR_offset_t *currentPosOfThread;
+int* strategyReceived;
 IOR_offset_t next_pairCnt;
 
 char **sample_data = NULL;
@@ -3171,11 +3175,11 @@ ec_collective_thread(ec_read_thread_args *arg)
         /*****************collective oeration*********************/
         if(id < k){
             pthread_mutex_lock(&lock_hasStraggler);
+            //if(isStraggler && !hasStraggler){
             if(isStraggler && !hasStraggler){
-
                 hasStraggler = 1;//thread id will be the straggler
                 currentStragger = id;
-
+                current_stage = STRATEGY_STAGE;
                 pthread_mutex_lock(&lock_firstStraggler);//active parity
                 if(firstStraggler){
                     firstStraggler = 0;
@@ -3208,6 +3212,20 @@ ec_collective_thread(ec_read_thread_args *arg)
                     fprintf(stdout, "thread %d broadcast strategy\n", id);
                     pthread_cond_broadcast(&strategyReady);
                     pthread_mutex_unlock(&lock_strategyIsReady);
+
+                    int res;
+                    int i;
+                    while(1){
+                        res=1;
+                        for(i=0;i<(k+m);i++){
+                            res*=strategyReceived;
+                        }
+                        if(res){
+                            current_stage = NORMAL_STAGE;
+                            memset(strategyReceived, 0 ,sizeof(int)*(k+m));
+                            break;
+                        }                        
+                    }
                     // hasStraggler = 0;
                     // pthread_mutex_lock(&lock_strategyIsReady);
                     // strategyIsReady = 0;
@@ -3225,6 +3243,20 @@ ec_collective_thread(ec_read_thread_args *arg)
                     pthread_cond_broadcast(&strategyReady);
                     pthread_mutex_unlock(&lock_strategyIsReady);
                     
+                    int res;
+                    int i;
+                    while(1){
+                        res=1;
+                        for(i=0;i<(k+m);i++){
+                            res*=strategyReceived;
+                        }
+                        if(res){
+                            current_stage = NORMAL_STAGE;
+                            memset(strategyReceived, 0 ,sizeof(int)*(k+m));
+                            break;
+                        }                        
+                    }
+
                     /***decode***/
                     int j;
                     if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
@@ -3279,8 +3311,8 @@ ec_collective_thread(ec_read_thread_args *arg)
 
                 // }
                 // next_read = the kth large of (0-(k+m-1));
-            }else if(hasStraggler){
-                //another thread is straggler, just read no matter is straggler or not
+            }else if(hasStraggler && current_stage==STRATEGY_STAGE){
+                //another thread is straggler, and is making strategy
                 fprintf(stdout, "thread %d aware straggler of thread %d\n", id, currentStragger);
                 pthread_mutex_unlock(&lock_hasStraggler);
                 /*wait for straggler thread making strategy*/
@@ -3289,7 +3321,8 @@ ec_collective_thread(ec_read_thread_args *arg)
                     fprintf(stdout, "thread %d is waiting for strategy\n", id);
                     pthread_cond_wait(&strategyReady,&lock_strategyIsReady);
                 }
-                fprintf(stdout,"thread %d gets the strategy of thread %d\n", id, currentStragger);    
+                fprintf(stdout,"thread %d gets the strategy of thread %d\n", id, currentStragger); 
+                strategyReceived[id] = 1;
                 pthread_mutex_unlock(&lock_strategyIsReady);
 
                 if(next_pairCnt > pairCnt){
@@ -3320,13 +3353,15 @@ ec_collective_thread(ec_read_thread_args *arg)
                 {
                     pthread_cond_wait(&strategyReady, &lock_strategyIsReady);
                 }
+                fprintf(stdout, "parity thread %d gets the strategy of thread %d\n", id, currentStragger);
+                strategyReceived[id] = 1;
                 pthread_mutex_unlock(&lock_strategyIsReady);
 
-                fprintf(stdout, "parity thread %d's pairCnt change from %lld to %lld\n", id, pairCnt, next_pairCnt);
+                fprintf(stdout, "STOP: parity thread %d's pairCnt change from %lld to %lld\n", id, pairCnt, next_pairCnt);
                 pairCnt = next_pairCnt;
                 currentPosOfThread[id] = pairCnt;
                 continue;
-            }else if(hasStraggler){
+            }else if(hasStraggler && current_stage==STRATEGY_STAGE){
                 pthread_mutex_unlock(&lock_hasStraggler);
                 /*wait for straggler thread making strategy*/
                 pthread_mutex_lock(&lock_strategyIsReady);
@@ -3335,6 +3370,7 @@ ec_collective_thread(ec_read_thread_args *arg)
                     pthread_cond_wait(&strategyReady, &lock_strategyIsReady);
                 }
                 fprintf(stdout, "parith thread %d gets the strategy of thread %d\n", id, currentStragger);
+                strategyReceived[id] = 1;
                 pthread_mutex_unlock(&lock_strategyIsReady);
 
                 if (next_pairCnt > pairCnt)
@@ -3376,6 +3412,7 @@ ec_collective_thread(ec_read_thread_args *arg)
                         pthread_cond_wait(&strategyReady, &lock_strategyIsReady);
                     }
                     fprintf(stdout, "parith thread %d gets the strategy of thread %d\n", id, currentStragger);
+                    strategyReceived[id] = 1;
                     pthread_mutex_unlock(&lock_strategyIsReady);
 
                     if (next_pairCnt > pairCnt)
@@ -3700,6 +3737,8 @@ WriteOrRead_ec(IOR_param_t *test,
 
         currentPosOfThread = (IOR_offset_t*)malloc(sizeof(IOR_offset_t)*total_stripe_num);
         memset(currentPosOfThread,0,sizeof(IOR_offset_t)*total_stripe_num);
+        strategyReceived = (int *)malloc(sizeof(int)*total_stripe_num);
+        memset(strategyReceived,0,sizeof(int)*total_stripe_num);
 
         ec_data = (char **)malloc(sizeof(char *) * k);
         ec_coding = (char **)malloc(sizeof(char *) * m);
