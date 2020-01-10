@@ -12,7 +12,7 @@ S = ["2", "3", "4", "5", "6", "7", "8"]
 
 nodeList = [
     "cd /data/ost0;", "cd /data/ost1;", "cd /data/ost2;", "cd /data/ost3;"#,
-    "cd /data/ost4;", "cd /data/ost5;", "cd /data/ost6;", "cd /data/ost7;"
+    #"cd /data/ost4;", "cd /data/ost5;", "cd /data/ost6;", "cd /data/ost7;"
 ]
 
 print("stress generator start...\n")
@@ -39,11 +39,11 @@ def stress_generator(n, s, t):
             sleepT = max(sleepT, stressTime)
             os.system(cmd)
         time.sleep(sleepT)
-        i = (i+n)%8
+        i = (i + n) % len(nodeList)
 
 
 ###stress_node.py num s t
-###stragglers at the same time : 
+###stragglers at the same time :
 ###s       : 0-6
 ###t       : 5 10 20 40 80
 stress_generator(int(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3]))
