@@ -3878,7 +3878,7 @@ ec_collective_thread3(ec_read_thread_args *arg)
         while(id == RC_id){
         
             /***decode***/
-            if(pairCnt == 8192){
+            if(pairCnt == num_reconstruct){
                 break;
             }
             
@@ -3910,7 +3910,7 @@ ec_collective_thread3(ec_read_thread_args *arg)
             
         }
 
-        if(pairCnt == 8192){
+        if(pairCnt == num_reconstruct){
             break;
         }
 
@@ -3937,7 +3937,7 @@ ec_collective_thread3(ec_read_thread_args *arg)
         }
         xfer_endTime = GetTimeStamp() - startTime;
         duration = xfer_endTime - xfer_startTime;
-        if (pairCnt == 8192)
+        if (pairCnt == num_reconstruct)
         {
             //leftThreads--;
             fprintf(stdout, "thread %d duration: %0.4lf pairCnt = %lld\n", id, duration, pairCnt);
