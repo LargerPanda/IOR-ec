@@ -1015,7 +1015,7 @@ GetPlatformName(char * platformName)
  */
 /*this is a function to choose the start ost#*/
 int ChooseStartOST(){
-    return 0;
+    return (rank*4);
 }
 
 void GetTestFileName_ec(char **ec_testFileNames, IOR_param_t *test)
