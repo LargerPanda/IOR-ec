@@ -3878,7 +3878,8 @@ ec_collective_thread3(ec_read_thread_args *arg)
         while(id == RC_id){
         
             /***decode***/
-            if(pairCnt == num_reconstruct){
+            if(pairCnt == (num_reconstruct-1)){
+                //fprintf(stdout,"process %d:thread %d start compute from %lld\n", rank,id, pairCnt);
                 break;
             }
             
