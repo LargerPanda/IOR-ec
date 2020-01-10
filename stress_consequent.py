@@ -11,7 +11,7 @@ nodeNum = 8
 S = ["2", "3", "4", "5", "6", "7", "8"]
 
 nodeList = [
-    "cd /data/ost0;", "cd /data/ost1;", "cd /data/ost2;", "cd /data/ost3;",
+    "cd /data/ost0;", "cd /data/ost1;", "cd /data/ost2;", "cd /data/ost3;"#,
     "cd /data/ost4;", "cd /data/ost5;", "cd /data/ost6;", "cd /data/ost7;"
 ]
 
