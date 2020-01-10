@@ -3952,6 +3952,7 @@ ec_collective_thread3(ec_read_thread_args *arg)
     // tranferDone[id] = 1;
     // numTransferred += 1;
     // pthread_mutex_unlock(&lockOfNT);
+    fprintf(stdout, "process %d: thread %d  pairCnt = %lld\n", rank, id, pairCnt);
     endTime = GetTimeStamp();
     transferTime = endTime - startTime;
     ec_timers[id] += transferTime;
