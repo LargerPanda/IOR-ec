@@ -3884,7 +3884,7 @@ ec_collective_thread3(ec_read_thread_args *arg)
             }
 
             //fprintf(stdout,"process %d:thread %d current pairCnt =  %lld\n", rank,id, pairCnt);
-            
+            fprintf(stdout, "process %d:thread %d kth =  %lld\n", rank, id, kth_large_offset_of_stripes(k+m,k));
             if(pairCnt < kth_large_offset_of_stripes(k+m,k)){
                 if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
                 {
