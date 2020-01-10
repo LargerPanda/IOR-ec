@@ -3884,7 +3884,7 @@ ec_collective_thread3(ec_read_thread_args *arg)
             }
 
             //fprintf(stdout,"process %d:thread %d current pairCnt =  %lld\n", rank,id, pairCnt);
-            fprintf(stdout, "process %d:thread %d kth =  %lld\n", rank, id, kth_large_offset_of_stripes(k+m,k));
+            
             if(pairCnt < kth_large_offset_of_stripes(k+m,k)){
                 if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
                 {
@@ -3956,6 +3956,7 @@ ec_collective_thread3(ec_read_thread_args *arg)
     // tranferDone[id] = 1;
     // numTransferred += 1;
     // pthread_mutex_unlock(&lockOfNT);
+    fprintf(stdout, "process %d: thread %d kth =  %lld\n", rank, id, kth_large_offset_of_stripes(k + m, k));
     fprintf(stdout, "process %d: thread %d  pairCnt = %lld\n", rank, id, pairCnt);
     fprintf(stdout, "process %d: num_reconstruct = %lld\n", rank, num_reconstruct);
     endTime = GetTimeStamp();
