@@ -4680,7 +4680,7 @@ WriteOrRead_ec(IOR_param_t *test,
                 ec_amtXferred[i] = IOR_Xfer(access, ec_fds[i], ec_data[i], ec_blocksize, test);
             }
             for(i=0;i<m;i++){
-                ec_amtXferred[k+i] = IOR_Xfer(access, ec_fds[k+i], ec_data[k+i], ec_blocksize, test);
+                ec_amtXferred[k+i] = IOR_Xfer(access, ec_fds[k+i], ec_coding[i], ec_blocksize, test);
             }
             /*ec transfer*/
             //amtXferred = IOR_Xfer(access, fd, buffer, transfer, test); //origin_mark
