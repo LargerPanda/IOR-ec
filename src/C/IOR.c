@@ -277,16 +277,20 @@ main(int     argc,
     }
     
     /* perform each test */
-    while (tests != NULL) {
-      verbose = tests->testParameters.verbose;
-      if (rank == 0 && verbose >= VERBOSE_0) {
-          ShowInfo(argc, argv, &tests->testParameters);
-      }
-      if (rank == 0 && verbose >= VERBOSE_3) {
-        ShowTest(&tests->testParameters);
-      }
-      TestIoSys(&tests->testParameters);
-      tests = tests->nextTest;
+    if(rank!=(numTasksWorld-1)){
+        while (tests != NULL) {
+            verbose = tests->testParameters.verbose;
+            if (rank == 0 && verbose >= VERBOSE_0) {
+                ShowInfo(argc, argv, &tests->testParameters);
+            }
+            if (rank == 0 && verbose >= VERBOSE_3) {
+                ShowTest(&tests->testParameters);
+            }
+            TestIoSys(&tests->testParameters);
+            tests = tests->nextTest;
+        }
+    }else{
+        
     }
 
     /* display finish time */
