@@ -3879,7 +3879,7 @@ ec_collective_thread3(ec_read_thread_args *arg)
         
             /***decode***/
             if(pairCnt == 8192){
-                fprintf(stdout,"process %d:thread %d break at paircnt %lld\n", rank,id, pairCnt);
+                fprintf(stdout,"process %d:thread %d end with compute %lld\n", rank,id, pairCnt);
                 break;
             }
             
@@ -3912,6 +3912,7 @@ ec_collective_thread3(ec_read_thread_args *arg)
         }
 
         if(pairCnt == 8192){
+            fprintf(stdout, "process %d:thread %d end with compute2 %lld\n", rank, id, pairCnt);
             break;
         }
 
@@ -3941,7 +3942,8 @@ ec_collective_thread3(ec_read_thread_args *arg)
         if (pairCnt == 8192)
         {
             //leftThreads--;
-            fprintf(stdout, "process %d: thread %d duration: %0.4lf pairCnt = %lld\n", rank, id, duration, pairCnt);
+            fprintf(stdout, "process %d:thread %d end with transfer", rank, id);
+            //fprintf(stdout, "process %d: thread %d duration: %0.4lf pairCnt = %lld\n", rank, id, duration, pairCnt);
         }
 
         // dataLeft[id]--;
