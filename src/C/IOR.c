@@ -3854,7 +3854,7 @@ ec_collective_thread3(ec_read_thread_args *arg)
             isStraggler = 1;
             RC_id = id;
             times_over_threshold = 0;
-            fprintf(stdout, "thread %d into straggler, offset: %lld\n", id, pairCnt);
+            fprintf(stdout, "process %d: thread %d into straggler, offset: %lld\n", rank,id, pairCnt);
         }
         if (times_below_threshold >= 5)
         {
@@ -3867,13 +3867,13 @@ ec_collective_thread3(ec_read_thread_args *arg)
                 currentStragger = -1;
                 pthread_mutex_unlock(&lock_hasStraggler);
             }
-            fprintf(stdout, "thread %d quit straggler, offset: %lld\n", id, pairCnt);
+            fprintf(stdout, "process %d:thread %d quit straggler, offset: %lld\n", rank,id, pairCnt);
         }
         /****************is_straggler******************/
 
         /*****************collective oeration*********************/
         if(id==RC_id)
-            fprintf(stdout,"thread %d start compute from %lld\n", id, pairCnt);
+            fprintf(stdout,"process %d:thread %d start compute from %lld\n", rank,id, pairCnt);
 
         while(id == RC_id){
         
@@ -3940,7 +3940,7 @@ ec_collective_thread3(ec_read_thread_args *arg)
         if (pairCnt == num_reconstruct)
         {
             //leftThreads--;
-            fprintf(stdout, "thread %d duration: %0.4lf pairCnt = %lld\n", id, duration, pairCnt);
+            fprintf(stdout, "process %d: thread %d duration: %0.4lf pairCnt = %lld\n", rank, id, duration, pairCnt);
         }
 
         // dataLeft[id]--;
