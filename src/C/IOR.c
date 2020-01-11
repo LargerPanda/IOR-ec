@@ -4078,7 +4078,8 @@ WriteOrRead_CL(IOR_param_t *test,
             MPI_Recv(ec_data0[i], k* ec_blocksize, MPI_CHAR, i, i, testComm, &status);
         }
 
-        char ***ec_data1= char(***)malloc(sizeof(char**) * k);
+        int j;
+        char ***ec_data1= (char***)malloc(sizeof(char**) * k);
         for(i=0;i<k;i++){
             ec_data1[i] = (char**)malloc(sizeof(char*)*k1);
             for(j=0;j<k1;j++){
