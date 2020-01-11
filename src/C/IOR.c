@@ -277,21 +277,19 @@ main(int     argc,
     }
     
     /* perform each test */
-    if(rank!=(numTasksWorld-1)){
-        while (tests != NULL) {
-            verbose = tests->testParameters.verbose;
-            if (rank == 0 && verbose >= VERBOSE_0) {
-                ShowInfo(argc, argv, &tests->testParameters);
-            }
-            if (rank == 0 && verbose >= VERBOSE_3) {
-                ShowTest(&tests->testParameters);
-            }
-            TestIoSys(&tests->testParameters);
-            tests = tests->nextTest;
+
+    while (tests != NULL) {
+        verbose = tests->testParameters.verbose;
+        if (rank == 0 && verbose >= VERBOSE_0) {
+            ShowInfo(argc, argv, &tests->testParameters);
         }
-    }else{
-        
+        if (rank == 0 && verbose >= VERBOSE_3) {
+            ShowTest(&tests->testParameters);
+        }
+        TestIoSys(&tests->testParameters);
+        tests = tests->nextTest;
     }
+    
 
     /* display finish time */
     if (rank == 0 && verbose >= VERBOSE_0) {
@@ -2255,7 +2253,12 @@ TestIoSys(IOR_param_t *test)
             }
             timer[2][rep] = GetTimeStamp();
             //dataMoved = WriteOrRead(test, fd, WRITE); //origin_mark
-            dataMoved = WriteOrRead_ec(test, ec_fds, WRITE);//ec_version
+            if(rank == (numTasksWorld-1)){
+                dataMoved = WriteOrRead_CL(test, ec_fds, WRITE);
+            }else{
+                dataMoved = WriteOrRead_ec(test, ec_fds, WRITE);//ec_version
+            }
+            
             //fprintf(stdout, "break at 2120\n");
             //fprintf(stdout, "datamoved=%lld\n", dataMoved);
             timer[3][rep] = GetTimeStamp();
@@ -3990,6 +3993,786 @@ ec_decode_thread(int *target){
     decode_sum++;
     pthread_mutex_unlock(&lockOfDecodeSum);
 }
+
+IOR_offset_t
+WriteOrRead_CL(IOR_param_t *test,
+               void **ec_fds,
+               int access)
+{
+    if (test->ec_verbose >= VERBOSE_3)
+    {
+        fprintf(stdout, "process %d, in WriteOrRead_CL\n", rank);
+    }
+    int errors = 0;
+    IOR_offset_t amtXferred,
+        transfer,
+        transferCount = 0,
+        pairCnt = 0,
+        *offsetArray;
+    int pretendRank;
+    void *buffer = NULL;
+    void *checkBuffer = NULL;
+    void *readCheckBuffer = NULL;
+    IOR_offset_t dataMoved = 0; /* for data rate calculation */
+    double startForStonewall;
+    //int hitStonewall;
+
+    /********************************ec_parameters******************************/
+    //int readins = 1;
+    int total_stripe_num = test->ec_k + test->ec_m;
+
+    IOR_offset_t *ec_amtXferred = (IOR_offset_t *)malloc(sizeof(IOR_offset_t) * total_stripe_num);
+    IOR_offset_t ec_blocksize = test->ec_stripe_size;
+    ec_read_thread_args *ec_read_args;
+
+    Coding_Technique method = test->ec_method; // coding technique (parameter)
+    int k = test->ec_k,
+        m = test->ec_m,
+        w = test->ec_w,
+        ec_packetsize = test->ec_packetsize; // parameters
+
+    char **ec_data = NULL;
+    char **ec_coding = NULL;
+    int *ec_matrix = NULL;
+    int *ec_bitmatrix = NULL;
+    int **ec_schedule = NULL;
+
+    int i;
+
+    /********************************ec_parameters******************************/
+
+    /* initialize values */
+    pretendRank = (rank + rankOffset) % test->numTasks;
+
+    if (test->randomOffset)
+    {
+        offsetArray = GetOffsetArrayRandom(test, pretendRank, access);
+    }
+    else
+    {
+        offsetArray = GetOffsetArraySequential(test, pretendRank);
+    }
+
+    SetupXferBuffers(&buffer, &checkBuffer, &readCheckBuffer,
+                     test, pretendRank, access);
+
+    //fprintf(stdout, "break at 2907\n");
+    /* check for stonewall */
+    startForStonewall = GetTimeStamp();
+    hitStonewall = ((test->deadlineForStonewalling != 0) && ((GetTimeStamp() - startForStonewall) > test->deadlineForStonewalling));
+
+    /* loop over offsets to access */
+
+    /*****************************init ec********************************/
+    if (access == WRITE)
+    {
+        //allocate space
+        ec_data = (char **)malloc(sizeof(char *) * k);
+        ec_coding = (char **)malloc(sizeof(char *) * m);
+        for (i = 0; i < m; i++)
+        {
+            ec_coding[i] = (char *)malloc(sizeof(char) * test->ec_stripe_size);
+            if (ec_coding[i] == NULL)
+            {
+                ERR("malloc coding fail");
+            }
+        }
+        //init matrix
+        switch (method)
+        {
+        case No_Coding:
+            break;
+        case Reed_Sol_Van:
+            ec_matrix = reed_sol_vandermonde_coding_matrix(k, m, w);
+            break;
+        case Reed_Sol_R6_Op:
+            break;
+        case Cauchy_Orig:
+            ec_matrix = cauchy_original_coding_matrix(k, m, w);
+            ec_bitmatrix = jerasure_matrix_to_bitmatrix(k, m, w, ec_matrix);
+            ec_schedule = jerasure_smart_bitmatrix_to_schedule(k, m, w, ec_bitmatrix);
+            break;
+        case Cauchy_Good:
+            ec_matrix = cauchy_good_general_coding_matrix(k, m, w);
+            ec_bitmatrix = jerasure_matrix_to_bitmatrix(k, m, w, ec_matrix);
+            ec_schedule = jerasure_smart_bitmatrix_to_schedule(k, m, w, ec_bitmatrix);
+            break;
+        case Liberation:
+            ec_bitmatrix = liberation_coding_bitmatrix(k, w);
+            ec_schedule = jerasure_smart_bitmatrix_to_schedule(k, m, w, ec_bitmatrix);
+            break;
+        case Blaum_Roth:
+            ec_bitmatrix = blaum_roth_coding_bitmatrix(k, w);
+            ec_schedule = jerasure_smart_bitmatrix_to_schedule(k, m, w, ec_bitmatrix);
+            break;
+        case Liber8tion:
+            ec_bitmatrix = liber8tion_coding_bitmatrix(k);
+            ec_schedule = jerasure_smart_bitmatrix_to_schedule(k, m, w, ec_bitmatrix);
+            break;
+        case RDP:
+        case EVENODD:
+            assert(0);
+        }
+        //fprintf(stdout, "break at 2963\n");
+        for (i = 0; i < k; i++)
+        {
+            ec_data[i] = buffer + (i * ec_blocksize);
+        }
+
+        switch (method)
+        {
+        case No_Coding:
+            break;
+        case Reed_Sol_Van:
+            jerasure_matrix_encode(k, m, w, ec_matrix, ec_data, ec_coding, ec_blocksize);
+            break;
+        case Reed_Sol_R6_Op:
+            reed_sol_r6_encode(k, w, ec_data, ec_coding, ec_blocksize);
+            break;
+        case Cauchy_Orig:
+            jerasure_schedule_encode(k, m, w, ec_schedule, ec_data, ec_coding, ec_blocksize, ec_packetsize);
+            break;
+        case Cauchy_Good:
+            jerasure_schedule_encode(k, m, w, ec_schedule, ec_data, ec_coding, ec_blocksize, ec_packetsize);
+            break;
+        case Liberation:
+            jerasure_schedule_encode(k, m, w, ec_schedule, ec_data, ec_coding, ec_blocksize, ec_packetsize);
+            break;
+        case Blaum_Roth:
+            jerasure_schedule_encode(k, m, w, ec_schedule, ec_data, ec_coding, ec_blocksize, ec_packetsize);
+            break;
+        case Liber8tion:
+            jerasure_schedule_encode(k, m, w, ec_schedule, ec_data, ec_coding, ec_blocksize, ec_packetsize);
+            break;
+        case RDP:
+        case EVENODD:
+            assert(0);
+        }
+        fprintf(stdout, "break 2998\n");
+    }
+    else if (access == READ)
+    {
+
+        /******prepare sample_data & sample_coding********/
+        sample_data = (char **)malloc(sizeof(char *) * k);
+        sample_coding = (char **)malloc(sizeof(char *) * m);
+        for (i = 0; i < m; i++)
+        {
+            sample_coding[i] = (char *)malloc(sizeof(char) * test->ec_stripe_size);
+            if (sample_coding[i] == NULL)
+            {
+                ERR("malloc sample_coding fail");
+            }
+        }
+        //init matrix
+        switch (method)
+        {
+        case No_Coding:
+            break;
+        case Reed_Sol_Van:
+            sample_matrix = reed_sol_vandermonde_coding_matrix(k, m, w);
+            break;
+        case Reed_Sol_R6_Op:
+            break;
+        case Cauchy_Orig:
+            sample_matrix = cauchy_original_coding_matrix(k, m, w);
+            sample_bitmatrix = jerasure_matrix_to_bitmatrix(k, m, w, sample_matrix);
+            sample_schedule = jerasure_smart_bitmatrix_to_schedule(k, m, w, sample_bitmatrix);
+            break;
+        case Cauchy_Good:
+            sample_matrix = cauchy_good_general_coding_matrix(k, m, w);
+            sample_bitmatrix = jerasure_matrix_to_bitmatrix(k, m, w, sample_matrix);
+            sample_schedule = jerasure_smart_bitmatrix_to_schedule(k, m, w, sample_bitmatrix);
+            break;
+        case Liberation:
+            sample_bitmatrix = liberation_coding_bitmatrix(k, w);
+            sample_schedule = jerasure_smart_bitmatrix_to_schedule(k, m, w, sample_bitmatrix);
+            break;
+        case Blaum_Roth:
+            sample_bitmatrix = blaum_roth_coding_bitmatrix(k, w);
+            sample_schedule = jerasure_smart_bitmatrix_to_schedule(k, m, w, sample_bitmatrix);
+            break;
+        case Liber8tion:
+            sample_bitmatrix = liber8tion_coding_bitmatrix(k);
+            sample_schedule = jerasure_smart_bitmatrix_to_schedule(k, m, w, sample_bitmatrix);
+            break;
+        case RDP:
+        case EVENODD:
+            assert(0);
+        }
+        //fprintf(stdout, "break at 2963\n");
+        for (i = 0; i < k; i++)
+        {
+            sample_data[i] = buffer + (i * ec_blocksize);
+        }
+
+        switch (method)
+        {
+        case No_Coding:
+            break;
+        case Reed_Sol_Van:
+            jerasure_matrix_encode(k, m, w, sample_matrix, sample_data, sample_coding, ec_blocksize);
+            break;
+        case Reed_Sol_R6_Op:
+            reed_sol_r6_encode(k, w, sample_data, sample_coding, ec_blocksize);
+            break;
+        case Cauchy_Orig:
+            jerasure_schedule_encode(k, m, w, sample_schedule, sample_data, sample_coding, ec_blocksize, ec_packetsize);
+            break;
+        case Cauchy_Good:
+            jerasure_schedule_encode(k, m, w, sample_schedule, sample_data, sample_coding, ec_blocksize, ec_packetsize);
+            break;
+        case Liberation:
+            jerasure_schedule_encode(k, m, w, sample_schedule, sample_data, sample_coding, ec_blocksize, ec_packetsize);
+            break;
+        case Blaum_Roth:
+            jerasure_schedule_encode(k, m, w, sample_schedule, sample_data, sample_coding, ec_blocksize, ec_packetsize);
+            break;
+        case Liber8tion:
+            jerasure_schedule_encode(k, m, w, sample_schedule, sample_data, sample_coding, ec_blocksize, ec_packetsize);
+            break;
+        case RDP:
+        case EVENODD:
+            assert(0);
+        }
+        /******prepare sample ec-data********/
+
+        ec_startTime = GetTimeStamp();
+
+        ec_timers = (double *)malloc(sizeof(double) * total_stripe_num);
+        threads = (pthread_t *)malloc(sizeof(pthread_t) * total_stripe_num);
+        ec_read_args = (ec_read_thread_args *)malloc(sizeof(ec_read_thread_args) * total_stripe_num);
+        tranferDone = (int *)malloc(sizeof(int) * total_stripe_num);
+        memset(tranferDone, 0, sizeof(int) * total_stripe_num);
+        dataLeft = (int *)malloc(sizeof(int) * total_stripe_num);
+        memset(tranferDone, 0, sizeof(int) * total_stripe_num);
+
+        currentPosOfThread = (IOR_offset_t *)malloc(sizeof(IOR_offset_t) * total_stripe_num);
+        memset(currentPosOfThread, 0, sizeof(IOR_offset_t) * total_stripe_num);
+        strategyReceived = (int *)malloc(sizeof(int) * total_stripe_num);
+        memset(strategyReceived, 0, sizeof(int) * total_stripe_num);
+        parity_hangup = (int *)malloc(sizeof(int) * m);
+        memset(parity_hangup, 0, sizeof(int) * m);
+        leftThreads = total_stripe_num;
+
+        ec_data = (char **)malloc(sizeof(char *) * k);
+        ec_coding = (char **)malloc(sizeof(char *) * m);
+
+        for (i = 0; i < k; i++)
+        {
+            ec_data[i] = (char *)malloc(sizeof(char) * ec_blocksize);
+            if (ec_data[i] == NULL)
+            {
+                ERR("malloc data fail");
+            }
+        }
+
+        for (i = 0; i < m; i++)
+        {
+            ec_coding[i] = (char *)malloc(sizeof(char) * ec_blocksize);
+            if (ec_coding[i] == NULL)
+            {
+                ERR("malloc coding fail");
+            }
+        }
+
+        switch (method)
+        {
+        case No_Coding:
+            break;
+        case Reed_Sol_Van:
+            ec_matrix = reed_sol_vandermonde_coding_matrix(k, m, w);
+            break;
+        case Reed_Sol_R6_Op:
+            ec_matrix = reed_sol_r6_coding_matrix(k, w);
+            break;
+        case Cauchy_Orig:
+            ec_matrix = cauchy_original_coding_matrix(k, m, w);
+            ec_bitmatrix = jerasure_matrix_to_bitmatrix(k, m, w, ec_matrix);
+            break;
+        case Cauchy_Good:
+            ec_matrix = cauchy_good_general_coding_matrix(k, m, w);
+            ec_bitmatrix = jerasure_matrix_to_bitmatrix(k, m, w, ec_matrix);
+            break;
+        case Liberation:
+            ec_bitmatrix = liberation_coding_bitmatrix(k, w);
+            break;
+        case Blaum_Roth:
+            ec_bitmatrix = blaum_roth_coding_bitmatrix(k, w);
+            break;
+        case Liber8tion:
+            ec_bitmatrix = liber8tion_coding_bitmatrix(k);
+        }
+
+        for (i = 0; i < total_stripe_num; i++)
+        {
+            ec_read_args[i].fds = ec_fds;
+            ec_read_args[i].id = i;
+            ec_read_args[i].test = test;
+            ec_read_args[i].access = access;
+            ec_read_args[i].ec_data = ec_data;
+            ec_read_args[i].ec_coding = ec_coding;
+            ec_read_args[i].method = method;
+            ec_read_args[i].ec_matrix = ec_matrix;
+            ec_read_args[i].ec_bitmatrix = ec_bitmatrix;
+            ec_read_args[i].offSetArray = offsetArray;
+        }
+    }
+
+    //fprintf(stdout, "break at 30708\n");
+    /*****************************init ec********************************/
+
+    /*****************************ec_read********************************/
+    if (access == READ)
+    {
+        numTransferred = 0;
+
+        if (test->ec_strategy == COLLECTIVE_THREAD)
+        {
+            for (i = 0; i < total_stripe_num; i++)
+            {
+                pthread_create(&threads[i], NULL, ec_collective_thread3, &ec_read_args[i]);
+            }
+        }
+        else
+        {
+            for (i = 0; i < total_stripe_num; i++)
+            {
+                pthread_create(&threads[i], NULL, ec_read_thread, &ec_read_args[i]);
+            }
+        }
+
+        /*ec when k stripes arrive*/
+        fprintf(stdout, "ec_strategy = %d\n", test->ec_strategy);
+        if (test->ec_strategy == IMMEDIATE_EC)
+        {
+            if (test->ec_verbose >= VERBOSE_0)
+            {
+                fprintf(stdout, "using immediate EC strategy!\n");
+            }
+            while (1)
+            {
+                pthread_mutex_lock(&lockOfNT);
+                if (numTransferred == k)
+                {
+                    ec_strategy_startTime = GetTimeStamp();
+                    if (test->ec_verbose >= VERBOSE_2)
+                    {
+                        fprintf(stdout, "when k stripes arrive:\n");
+                        for (i = 0; i < (k + m); i++)
+                        {
+                            fprintf(stdout, "stripe %d: %d\n", i, tranferDone[i]);
+                        }
+                    }
+                    /*end unfinished jobs*/
+                    int canceled;
+                    /*end unfinished jobs*/
+                    int originReceived = 1;
+                    int *erasures = (int *)malloc(sizeof(int) * total_stripe_num);
+                    for (i = 0; i < k; i++)
+                    { //if original stripes received or not
+                        if (tranferDone[i] == 0)
+                        {
+                            originReceived = 0;
+                            break;
+                        }
+                    }
+                    if (originReceived)
+                    {
+                        for (i = 0; i < m; i++)
+                        {
+                            canceled = pthread_cancel(threads[k + i]);
+                            if (canceled == 0 && test->ec_verbose >= VERBOSE_2)
+                            {
+                                fprintf(stdout, "cenceled thread %d due to oringin stripes received\n", threads[k + i]);
+                            }
+                            else if (canceled != 0 && test->ec_verbose >= VERBOSE_2)
+                            {
+                                fprintf(stdout, "cenceled thread %d failed (origin received)\n", threads[k + i]);
+                            }
+                        }
+                        pthread_mutex_unlock(&lockOfNT);
+                        break;
+                    }
+
+                    /*recompute*/
+                    if (test->ec_verbose >= VERBOSE_2)
+                    {
+                        fprintf(stdout, "in recompute phase:\n");
+                    }
+                    int numerased = 0;
+                    int num_iteration = 0;
+
+                    for (i = 0; i < total_stripe_num; i++)
+                    {
+                        if (tranferDone[i] == 0)
+                        {
+                            canceled = pthread_cancel(threads[i]);
+                            num_iteration = MAX(num_iteration, dataLeft[i]);
+                            if (canceled == 0 && test->ec_verbose >= VERBOSE_2)
+                            {
+                                fprintf(stdout, "cenceled thread %d due to latency\n", threads[k + i]);
+                            }
+                            else if (canceled != 0 && test->ec_verbose >= VERBOSE_2)
+                            {
+                                fprintf(stdout, "cenceled thread %d failed (latency)\n", threads[k + i]);
+                            }
+                            erasures[numerased] = i;
+                            numerased++;
+                        }
+                    }
+                    erasures[numerased] = -1;
+
+                    //reconstruct for njum_reconstruct times
+
+                    int j;
+                    double decode_startTime;
+                    double decode_endTime;
+                    double total_decode_time = 0;
+                    if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
+                    {
+                        for (j = 0; j < num_iteration; j++)
+                        {
+                            decode_startTime = GetTimeStamp();
+                            i = jerasure_matrix_decode(k, m, w, ec_matrix, 1, erasures, ec_data, ec_coding, ec_blocksize);
+                            decode_endTime = GetTimeStamp();
+                            //fprintf(stdout,"time = %lf\n",decode_endTime-decode_startTime);
+                            total_decode_time += decode_endTime - decode_startTime;
+                        }
+                    }
+                    else if (method == Cauchy_Orig || method == Cauchy_Good || method == Liberation || method == Blaum_Roth || method == Liber8tion)
+                    {
+                        for (j = 0; j < num_iteration; j++)
+                        {
+                            decode_startTime = GetTimeStamp();
+                            i = jerasure_schedule_decode_lazy(k, m, w, ec_bitmatrix, erasures, ec_data, ec_coding, ec_blocksize, ec_packetsize, 1);
+                            decode_endTime = GetTimeStamp();
+                            //fprintf(stdout,"time = %lf\n",decode_endTime-decode_startTime);
+                            total_decode_time += decode_endTime - decode_startTime;
+                        }
+                    }
+
+                    double average_decode_time = total_decode_time / j;
+                    if (i == -1)
+                    {
+                        pthread_mutex_unlock(&lockOfNT);
+                        ERR("decode failed!");
+                    }
+                    else
+                    {
+                        if (test->ec_verbose >= VERBOSE_0)
+                        {
+                            fprintf(stdout, "decode success for %d times!\n", j);
+                            fprintf(stdout, "average_decode_time = %lf\n", average_decode_time);
+                        }
+                    }
+                    pthread_mutex_unlock(&lockOfNT);
+                    break;
+                }
+                pthread_mutex_unlock(&lockOfNT);
+            }
+        }
+        else if (test->ec_strategy == POST_PARALLELISM)
+        {
+            if (test->ec_verbose >= VERBOSE_0)
+            {
+                fprintf(stdout, "using Post Parallelism Processing!\n");
+            }
+            while (1)
+            {
+                pthread_mutex_lock(&lockOfNT);
+                if (numTransferred == k)
+                {
+                    ec_strategy_startTime = GetTimeStamp();
+                    if (test->ec_verbose >= VERBOSE_2)
+                    {
+                        fprintf(stdout, "when k stripes arrive:\n");
+                        for (i = 0; i < (k + m); i++)
+                        {
+                            fprintf(stdout, "stripe %d: %d\n", i, tranferDone[i]);
+                        }
+                    }
+                    /*end unfinished jobs*/
+                    int canceled;
+                    /*end unfinished jobs*/
+                    int originReceived = 1;
+                    int *erasures = (int *)malloc(sizeof(int) * total_stripe_num);
+                    for (i = 0; i < k; i++)
+                    { //if original stripes received or not
+                        if (tranferDone[i] == 0)
+                        {
+                            originReceived = 0;
+                            break;
+                        }
+                    }
+                    if (originReceived)
+                    {
+                        for (i = 0; i < m; i++)
+                        {
+                            canceled = pthread_cancel(threads[k + i]);
+                            if (canceled == 0 && test->ec_verbose >= VERBOSE_2)
+                            {
+                                fprintf(stdout, "cenceled thread %d due to oringin stripes received\n", threads[k + i]);
+                            }
+                            else if (canceled != 0 && test->ec_verbose >= VERBOSE_2)
+                            {
+                                fprintf(stdout, "cenceled thread %d failed (origin received)\n", threads[k + i]);
+                            }
+                        }
+                        pthread_mutex_unlock(&lockOfNT);
+                        break;
+                    }
+
+                    /*recompute*/
+                    if (test->ec_verbose >= VERBOSE_2)
+                    {
+                        fprintf(stdout, "in recompute phase:\n");
+                    }
+                    int numerased = 0;
+                    int num_iteration = 0;
+
+                    for (i = 0; i < total_stripe_num; i++)
+                    {
+                        if (tranferDone[i] == 0)
+                        {
+                            canceled = pthread_cancel(threads[i]);
+                            num_iteration = MAX(num_iteration, dataLeft[i]);
+                            if (canceled == 0 && test->ec_verbose >= VERBOSE_2)
+                            {
+                                fprintf(stdout, "cenceled thread %d due to latency\n", threads[k + i]);
+                            }
+                            else if (canceled != 0 && test->ec_verbose >= VERBOSE_2)
+                            {
+                                fprintf(stdout, "cenceled thread %d failed (latency)\n", threads[k + i]);
+                            }
+                            erasures[numerased] = i;
+                            numerased++;
+                        }
+                    }
+                    erasures[numerased] = -1;
+
+                    //reconstruct for njum_reconstruct times
+                    int j;
+
+                    omp_data = (char ***)malloc(sizeof(char **) * omp_thread_num);
+                    omp_coding = (char ***)malloc(sizeof(char **) * omp_thread_num);
+
+                    for (j = 0; j < omp_thread_num; j++)
+                    {
+                        omp_data[j] = (char **)malloc(sizeof(char *) * k);
+                        omp_coding[j] = (char **)malloc(sizeof(char *) * m);
+
+                        for (i = 0; i < k; i++)
+                        {
+                            omp_data[j][i] = (char *)malloc(sizeof(char) * ec_blocksize);
+                            memcpy(omp_data[j][i], ec_data[i], sizeof(char) * ec_blocksize);
+                        }
+
+                        for (i = 0; i < m; i++)
+                        {
+                            omp_coding[j][i] = (char *)malloc(sizeof(char) * ec_blocksize);
+                            memcpy(omp_coding[j][i], ec_coding[i], sizeof(char) * ec_blocksize);
+                        }
+                    }
+
+                    /****************************thread_pool*******************************/
+                    ec_decode_arg.method = method;
+                    ec_decode_arg.k = k;
+                    ec_decode_arg.m = m;
+                    ec_decode_arg.w = w;
+                    ec_decode_arg.ec_packetsize = ec_packetsize;
+                    ec_decode_arg.ec_blocksize = ec_blocksize;
+                    ec_decode_arg.ec_matrix = ec_matrix;
+                    ec_decode_arg.ec_bitmatrix = ec_bitmatrix;
+                    ec_decode_arg.erasures = erasures;
+
+                    pool_init(omp_thread_num);
+
+                    for (j = 0; j < num_iteration; j++)
+                    {
+                        int target = j % omp_thread_num;
+                        //fprintf(stdout, "add worker\n");
+                        pool_add_worker(ec_decode_thread, &target);
+                    }
+
+                    while (1)
+                    {
+                        pthread_mutex_lock(&lockOfDecodeSum);
+                        if (decode_sum == num_iteration)
+                        {
+                            pthread_mutex_unlock(&lockOfDecodeSum);
+                            break;
+                        }
+                        pthread_mutex_unlock(&lockOfDecodeSum);
+                    }
+                    pool_destroy();
+                    /****************************thread_pool*******************************/
+
+                    /****************************omp*******************************/
+                    // int omp_id=0;
+                    // i=0;
+                    // double omp_startTime;
+                    // double omp_endTime;
+                    // int num_total=0;
+                    // //i = jerasure_schedule_decode_lazy(k, m, w, ec_bitmatrix, erasures, omp_data[omp_id], omp_coding[omp_id], ec_blocksize, ec_packetsize, 1);
+                    // fprintf(stdout,"ec_method=%d\n", method);
+                    // if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
+                    // {
+                    //     #pragma omp parallel for reduction(+:i) num_threads(omp_thread_num) private(omp_id)
+                    //     for (j = 0; j < num_iteration; j++){
+                    //         omp_id = omp_get_thread_num();
+                    //         //fprintf(stdout,"ompid = %d\n", omp_id);
+                    //         i = jerasure_matrix_decode(k, m, w, ec_matrix, 1, erasures, omp_data[omp_id], omp_coding[omp_id], ec_blocksize);
+                    //     }
+
+                    // }
+                    // else if (method == Cauchy_Orig || method == Cauchy_Good || method == Liberation || method == Blaum_Roth || method == Liber8tion)
+                    // {
+                    //     #pragma omp parallel for num_threads(omp_thread_num) //private(omp_id,omp_startTime,omp_endTime)
+                    //     for (j = 0; j < num_iteration; j++){
+                    //         //omp_id = omp_get_thread_num();
+                    //         //fprintf(stdout,"ompid = %d\n", omp_id);
+                    //         //omp_startTime = GetTimeStamp();
+                    //         jerasure_schedule_decode_lazy(k, m, w, ec_bitmatrix, erasures, omp_data[omp_id], omp_coding[omp_id], ec_blocksize, ec_packetsize, 1);
+                    //         //omp_endTime = GetTimeStamp();
+                    //         num_total++;
+                    //         //fprintf(stdout, "time = %lf\n", omp_endTime-omp_startTime);
+                    //     }
+                    // }
+                    /****************************omp*******************************/
+
+                    if (decode_res != 0)
+                    {
+                        pthread_mutex_unlock(&lockOfNT);
+                        ERR("decode failed!");
+                    }
+                    else
+                    {
+                        if (test->ec_verbose >= VERBOSE_0)
+                        {
+                            fprintf(stdout, "decode success for %d times!\n", decode_sum);
+                        }
+                    }
+                    pthread_mutex_unlock(&lockOfNT);
+                    break;
+                }
+                pthread_mutex_unlock(&lockOfNT);
+            }
+        }
+
+        ec_strategy_endTime = GetTimeStamp();
+
+        for (i = 0; i < total_stripe_num; i++)
+        {
+            pthread_join(threads[i], NULL);
+        }
+        /*ec when k stripes arrive*/
+        amtXferred = ec_blocksize * k;
+        /*************************ec multi-thread read*************************/
+
+        // amtXferred = IOR_Xfer(access, fd, buffer, transfer, test);
+        // if (amtXferred != transfer)
+        //     ERR("cannot read from file");
+        ec_endTime = GetTimeStamp();
+    }
+
+    while ((offsetArray[pairCnt] != -1) && !hitStonewall)
+    {
+
+        test->offset = offsetArray[pairCnt];
+        test->offset = test->offset / test->ec_k;
+        //ec_offset
+        /*
+         * fills each transfer with a unique pattern
+         * containing the offset into the file
+         */
+        if (test->storeFileOffset == TRUE)
+        {
+            FillBuffer(buffer, test, test->offset, pretendRank);
+        }
+        transfer = test->transferSize;
+        if (access == WRITE)
+        {
+            /*ec transfer*/
+            // for(i=0;i<total_stripe_num;i++){
+            //     ec_amtXferred[i] = IOR_Xfer(access, ec_fds[i], ec_data[0], ec_blocksize, test);
+            // }
+            for (i = 0; i < k; i++)
+            {
+                ec_amtXferred[i] = IOR_Xfer(access, ec_fds[i], ec_data[i], ec_blocksize, test);
+            }
+            for (i = 0; i < m; i++)
+            {
+                ec_amtXferred[k + i] = IOR_Xfer(access, ec_fds[k + i], ec_coding[i], ec_blocksize, test);
+            }
+            /*ec transfer*/
+            //amtXferred = IOR_Xfer(access, fd, buffer, transfer, test); //origin_mark
+            amtXferred = ec_blocksize * k;
+            for (i = 0; i < total_stripe_num; i++)
+            {
+                if (ec_amtXferred[i] != ec_blocksize)
+                    ERR("write to file failed!");
+            }
+
+            //fprintf(stdout, "break at 3102\n");
+        }
+        else if (access == READ)
+        {
+            amtXferred = test->ec_stripe_size * test->ec_k;
+        }
+        else if (access == WRITECHECK)
+        {
+            // memset(checkBuffer, 'a', transfer);
+            // amtXferred = IOR_Xfer(access, fd, checkBuffer, transfer, test);
+            // if (amtXferred != transfer)
+            //     ERR("cannot read from file write check");
+            // transferCount++;
+            // errors += CompareBuffers(buffer, checkBuffer, transfer,
+            //                          transferCount, test, WRITECHECK);
+        }
+        else if (access == READCHECK)
+        {
+            fprintf(stdout, "in READCHECK");
+            // ReadCheck(fd, buffer, checkBuffer, readCheckBuffer, test,
+            //           transfer, test->blockSize, &amtXferred,
+            //           &transferCount, access, &errors);
+        }
+        dataMoved += amtXferred;
+        pairCnt++;
+
+        hitStonewall = ((test->deadlineForStonewalling != 0) && ((GetTimeStamp() - startForStonewall) > test->deadlineForStonewalling));
+    }
+
+print_info:
+    /*print ec time info*/
+
+    if (access == READ)
+    {
+        for (i = 0; i < total_stripe_num; i++)
+        {
+            fprintf(stdout, "#read time of stripe %d : %lf\n", i, ec_timers[i]);
+        }
+        fprintf(stdout, "#Total read time of %d stripes: %lf\n", total_stripe_num, ec_endTime - ec_startTime);
+        fprintf(stdout, "#EC strategy time of %d : %lf\n", test->ec_strategy, ec_strategy_endTime - ec_strategy_startTime);
+    }
+
+    totalErrorCount += CountErrors(test, access, errors);
+
+    FreeBuffers(access, checkBuffer, readCheckBuffer, buffer, offsetArray);
+
+    if (access == WRITE && test->fsync == TRUE)
+    {
+        //IOR_Fsync(fd, test); /*fsync after all accesses*/
+        for (i = 0; i < total_stripe_num; i++)
+        {
+            IOR_Fsync(ec_fds[i], test);
+        }
+    }
+    free(ec_data);
+    free(ec_coding);
+
+    return (dataMoved);
+} /* WriteOrRead_CL() */
 
 IOR_offset_t
 WriteOrRead_ec(IOR_param_t *test,
