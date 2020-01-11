@@ -5745,7 +5745,7 @@ WriteOrRead_ec(IOR_param_t *test,
 
         ec_strategy_endTime = GetTimeStamp();
 
-        while(global_finished!=(numTasksWorld-1)){
+        while(1){
             MPI_Allreduce(&local_finished,&global_finished,1,MPI_INT,MPI_SUM,testComm);
             fprintf("process %d, current global finished: %d\n", rank, global_finished);
             sleep(1);
