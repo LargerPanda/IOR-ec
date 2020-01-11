@@ -1023,9 +1023,9 @@ int ChooseStartOST(){
 void GetTestFileName_ec(char **ec_testFileNames, IOR_param_t *test)
 {
     //format is /data/data(ost#)/filename.process#.strip# or parity#
-    if(test->ec_verbose >= VERBOSE_3){
-        fprintf(stdout, "in GetTestFileName_ec\n");
-    }
+    // if(test->ec_verbose >= VERBOSE_3){
+    //     fprintf(stdout, "in GetTestFileName_ec\n");
+    // }
     char initialTestFileName[MAX_STR],
          targetDirectoryRoot[MAX_STR] = "/data/ost";
 
@@ -2025,9 +2025,9 @@ SummarizeResults(IOR_param_t * test)
 void
 TestIoSys(IOR_param_t *test)
 {
-    if(test->ec_verbose >= VERBOSE_3){
-        fprintf(stdout, "in TestIoSys\n");
-    }
+    // if(test->ec_verbose >= VERBOSE_3){
+    //     fprintf(stdout, "in TestIoSys\n");
+    // }
     
     char           testFileName[MAX_STR];
     double       * timer[12];
