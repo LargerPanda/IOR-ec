@@ -5818,7 +5818,7 @@ WriteOrRead_ec(IOR_param_t *test,
                     mpi_coding[j] = ec_data[i]; //coding是自己的data
                 }
                 for(j=0;j<k1;j++){ //data从别的进程来
-                    MPI_Recv(mpi_data[j+1],ec_blocksize,MPI_CHAR,j+1,j+1,testComm, &status);
+                    MPI_Recv(mpi_data[j],ec_blocksize,MPI_CHAR,j+1,j+1,testComm, &status);
                 }
 
                 if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
