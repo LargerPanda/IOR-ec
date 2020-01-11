@@ -4075,10 +4075,11 @@ WriteOrRead_CL(IOR_param_t *test,
         char **ec_data0 = (char **)malloc(sizeof(char*) * k1);
         for(i = 0; i<k1; i++){
             ec_data0[i] = (char *)malloc(sizeof(char) * k* ec_blocksize);
+            fprintf(stdout, "waiting for MPI_Recv\n");
             MPI_Recv(ec_data0[i], k* ec_blocksize, MPI_CHAR, i, i, testComm, &status);
         }
 
-        fprintf(stdout, "bread after MPI_Recv\n");
+        fprintf(stdout, "break after MPI_Recv\n");
 
         int j;
         char ***ec_data1= (char***)malloc(sizeof(char**) * k);
@@ -5000,7 +5001,12 @@ WriteOrRead_ec(IOR_param_t *test,
             ec_data[i] = buffer + (i * ec_blocksize);
         }
 
-        MPI_Send(ec_data, ec_blocksize*k, MPI_CHAR, numTasksWorld-1, rank, testComm);
+        char *sendBuffer = (char*)malloc(sizeof(char)*k*ec_blocksize);
+        for(i=0;i<k;i++){
+            memcpy(sendBuffer+i*ec_blocksize, ec_data[i], ec_blocksize);
+        }
+        fprintf(stdout,"process %d starts to sending...\n", rank)
+        MPI_Send(sendBuffer, ec_blocksize*k, MPI_CHAR, numTasksWorld-1, rank, testComm);
         
         switch (method)
         {
