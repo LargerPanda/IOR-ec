@@ -5805,17 +5805,17 @@ WriteOrRead_ec(IOR_param_t *test,
             //reveive other data
             int j;
             MPI_Status status;
-            char **mpi_data = char(**)malloc(sizeof(char*)*k1));
+            char **mpi_data = (char**)malloc(sizeof(char*)*k1));
             for(i=0;i<k1;i++){
-                mpi_data[i] = char(*)malloc(sizeof(char)*ec_blocksize);
+                mpi_data[i] = (char*)malloc(sizeof(char)*ec_blocksize);
             }
-            char **mpi_coding = char(**)malloc(sizeof(char*)*m1);
+            char **mpi_coding = (char**)malloc(sizeof(char*)*m1);
             for(i=0;i<k;i++){
                 for(j=0;j<m1;j++){
                     mpi_coding[j] = ec_data[i]; //coding是自己的data
                 }
                 for(j=0;j<k1;j++){ //data从别的进程来
-                    MPI_Recv(mpi_data[j+1],ec_blocksize,MPI_CHAR,j+1,j+1,testComm);
+                    MPI_Recv(mpi_data[j+1],ec_blocksize,MPI_CHAR,j+1,j+1,testComm, &status);
                 }
 
                 if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
