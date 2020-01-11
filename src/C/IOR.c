@@ -3047,7 +3047,9 @@ char ***omp_coding;
 int omp_thread_num = 8;
 ec_decode_thread_args ec_decode_arg;
 int decode_res = 0;
-
+int local_finished = 0;
+int global_finished = 0;
+int finished_thread = 0;
 
 
 typedef struct rcBlock{
@@ -3841,7 +3843,6 @@ ec_collective_thread3(ec_read_thread_args *arg)
     //fprintf(stdout, "break at 3524\n");
     while ((offsetArray[pairCnt] != -1) && !hitStonewall)
     {
-       
         /*****************collective oeration*********************/
         /****************is_straggler******************/
         if (duration > upper_threshold && !isStraggler)
@@ -3895,6 +3896,12 @@ ec_collective_thread3(ec_read_thread_args *arg)
                 break;
             }
 
+            // MPI_Reduce(&local_finished,&global_finished, 1, MPI_INT, MPI_SUM, rank, testComm);
+            // fprintf(stdout,"global_finished = %d\n", global_finished);
+
+            // if(global_finished == numTasksWorld-1){
+            //     fprintf(stdout,"process %d's file can be immediatly reconstructed\n", rank);
+            // }
             //fprintf(stdout,"process %d:thread %d current pairCnt =  %lld\n", rank,id, pairCnt);
             
             if(pairCnt < kth_large_offset_of_stripes(k+m,k)){
@@ -3937,6 +3944,183 @@ ec_collective_thread3(ec_read_thread_args *arg)
         /*****************collective oeration*********************/
         
         
+        if (id < k)
+        {
+            xfer_startTime = GetTimeStamp() - startTime;
+            transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], (arg->ec_data)[id], arg->test->ec_stripe_size, arg->test, offset);
+            pairCnt++;
+            currentPosOfThread[id]++;
+        }
+        else
+        {
+            xfer_startTime = GetTimeStamp() - startTime;
+            transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], (arg->ec_coding)[id - k], arg->test->ec_stripe_size, arg->test, offset);
+            pairCnt++;
+            currentPosOfThread[id]++;
+        }
+        xfer_endTime = GetTimeStamp() - startTime;
+        duration = xfer_endTime - xfer_startTime;
+        if (pairCnt == num_reconstruct)
+        {
+            //leftThreads--;
+            fprintf(stdout, "process %d:thread %d end with transfer\n", rank, id);
+            //fprintf(stdout, "process %d: thread %d duration: %0.4lf pairCnt = %lld\n", rank, id, duration, pairCnt);
+        }
+
+        // dataLeft[id]--;
+    }
+    //fprintf(stdout, "reading file%d complete, size: %lld\n", id, transferred_size);
+
+    // pthread_mutex_lock(&lockOfNT);
+    // tranferDone[id] = 1;
+    // numTransferred += 1;
+    // pthread_mutex_unlock(&lockOfNT);
+    fprintf(stdout, "process %d: thread %d kth =  %lld\n", rank, id, kth_large_offset_of_stripes(k + m, k));
+    fprintf(stdout, "process %d: thread %d  pairCnt = %lld\n", rank, id, pairCnt);
+    fprintf(stdout, "process %d: num_reconstruct = %lld\n", rank, num_reconstruct);
+    finished_thread++;
+    if(id==0 && finished_thread==(k+m)){
+        local_finished = 1;
+    }
+    endTime = GetTimeStamp();
+    transferTime = endTime - startTime;
+    ec_timers[id] += transferTime;
+}
+
+void *
+ec_collective_thread4(ec_read_thread_args *arg)
+{
+    int id = arg->id;
+    int k = arg->test->ec_k;
+    int m = arg->test->ec_m;
+    int w = arg->test->ec_w;
+    enum Coding_Technique method = arg->test->ec_method;
+    IOR_offset_t ec_blocksize = arg->test->ec_stripe_size;
+    int ec_packetsize = arg->test->ec_packetsize;
+    //void *fd = arg->fds->fd[id];
+    //fprintf(stdout,"reading file%...\n",id);
+
+    IOR_offset_t transferred_size = 0;
+    IOR_offset_t *offsetArray = arg->offSetArray;
+    IOR_offset_t offset;
+
+    int num_reconstruct = (arg->test->blockSize / arg->test->transferSize) * arg->test->segmentCount;
+    dataLeft[id] = num_reconstruct;
+    IOR_offset_t pairCnt = 0;
+    double startTime = 0;
+    double endTime = 0;
+
+    int isOriginReader = id < k ? 1 : 0;
+    int isStraggler = 0;
+    int transferTime = 0;
+    double xfer_startTime = 0;
+    double xfer_endTime = 0;
+    double duration = 0;
+    double times_over_threshold = 0;
+    double times_below_threshold = 0;
+    //double threshold = 0.02;
+    double upper_threshold = 0.02;
+    double lower_threshold = 0.01;
+    startTime = GetTimeStamp();
+
+    //fprintf(stdout, "break at 3524\n");
+    while ((offsetArray[pairCnt] != -1) && !hitStonewall)
+    {
+
+        /*****************collective oeration*********************/
+        /****************is_straggler******************/
+        if (duration > upper_threshold && !isStraggler)
+        { //不是straggler，等待进入
+            times_over_threshold++;
+        }
+        else if (duration < lower_threshold && isStraggler)
+        { //是straggler，等待退出
+            times_below_threshold++;
+        }
+        else if (duration <= lower_threshold && !isStraggler)
+        { //不是straggler，进入状态清零
+            times_over_threshold = 0;
+        }
+        else if (duration >= upper_threshold && isStraggler)
+        { //是straggler，退出状态清零
+            times_below_threshold = 0;
+        }
+
+        if (times_over_threshold >= 10)
+        {
+            isStraggler = 1;
+            RC_id = id;
+            times_over_threshold = 0;
+            fprintf(stdout, "process %d: thread %d into straggler, offset: %lld\n", rank, id, pairCnt);
+        }
+        if (times_below_threshold >= 5)
+        {
+            isStraggler = 0;
+            times_below_threshold = 0;
+            if (currentStragger == id)
+            {
+                pthread_mutex_lock(&lock_hasStraggler);
+                hasStraggler = 0;
+                currentStragger = -1;
+                pthread_mutex_unlock(&lock_hasStraggler);
+            }
+            fprintf(stdout, "process %d:thread %d quit straggler, offset: %lld\n", rank, id, pairCnt);
+        }
+        /****************is_straggler******************/
+
+        /*****************collective oeration*********************/
+        if (id == RC_id)
+            fprintf(stdout, "process %d:thread %d start compute from %lld\n", rank, id, pairCnt);
+
+        while (id == RC_id)
+        {
+
+            /***decode***/
+            if (pairCnt == num_reconstruct)
+            {
+                fprintf(stdout, "process %d:thread %d end with compute %lld\n", rank, id, pairCnt);
+                break;
+            }
+
+            //fprintf(stdout,"process %d:thread %d current pairCnt =  %lld\n", rank,id, pairCnt);
+
+            if (pairCnt < kth_large_offset_of_stripes(k + m, k))
+            {
+                if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
+                {
+
+                    //decode_startTime = GetTimeStamp();
+                    jerasure_matrix_decode(k, m, w, sample_matrix, 1, sample_erasures, sample_data, sample_coding, ec_blocksize);
+                    //decode_endTime = GetTimeStamp();
+                    //fprintf(stdout,"time = %lf\n",decode_endTime-decode_startTime);
+                }
+                else if (method == Cauchy_Orig || method == Cauchy_Good || method == Liberation || method == Blaum_Roth || method == Liber8tion)
+                {
+
+                    //decode_startTime = GetTimeStamp();
+                    jerasure_schedule_decode_lazy(k, m, w, sample_bitmatrix, sample_erasures, sample_data, sample_coding, ec_blocksize, ec_packetsize, 1);
+                    //decode_endTime = GetTimeStamp();
+                    //fprintf(stdout,"time = %lf\n",decode_endTime-decode_startTime);
+                }
+                pairCnt++;
+                currentPosOfThread[id]++;
+                //fprintf(stdout, "thread %d decode complete, current ready offset: %lld\n", id, pairCnt);
+                /***decode***/
+            }
+        }
+
+        if (pairCnt == num_reconstruct)
+        {
+            fprintf(stdout, "process %d:thread %d end with compute2 %lld\n", rank, id, pairCnt);
+            break;
+        }
+
+        offset = offsetArray[pairCnt];
+        offset = offset / arg->test->ec_k;
+
+        //fprintf(stdout, "thread %d stop compute, current offset %lld\n", id, pairCnt);
+        /*****************collective oeration*********************/
+
         if (id < k)
         {
             xfer_startTime = GetTimeStamp() - startTime;
@@ -4772,11 +4956,22 @@ WriteOrRead_CL(IOR_param_t *test,
         }
 
         ec_strategy_endTime = GetTimeStamp();
+        
+        while(global_finished!=(numTasksWorld-1)){
+            MPI_Allreduce(&local_finished,&global_finished,1,MPI_INT,MPI_SUM,testComm);
+            fprintf("process %d, current global finished: %d\n", rank, global_finished);
+            sleep(1);
+        }
+
+        if(rank == 0 && global_finished == (numTasksWorld-1)){
+            fprintf("process %d, only lack one file", rank, global_finished);
+        }
 
         for (i = 0; i < total_stripe_num; i++)
         {
             pthread_join(threads[i], NULL);
         }
+
         /*ec when k stripes arrive*/
         amtXferred = ec_blocksize * k;
         /*************************ec multi-thread read*************************/
