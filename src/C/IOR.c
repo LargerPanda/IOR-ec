@@ -5805,7 +5805,7 @@ WriteOrRead_ec(IOR_param_t *test,
             //reveive other data
             int j;
             MPI_Status status;
-            char **mpi_data = (char**)malloc(sizeof(char*)*k1));
+            char **mpi_data = (char**)malloc(sizeof(char*)*k1);
             for(i=0;i<k1;i++){
                 mpi_data[i] = (char*)malloc(sizeof(char)*ec_blocksize);
             }
