@@ -4085,15 +4085,17 @@ WriteOrRead_CL(IOR_param_t *test,
         char ***ec_data1= (char***)malloc(sizeof(char**) * k);
         for(i=0;i<k;i++){
             ec_data1[i] = (char**)malloc(sizeof(char*)*k1);
-            for(j=0;j<k1;j++){
+            for(j=0;j<k1;j++){              
                 ec_data1[i][j] = ec_data0[j] + i * ec_blocksize;
+                fprintf(stdout, "break after ec_data1\n");
             }
         } 
         char ***ec_coding1 = (char***)malloc(sizeof(char**) * k);
         for(i=0;i<k;i++){
             ec_coding[i] = (char**)malloc(sizeof(char*)*m1);
             for(j=0;j<m1;j++){
-                ec_data1[i][j] = (char *)malloc(sizeof(char) * test->ec_stripe_size);
+                ec_coding1[i][j] = (char *)malloc(sizeof(char) * ec_blocksize);
+                fprintf(stdout, "break after ec_coding1\n");
             }
         } 
 
