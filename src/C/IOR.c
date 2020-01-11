@@ -4078,6 +4078,8 @@ WriteOrRead_CL(IOR_param_t *test,
             MPI_Recv(ec_data0[i], k* ec_blocksize, MPI_CHAR, i, i, testComm, &status);
         }
 
+        fprintf(stdout, "bread after MPI_Recv\n");
+
         int j;
         char ***ec_data1= (char***)malloc(sizeof(char**) * k);
         for(i=0;i<k;i++){
@@ -4093,6 +4095,8 @@ WriteOrRead_CL(IOR_param_t *test,
                 ec_data1[i][j] = (char *)malloc(sizeof(char) * test->ec_stripe_size);
             }
         } 
+
+        fprintf(stdout, "bread after ec_data1 and ec_coding1\n");
 
         switch (method)
         {
@@ -4163,6 +4167,8 @@ WriteOrRead_CL(IOR_param_t *test,
         }
        //end prepare ec_data 1 - k  RS(k1,1) 
 
+        fprintf(stdout, "bread after encode\n");
+        
         ec_data = (char **)malloc(sizeof(char *) * k);
         ec_coding = (char **)malloc(sizeof(char *) * m);
         for (i = 0; i < m; i++)
@@ -4215,6 +4221,7 @@ WriteOrRead_CL(IOR_param_t *test,
             ec_data[i] = ec_coding1[i][0];
         }
 
+        fprintf(stdout, "break after ec_data[i] = ec_coding1[i][0]\n");
         switch (method)
         {
         case No_Coding:
@@ -4244,7 +4251,7 @@ WriteOrRead_CL(IOR_param_t *test,
         case EVENODD:
             assert(0);
         }
-        fprintf(stdout, "break 2998\n");
+        fprintf(stdout, "break after ec_data,ec_coding\n");
     }
     else if (access == READ)
     {
