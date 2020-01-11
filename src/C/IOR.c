@@ -4086,7 +4086,7 @@ WriteOrRead_CL(IOR_param_t *test,
                 ec_data1[i][j] = ec_data0[j] + i * ec_blocksize;
             }
         } 
-        char ***ec_coding1 = char(***)malloc(sizeof(char**) * k);
+        char ***ec_coding1 = (char***)malloc(sizeof(char**) * k);
         for(i=0;i<k;i++){
             ec_coding[i] = (char**)malloc(sizeof(char*)*m1);
             for(j=0;j<m1;j++){
