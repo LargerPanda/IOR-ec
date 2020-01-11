@@ -4030,6 +4030,10 @@ WriteOrRead_CL(IOR_param_t *test,
         m = test->ec_m,
         w = test->ec_w,
         ec_packetsize = test->ec_packetsize; // parameters
+    
+    int k1 = numTasksWorld-1;
+    int m1 = 1;
+    MPI_Status status;
 
     char **ec_data = NULL;
     char **ec_coding = NULL;
@@ -4038,6 +4042,7 @@ WriteOrRead_CL(IOR_param_t *test,
     int **ec_schedule = NULL;
 
     int i;
+
 
     /********************************ec_parameters******************************/
 
@@ -4066,7 +4071,97 @@ WriteOrRead_CL(IOR_param_t *test,
     /*****************************init ec********************************/
     if (access == WRITE)
     {
-        //allocate space
+        //prepare ec_data 1 - k  RS(k1,1) 
+        char **ec_data0 = (char **)malloc(sizeof(char*) * k1);
+        for(i = 0; i<k1; i++){
+            ec_data0[i] = (char *)malloc(sizeof(char) * k* ec_blocksize);
+            MPI_Recv(ec_data0[i], k* ec_blocksize, MPI_CHAR, i, i, testComm, &status);
+        }
+
+        char ***ec_data1= char(***)malloc(sizeof(char**) * k);
+        for(i=0;i<k;i++){
+            ec_data1[i] = (char**)malloc(sizeof(char*)*k1);
+            for(j=0;j<k1;j++){
+                ec_data1[i][j] = ec_data0[j] + i * ec_blocksize;
+            }
+        } 
+        char ***ec_coding1 = char(***)malloc(sizeof(char**) * k);
+        for(i=0;i<k;i++){
+            ec_coding[i] = (char**)malloc(sizeof(char*)*m1);
+            for(j=0;j<m1;j++){
+                ec_data1[i][j] = (char *)malloc(sizeof(char) * test->ec_stripe_size);
+            }
+        } 
+
+        switch (method)
+        {
+        case No_Coding:
+            break;
+        case Reed_Sol_Van:
+            ec_matrix = reed_sol_vandermonde_coding_matrix(k1, m1, w);
+            break;
+        case Reed_Sol_R6_Op:
+            break;
+        case Cauchy_Orig:
+            ec_matrix = cauchy_original_coding_matrix(k1, m1, w);
+            ec_bitmatrix = jerasure_matrix_to_bitmatrix(k1, m1, w, ec_matrix);
+            ec_schedule = jerasure_smart_bitmatrix_to_schedule(k1, m1, w, ec_bitmatrix);
+            break;
+        case Cauchy_Good:
+            ec_matrix = cauchy_good_general_coding_matrix(k1, m1, w);
+            ec_bitmatrix = jerasure_matrix_to_bitmatrix(k1, m1, w, ec_matrix);
+            ec_schedule = jerasure_smart_bitmatrix_to_schedule(k1, m1, w, ec_bitmatrix);
+            break;
+        case Liberation:
+            ec_bitmatrix = liberation_coding_bitmatrix(k1, w);
+            ec_schedule = jerasure_smart_bitmatrix_to_schedule(k1, m1, w, ec_bitmatrix);
+            break;
+        case Blaum_Roth:
+            ec_bitmatrix = blaum_roth_coding_bitmatrix(k1, w);
+            ec_schedule = jerasure_smart_bitmatrix_to_schedule(k1, m1, w, ec_bitmatrix);
+            break;
+        case Liber8tion:
+            ec_bitmatrix = liber8tion_coding_bitmatrix(k1);
+            ec_schedule = jerasure_smart_bitmatrix_to_schedule(k1, m1, w, ec_bitmatrix);
+            break;
+        case RDP:
+        case EVENODD:
+            assert(0);
+        }
+
+        for(i=0;i<k;i++){
+            switch (method)
+            {
+            case No_Coding:
+                break;
+            case Reed_Sol_Van:
+                jerasure_matrix_encode(k1, m1, w, ec_matrix, ec_data1[i], ec_coding1[i], ec_blocksize);
+                break;
+            case Reed_Sol_R6_Op:
+                reed_sol_r6_encode(k1, w, ec_data1[i], ec_coding1[i], ec_blocksize);
+                break;
+            case Cauchy_Orig:
+                jerasure_schedule_encode(k1, m1, w, ec_schedule, ec_data1[i], ec_coding1[i], ec_blocksize, ec_packetsize);
+                break;
+            case Cauchy_Good:
+                jerasure_schedule_encode(k1, m1, w, ec_schedule, ec_data1[i], ec_coding1[i], ec_blocksize, ec_packetsize);
+                break;
+            case Liberation:
+                jerasure_schedule_encode(k1, m1, w, ec_schedule, ec_data1[i], ec_coding1[i], ec_blocksize, ec_packetsize);
+                break;
+            case Blaum_Roth:
+                jerasure_schedule_encode(k1, m1, w, ec_schedule, ec_data1[i], ec_coding1[i], ec_blocksize, ec_packetsize);
+                break;
+            case Liber8tion:
+                jerasure_schedule_encode(k1, m1, w, ec_schedule, ec_data1[i], ec_coding1[i], ec_blocksize, ec_packetsize);
+                break;
+            case RDP:
+            case EVENODD:
+                assert(0);
+            }
+        }
+       //end prepare ec_data 1 - k  RS(k1,1) 
+
         ec_data = (char **)malloc(sizeof(char *) * k);
         ec_coding = (char **)malloc(sizeof(char *) * m);
         for (i = 0; i < m; i++)
@@ -4116,7 +4211,7 @@ WriteOrRead_CL(IOR_param_t *test,
         //fprintf(stdout, "break at 2963\n");
         for (i = 0; i < k; i++)
         {
-            ec_data[i] = buffer + (i * ec_blocksize);
+            ec_data[i] = ec_coding1[i][0];
         }
 
         switch (method)
@@ -4896,6 +4991,8 @@ WriteOrRead_ec(IOR_param_t *test,
         {
             ec_data[i] = buffer + (i * ec_blocksize);
         }
+
+        MPI_Send(ec_data, ec_blocksize*k, MPI_CHAR, numTasksWorld-1, rank, testComm);
         
         switch (method)
         {
