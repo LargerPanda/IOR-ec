@@ -5746,14 +5746,14 @@ WriteOrRead_ec(IOR_param_t *test,
         ec_strategy_endTime = GetTimeStamp();
 
         while(1){
-            fprintf("in while1\n");
+            fprintf(stdout, "in while1\n");
             MPI_Allreduce(&local_finished,&global_finished,1,MPI_INT,MPI_SUM,testComm);
-            fprintf("process %d, current global finished: %d\n", rank, global_finished);
+            fprintf(stdout, "process %d, current global finished: %d\n", rank, global_finished);
             sleep(1);
         }
 
         if(rank == 0 && global_finished == (numTasksWorld-1)){
-            fprintf("process %d, only lack one file", rank, global_finished);
+            fprintf(stdout,"process %d, only lack one file", rank, global_finished);
         }
 
         for (i = 0; i < total_stripe_num; i++)
