@@ -5808,7 +5808,7 @@ WriteOrRead_ec(IOR_param_t *test,
             char **mpi_data = (char**)malloc(sizeof(char*)*k1);
             for(i=0;i<k1;i++){
                 mpi_data[i] = (char*)malloc(sizeof(char)*ec_blocksize);
-                if(mpi_data[i]!==NULL){
+                if(mpi_data[i]!=NULL){
                     fprintf(stdout,"allocate mpi_data success!\n");
                 }
             }
