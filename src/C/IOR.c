@@ -2458,11 +2458,11 @@ TestIoSys(IOR_param_t *test)
             }
             timer[8][rep] = GetTimeStamp();
             //dataMoved = WriteOrRead(test, fd, READ);
-            if(rank==(numTasksWorld-1)){
-                dataMoved = WriteOrRead_CL(test, ec_fds, READ);
-            }else{
-                dataMoved = WriteOrRead_ec(test, ec_fds, READ);
-            }
+            // if(rank==(numTasksWorld-1)){
+            //     dataMoved = WriteOrRead_CL(test, ec_fds, READ);
+            // }else{
+            dataMoved = WriteOrRead_ec(test, ec_fds, READ);
+            // }
             
             timer[9][rep] = GetTimeStamp();
             if (test->intraTestBarriers)
@@ -3047,8 +3047,6 @@ char ***omp_coding;
 int omp_thread_num = 8;
 ec_decode_thread_args ec_decode_arg;
 int decode_res = 0;
-int local_finished = 0;
-int global_finished = 0;
 int finished_thread = 0;
 
 
@@ -3975,12 +3973,13 @@ ec_collective_thread3(ec_read_thread_args *arg)
     // tranferDone[id] = 1;
     // numTransferred += 1;
     // pthread_mutex_unlock(&lockOfNT);
-    fprintf(stdout, "process %d: thread %d kth =  %lld\n", rank, id, kth_large_offset_of_stripes(k + m, k));
-    fprintf(stdout, "process %d: thread %d  pairCnt = %lld\n", rank, id, pairCnt);
-    fprintf(stdout, "process %d: num_reconstruct = %lld\n", rank, num_reconstruct);
+    //fprintf(stdout, "process %d: thread %d kth =  %lld\n", rank, id, kth_large_offset_of_stripes(k + m, k));
+    //fprintf(stdout, "process %d: thread %d  pairCnt = %lld\n", rank, id, pairCnt);
+    //fprintf(stdout, "process %d: num_reconstruct = %lld\n", rank, num_reconstruct);
     finished_thread++;
     if(id==0 && finished_thread==(k+m)){
-        local_finished = 1;
+        *(arg->local_finished) = 1;
+        fprintf(stdout, "process %d: local_finished = %d\n", rank, *(arg->local_finished));
     }
     endTime = GetTimeStamp();
     transferTime = endTime - startTime;
@@ -4232,7 +4231,8 @@ WriteOrRead_CL(IOR_param_t *test,
 
     int i;
 
-
+    int local_finished = 0;
+    int global_finished = 0;
     /********************************ec_parameters******************************/
 
     /* initialize values */
@@ -4611,6 +4611,7 @@ WriteOrRead_CL(IOR_param_t *test,
             ec_read_args[i].ec_matrix = ec_matrix;
             ec_read_args[i].ec_bitmatrix = ec_bitmatrix;
             ec_read_args[i].offSetArray = offsetArray;
+            ec_read_args[i].local_finished = &local_finished;
         }
     }
 
@@ -5124,6 +5125,8 @@ WriteOrRead_ec(IOR_param_t *test,
 
     int i;
     
+    int local_finished = 0;
+    int global_finished = 0;
     /********************************ec_parameters******************************/
 
     /* initialize values */
@@ -5406,6 +5409,7 @@ WriteOrRead_ec(IOR_param_t *test,
             ec_read_args[i].ec_matrix = ec_matrix;
             ec_read_args[i].ec_bitmatrix = ec_bitmatrix;
             ec_read_args[i].offSetArray = offsetArray;
+            ec_read_args[i].local_finished = &local_finished;
         }
     }
 
@@ -5740,6 +5744,16 @@ WriteOrRead_ec(IOR_param_t *test,
         }
 
         ec_strategy_endTime = GetTimeStamp();
+
+        while(global_finished!=(numTasksWorld-1)){
+            MPI_Allreduce(&local_finished,&global_finished,1,MPI_INT,MPI_SUM,testComm);
+            fprintf("process %d, current global finished: %d\n", rank, global_finished);
+            sleep(1);
+        }
+
+        if(rank == 0 && global_finished == (numTasksWorld-1)){
+            fprintf("process %d, only lack one file", rank, global_finished);
+        }
 
         for (i = 0; i < total_stripe_num; i++)
         {

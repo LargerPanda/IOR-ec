@@ -39,7 +39,7 @@ typedef struct ec_read_thread_args
     int *ec_matrix;
     int *ec_bitmatrix;
     enum Coding_Technique method;
-
+    int *local_finished;
     /*ec control parameters*/
 } ec_read_thread_args;
 
