@@ -5855,10 +5855,13 @@ WriteOrRead_ec(IOR_param_t *test,
         }
 
         /*************************inter-process repair******************************/
-        for (i = 0; i < total_stripe_num; i++)
-        {
-            pthread_join(threads[i], NULL);
+        if(local_finished!=0){
+            for (i = 0; i < total_stripe_num; i++)
+            {
+                pthread_join(threads[i], NULL);
+            }
         }
+        
         /*ec when k stripes arrive*/
         fprintf(stdout, "process %d: break after join..\n", rank);
         amtXferred = ec_blocksize * k;
