@@ -86,6 +86,7 @@ double         TimeDeviation    (void);
 void           ValidTests       (IOR_param_t *);
 IOR_offset_t   WriteOrRead      (IOR_param_t *, void *, int);
 IOR_offset_t   WriteOrRead_ec   (IOR_param_t *, void **, int);
+IOR_offset_t   WriteOrRead_CL   (IOR_param_t *, void **, int);
 void           WriteTimes       (IOR_param_t *, double **, int, int);
 
 
