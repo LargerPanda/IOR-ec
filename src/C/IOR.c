@@ -5841,6 +5841,7 @@ WriteOrRead_ec(IOR_param_t *test,
                         //fprintf(stdout,"time = %lf\n",decode_endTime-decode_startTime);
                     }
                 }
+                fprintf(stdout, "process %d: decode %d times!!\n", rank,j);
 
             }
 
@@ -5859,6 +5860,7 @@ WriteOrRead_ec(IOR_param_t *test,
             pthread_join(threads[i], NULL);
         }
         /*ec when k stripes arrive*/
+        fprintf(stdout, "process %d: break after join..\n", rank);
         amtXferred = ec_blocksize * k;
         /*************************ec multi-thread read*************************/
 
