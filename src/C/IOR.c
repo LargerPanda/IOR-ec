@@ -5756,7 +5756,7 @@ WriteOrRead_ec(IOR_param_t *test,
         }
 
         if(rank == 0 && global_finished == (numTasksWorld-1)){
-            fprintf(stdout,"process %d, only lack one file", rank, global_finished);
+            fprintf(stdout,"process %d, only lack one file\n", rank, global_finished);
         }
 
         for (i = 0; i < total_stripe_num; i++)
