@@ -4092,14 +4092,14 @@ WriteOrRead_CL(IOR_param_t *test,
         } 
         char ***ec_coding1 = (char***)malloc(sizeof(char**) * k);
         for(i=0;i<k;i++){
-            ec_coding[i] = (char**)malloc(sizeof(char*)*m1);
+            ec_coding1[i] = (char**)malloc(sizeof(char*) * m1);
             for(j=0;j<m1;j++){
                 ec_coding1[i][j] = (char *)malloc(sizeof(char) * ec_blocksize);
                 fprintf(stdout, "break after ec_coding1\n");
             }
         } 
 
-        fprintf(stdout, "bread after ec_data1 and ec_coding1\n");
+        fprintf(stdout, "break after ec_data1 and ec_coding1\n");
 
         switch (method)
         {
