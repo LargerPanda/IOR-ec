@@ -1,0 +1,56 @@
+#32p
+#####ec_method#######
+#Reed_Sol_Van       0
+#Reed_Sol_R6_Op     1
+#Cauchy_Orig        2
+#Cauchy_Good        3
+#Liberation         4
+#Blaum_Roth         5
+#Liber8tion         6
+#RDP                7
+#EVENODD            8
+#No_Coding          9
+####ec_strategy######
+#Immediate          0
+######ec_params######
+#ec_stripe_count    2
+#ec_stripe_size  512K
+#ec_k               2
+#ec_m               2
+#ec_w               8
+#ec_packetsize      8
+#ec_method          0
+#ec_strategy        0
+#ec_verbose         0
+#ec_num_osts        8
+#####################
+IOR START
+    testFile=testfile
+    filePerProc=1
+    api=MPIIO
+    repetitions=1
+    verbose=3
+    #writeFile=1
+    readFile=1
+    segmentCount=1
+    blockSize=6G
+    transferSize=1m 
+#replaced to k*stripe size actually
+#########ec##########
+    ec_stripe_count=6
+    ec_stripe_size=512k
+    ec_k=6
+    ec_m=2
+    ec_w=8      
+    ec_packetsize=8
+    ec_method=3
+    ec_strategy=0
+    ec_verbose=3
+    ec_num_ost=8    
+#########ec##########
+    keepFile=1
+    verbose=1
+    deadlineForStonewalling=0
+    useExistingTestFile=0
+    randomOffset=0
+IOR STOP
