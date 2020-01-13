@@ -5746,7 +5746,7 @@ WriteOrRead_ec(IOR_param_t *test,
         ec_strategy_endTime = GetTimeStamp();
 
         /*************************inter-process repair******************************/
-        if(test->ec_strategy == COLLECTIVE_THREAD)
+        if(test->ec_strategy == COLLECTIVE_THREAD){
             while(1){
                 //fprintf(stdout, "in while1\n");
                 MPI_Allreduce(&local_finished,&global_finished,1,MPI_INT,MPI_SUM,testComm);
