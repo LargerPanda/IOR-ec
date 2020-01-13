@@ -5865,7 +5865,14 @@ WriteOrRead_ec(IOR_param_t *test,
             
             /*ec when k stripes arrive*/
             fprintf(stdout, "process %d: break after join..\n", rank);
+        }else{
+            for (i = 0; i < total_stripe_num; i++)
+            {
+                pthread_join(threads[i], NULL);
+            }
         }
+
+        
         amtXferred = ec_blocksize * k;
         /*************************ec multi-thread read*************************/
 
