@@ -5581,7 +5581,7 @@ WriteOrRead_ec(IOR_param_t *test,
         //     }
         // }
 
-        for (i = 0; i < total_stripe_num; i++)
+        for (i = 0; i < k; i++)
         {
             pthread_join(threads[i], NULL);
         }
