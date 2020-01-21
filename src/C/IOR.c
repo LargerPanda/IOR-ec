@@ -3132,6 +3132,7 @@ ec_adaptive_thread(ec_read_thread_args *arg)
     //double threshold = 0.02;
     double upper_threshold = 0.02;
     double lower_threshold = 0.01;
+    double duration = 0.00;
     /*adaptive parameter*/
     while ((offsetArray[pairCnt] != -1) && !hitStonewall)
     {
