@@ -3075,11 +3075,6 @@ ec_read_thread(ec_read_thread_args *arg)
     double endTime = 0;
     double average_xfer_time = 0;
     startTime = GetTimeStamp();
-    if (sleepFlag && id < k)
-    {
-        fprintf(stdout, "enter sleep\n");
-        sleep(10);
-    }
 
     while ((offsetArray[pairCnt] != -1) && !hitStonewall)
     {
