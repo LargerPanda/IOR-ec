@@ -3132,7 +3132,7 @@ ec_adaptive_thread(ec_read_thread_args *arg)
     double xfer_startTime;
     double xfer_endTime;
     double upper_threshold = 0.02;
-    double lower_threshold = 0.006;
+    double lower_threshold = 0.01;
     double duration = 0.00;
     /*adaptive parameter*/
     while ((offsetArray[pairCnt] != -1) && !hitStonewall)
@@ -3162,7 +3162,7 @@ ec_adaptive_thread(ec_read_thread_args *arg)
             times_over_threshold = 0;
             fprintf(stdout, "process %d: thread %d into straggler, offset: %lld\n", rank, id, pairCnt);
         }
-        if (times_below_threshold >= 10)
+        if (times_below_threshold >= 5)
         {
             isStraggler = 0;
             times_below_threshold = 0;
@@ -3182,16 +3182,17 @@ ec_adaptive_thread(ec_read_thread_args *arg)
         //XferStartTime = GetTimeStamp() - startTime;
         if (id < k)
         {
-            xfer_startTime = GetTimeStamp();
+            xfer_startTime = GetTimeStamp() -startTime;
             transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], (arg->ec_data)[id], arg->test->ec_stripe_size, arg->test, offset);
         }
         else
         {
 
-            xfer_startTime = GetTimeStamp();
+            xfer_startTime = GetTimeStamp()-startTime;
             transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], (arg->ec_coding)[id - k], arg->test->ec_stripe_size, arg->test, offset);
         }
-        duration = GetTimeStamp() - xfer_startTime;
+        xfer_endTime = GetTimeStamp() - xfer_startTime;
+        duration = xfer_endTime - xfer_startTime;
         //fprintf(stdout, "#Xferid=%d,startTime=%0.2lf,endTIme=%0.2lf,duration=%2lf\n",id, XferStartTime,XferEndTime,XferEndTime-XferStartTime);
         pairCnt++;
         dataLeft[id]--;
