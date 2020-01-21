@@ -3511,7 +3511,7 @@ ec_collective_thread2(ec_read_thread_args *arg)
 }
 
 void *
-ec_collective_thread3(ec_read_thread_args *arg)
+ec_collective_thread3(ec_read_thread_args *arg) //violate
 {
     int id = arg->id;
     int k = arg->test->ec_k;
@@ -5133,7 +5133,7 @@ WriteOrRead_ec(IOR_param_t *test,
         if(test->ec_strategy == COLLECTIVE_THREAD){
             for (i = 0; i < total_stripe_num; i++)
             {
-                pthread_create(&threads[i], NULL, ec_collective_thread3, &ec_read_args[i]);
+                pthread_create(&threads[i], NULL, ec_collective_thread4, &ec_read_args[i]);
             }
         }else if(test->ec_strategy == ADAPTIVE_EC){
             for (i = 0; i < k; i++)
@@ -5459,132 +5459,136 @@ WriteOrRead_ec(IOR_param_t *test,
         ec_strategy_endTime = GetTimeStamp();
 
         /*************************inter-process repair******************************/
-        if(test->ec_strategy == COLLECTIVE_THREAD){
-            while(1){
-                //fprintf(stdout, "in while1\n");
-                MPI_Allreduce(&local_finished,&global_finished,1,MPI_INT,MPI_SUM,testComm);
-                fprintf(stdout, "process %d, current global finished: %d\n", rank, global_finished);
-                if(global_finished == (numTasksWorld-1)){
-                    break;
-                }               
-                sleep(1);
-            }
+        // if(test->ec_strategy == COLLECTIVE_THREAD){
+        //     while(1){
+        //         //fprintf(stdout, "in while1\n");
+        //         MPI_Allreduce(&local_finished,&global_finished,1,MPI_INT,MPI_SUM,testComm);
+        //         fprintf(stdout, "process %d, current global finished: %d\n", rank, global_finished);
+        //         if(global_finished == (numTasksWorld-1)){
+        //             break;
+        //         }               
+        //         sleep(1);
+        //     }
 
-            if(rank == 0 && global_finished == (numTasksWorld-1)){
-                fprintf(stdout,"process %d, only lack one file!!!!!!!!!!!!!!!!!1\n", rank, global_finished);
-            }
+        //     if(rank == 0 && global_finished == (numTasksWorld-1)){
+        //         fprintf(stdout,"process %d, only lack one file!!!!!!!!!!!!!!!!!1\n", rank, global_finished);
+        //     }
 
-            int cancel;
-            if(local_finished == 0){
-                for(i=0;i<total_stripe_num;i++){
-                    cancel = pthread_cancel(threads[i]);
-                    if(cancel == 0){
-                        fprintf(stdout,"process %d: cancel thread %d success!\n", rank, i);
+        //     int cancel;
+        //     if(local_finished == 0){
+        //         for(i=0;i<total_stripe_num;i++){
+        //             cancel = pthread_cancel(threads[i]);
+        //             if(cancel == 0){
+        //                 fprintf(stdout,"process %d: cancel thread %d success!\n", rank, i);
             
-                    }
-                }
-            }else if(rank == (numTasksWorld-1)){
-                //prepare matrix
-                int k1 = numTasksWorld-1;
-                int m1 = 1;
-                int erasures[2] = {0,-1};
-                switch (method)
-                {
-                    case No_Coding:
-                        break;
-                    case Reed_Sol_Van:
-                        ec_matrix = reed_sol_vandermonde_coding_matrix(k1, m1, w);
-                        break;
-                    case Reed_Sol_R6_Op:
-                        ec_matrix = reed_sol_r6_coding_matrix(k1, w);
-                        break;
-                    case Cauchy_Orig:
-                        ec_matrix = cauchy_original_coding_matrix(k1, m1, w);
-                        ec_bitmatrix = jerasure_matrix_to_bitmatrix(k1, m1, w, ec_matrix);
-                        break;
-                    case Cauchy_Good:
-                        ec_matrix = cauchy_good_general_coding_matrix(k1, m1, w);
-                        ec_bitmatrix = jerasure_matrix_to_bitmatrix(k1, m1, w, ec_matrix);
-                        break;
-                    case Liberation:
-                        ec_bitmatrix = liberation_coding_bitmatrix(k1, w);
-                        break;
-                    case Blaum_Roth:
-                        ec_bitmatrix = blaum_roth_coding_bitmatrix(k1, w);
-                        break;
-                    case Liber8tion:
-                        ec_bitmatrix = liber8tion_coding_bitmatrix(k1);
-                }
+        //             }
+        //         }
+        //     }else if(rank == (numTasksWorld-1)){
+        //         //prepare matrix
+        //         int k1 = numTasksWorld-1;
+        //         int m1 = 1;
+        //         int erasures[2] = {0,-1};
+        //         switch (method)
+        //         {
+        //             case No_Coding:
+        //                 break;
+        //             case Reed_Sol_Van:
+        //                 ec_matrix = reed_sol_vandermonde_coding_matrix(k1, m1, w);
+        //                 break;
+        //             case Reed_Sol_R6_Op:
+        //                 ec_matrix = reed_sol_r6_coding_matrix(k1, w);
+        //                 break;
+        //             case Cauchy_Orig:
+        //                 ec_matrix = cauchy_original_coding_matrix(k1, m1, w);
+        //                 ec_bitmatrix = jerasure_matrix_to_bitmatrix(k1, m1, w, ec_matrix);
+        //                 break;
+        //             case Cauchy_Good:
+        //                 ec_matrix = cauchy_good_general_coding_matrix(k1, m1, w);
+        //                 ec_bitmatrix = jerasure_matrix_to_bitmatrix(k1, m1, w, ec_matrix);
+        //                 break;
+        //             case Liberation:
+        //                 ec_bitmatrix = liberation_coding_bitmatrix(k1, w);
+        //                 break;
+        //             case Blaum_Roth:
+        //                 ec_bitmatrix = blaum_roth_coding_bitmatrix(k1, w);
+        //                 break;
+        //             case Liber8tion:
+        //                 ec_bitmatrix = liber8tion_coding_bitmatrix(k1);
+        //         }
                 
-                //reveive other data
-                int j;
-                MPI_Status status;
-                char **mpi_data = (char**)malloc(sizeof(char*)*k1);
-                for(i=0;i<k1;i++){
-                    mpi_data[i] = (char*)malloc(sizeof(char)*ec_blocksize);
-                    if(mpi_data[i]!=NULL){
-                        fprintf(stdout,"allocate mpi_data success!\n");
-                    }
-                }
-                char **mpi_coding = (char**)malloc(sizeof(char*)*m1);
-                for(i=0;i<k;i++){
-                    for(j=0;j<m1;j++){
-                        mpi_coding[j] = ec_data[i]; //coding是自己的data
-                    }
-                    for(j=0;j<(k1-1);j++){ //data从别的进程来,先忽略0号进程
-                        MPI_Recv(mpi_data[j+1],ec_blocksize,MPI_CHAR,j+1,j+1,testComm, &status);
-                    }
+        //         //reveive other data
+        //         int j;
+        //         MPI_Status status;
+        //         char **mpi_data = (char**)malloc(sizeof(char*)*k1);
+        //         for(i=0;i<k1;i++){
+        //             mpi_data[i] = (char*)malloc(sizeof(char)*ec_blocksize);
+        //             if(mpi_data[i]!=NULL){
+        //                 fprintf(stdout,"allocate mpi_data success!\n");
+        //             }
+        //         }
+        //         char **mpi_coding = (char**)malloc(sizeof(char*)*m1);
+        //         for(i=0;i<k;i++){
+        //             for(j=0;j<m1;j++){
+        //                 mpi_coding[j] = ec_data[i]; //coding是自己的data
+        //             }
+        //             for(j=0;j<(k1-1);j++){ //data从别的进程来,先忽略0号进程
+        //                 MPI_Recv(mpi_data[j+1],ec_blocksize,MPI_CHAR,j+1,j+1,testComm, &status);
+        //             }
 
-                    if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
-                    {
-                        for (j = 0; j < 1500; j++)
-                        {
-                            //decode_startTime = GetTimeStamp();
-                            jerasure_matrix_decode(k1, m1, w, ec_matrix, 1, erasures, mpi_data, mpi_coding, ec_blocksize);
-                            //decode_endTime = GetTimeStamp();
-                            //fprintf(stdout,"time = %lf\n",decode_endTime-decode_startTime);
-                        }
-                    }
-                    else if (method == Cauchy_Orig || method == Cauchy_Good || method == Liberation || method == Blaum_Roth || method == Liber8tion)
-                    {
-                        for (j = 0; j < 1500; j++)
-                        {
-                            //decode_startTime = GetTimeStamp();
-                            jerasure_schedule_decode_lazy(k1, m1, w, ec_bitmatrix, erasures, mpi_data, mpi_coding, ec_blocksize, ec_packetsize, 1);
-                            //decode_endTime = GetTimeStamp();
-                            //fprintf(stdout,"time = %lf\n",decode_endTime-decode_startTime);
-                        }
-                    }
-                    fprintf(stdout, "process %d: decode %d times!!\n", rank,j);
+        //             if (method == Reed_Sol_Van || method == Reed_Sol_R6_Op)
+        //             {
+        //                 for (j = 0; j < 1500; j++)
+        //                 {
+        //                     //decode_startTime = GetTimeStamp();
+        //                     jerasure_matrix_decode(k1, m1, w, ec_matrix, 1, erasures, mpi_data, mpi_coding, ec_blocksize);
+        //                     //decode_endTime = GetTimeStamp();
+        //                     //fprintf(stdout,"time = %lf\n",decode_endTime-decode_startTime);
+        //                 }
+        //             }
+        //             else if (method == Cauchy_Orig || method == Cauchy_Good || method == Liberation || method == Blaum_Roth || method == Liber8tion)
+        //             {
+        //                 for (j = 0; j < 1500; j++)
+        //                 {
+        //                     //decode_startTime = GetTimeStamp();
+        //                     jerasure_schedule_decode_lazy(k1, m1, w, ec_bitmatrix, erasures, mpi_data, mpi_coding, ec_blocksize, ec_packetsize, 1);
+        //                     //decode_endTime = GetTimeStamp();
+        //                     //fprintf(stdout,"time = %lf\n",decode_endTime-decode_startTime);
+        //                 }
+        //             }
+        //             fprintf(stdout, "process %d: decode %d times!!\n", rank,j);
 
-                }
+        //         }
 
-                fprintf(stdout, "process %d: I/O complete!!\n", rank);
+        //         fprintf(stdout, "process %d: I/O complete!!\n", rank);
                 
-            }else{
-                for(i=0;i<k;i++){
-                    MPI_Send(ec_data[i],ec_blocksize,MPI_CHAR,numTasksWorld-1,rank,testComm);
-                }
-                fprintf(stdout, "process %d: finish sending!!\n", rank);
-            }
+        //     }else{
+        //         for(i=0;i<k;i++){
+        //             MPI_Send(ec_data[i],ec_blocksize,MPI_CHAR,numTasksWorld-1,rank,testComm);
+        //         }
+        //         fprintf(stdout, "process %d: finish sending!!\n", rank);
+        //     }
 
-            /*************************inter-process repair******************************/
-            if(local_finished!=0){
-                for (i = 0; i < total_stripe_num; i++)
-                {
-                    pthread_join(threads[i], NULL);
-                }
-            }
+        //     /*************************inter-process repair******************************/
+        //     if(local_finished!=0){
+        //         for (i = 0; i < total_stripe_num; i++)
+        //         {
+        //             pthread_join(threads[i], NULL);
+        //         }
+        //     }
             
-            /*ec when k stripes arrive*/
-            fprintf(stdout, "process %d: break after join..\n", rank);
-        }else{
-            for (i = 0; i < total_stripe_num; i++)
-            {
-                pthread_join(threads[i], NULL);
-            }
+        //     /*ec when k stripes arrive*/
+        //     fprintf(stdout, "process %d: break after join..\n", rank);
+        // }else{
+        //     for (i = 0; i < total_stripe_num; i++)
+        //     {
+        //         pthread_join(threads[i], NULL);
+        //     }
+        // }
+
+        for (i = 0; i < total_stripe_num; i++)
+        {
+            pthread_join(threads[i], NULL);
         }
-
         
         amtXferred = ec_blocksize * k;
         /*************************ec multi-thread read*************************/
