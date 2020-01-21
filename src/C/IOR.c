@@ -3160,7 +3160,7 @@ ec_adaptive_decode()
     for (i = 0; i < decode_num; i++)
     {
         //jerasure_schedule_decode_lazy(6, 2, 8, sample_matrix, sample_erasures, sample_data[0], sample_coding[0], 524288, 8, 1);
-        sleep(0.016);
+        sleep(16);
     }
     double endTime = GetTimeStamp();
     decode_time = endTime - startTime;
@@ -3284,7 +3284,6 @@ ec_adaptive_thread(ec_read_thread_args *arg)
             pthread_join(decode_thread, NULL);
             fprintf(stdout, "parity time0: %lf, parity time1: %lf\n", parity_time[0],parity_time[1]);
             fprintf(stdout, "slow read time: %lf\n", slow_time);
-            fprintf(stdout, "parity time0: %lf, parity time1: %lf\n", parity_time[0],parity_time[1]);
             fprintf(stdout, "decode time: %lf\n", decode_time);
             pairCnt += window_size;
             isStraggler = 0;
