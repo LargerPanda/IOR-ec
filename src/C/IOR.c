@@ -3159,7 +3159,8 @@ ec_adaptive_decode()
     int i;
     for (i = 0; i < decode_num; i++)
     {
-        jerasure_schedule_decode_lazy(6, 2, 8, sample_matrix, sample_erasures, sample_data[0], sample_coding[0], 524288, 8, 1);
+        //jerasure_schedule_decode_lazy(6, 2, 8, sample_matrix, sample_erasures, sample_data[0], sample_coding[0], 524288, 8, 1);
+        sleep(0.016);
     }
     double endTime = GetTimeStamp();
     decode_time = endTime - startTime;
@@ -3276,7 +3277,7 @@ ec_adaptive_thread(ec_read_thread_args *arg)
             pthread_create(&parity_threads[0], NULL, ec_parity_thread0, arg);
             pthread_create(&parity_threads[1], NULL, ec_parity_thread1, arg);
             pthread_create(&slow_read, NULL, ec_slowread_thread, arg);
-            pthread_create(&decode_thread,NULL,ec_adaptive_decode,NULL);
+            pthread_create(&decode_thread, NULL ,ec_adaptive_decode, NULL);
             pthread_join(parity_threads[0], NULL);
             pthread_join(parity_threads[1], NULL);
             pthread_join(slow_read, NULL);
