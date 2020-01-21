@@ -3180,18 +3180,12 @@ ec_adaptive_thread(ec_read_thread_args *arg)
         offset = offsetArray[pairCnt];
         offset = offset / arg->test->ec_k;
         //XferStartTime = GetTimeStamp() - startTime;
-        if (id < k)
-        {
-            xfer_startTime = GetTimeStamp() -startTime;
-            transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], (arg->ec_data)[id], arg->test->ec_stripe_size, arg->test, offset);
-        }
-        else
-        {
-
-            xfer_startTime = GetTimeStamp()-startTime;
-            transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], (arg->ec_coding)[id - k], arg->test->ec_stripe_size, arg->test, offset);
-        }
-        xfer_endTime = GetTimeStamp() - xfer_startTime;
+        
+        xfer_startTime = GetTimeStamp() -startTime;
+        transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], (arg->ec_data)[id], arg->test->ec_stripe_size, arg->test, offset);
+    
+        
+        xfer_endTime = GetTimeStamp() - startTime;
         duration = xfer_endTime - xfer_startTime;
         //fprintf(stdout, "#Xferid=%d,startTime=%0.2lf,endTIme=%0.2lf,duration=%2lf\n",id, XferStartTime,XferEndTime,XferEndTime-XferStartTime);
         pairCnt++;
