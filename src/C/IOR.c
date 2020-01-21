@@ -3132,7 +3132,7 @@ ec_adaptive_thread(ec_read_thread_args *arg)
     double xfer_startTime;
     double xfer_endTime;
     double upper_threshold = 0.02;
-    double lower_threshold = 0.01;
+    double lower_threshold = 0.008;
     double duration = 0.00;
     /*adaptive parameter*/
     while ((offsetArray[pairCnt] != -1) && !hitStonewall)
@@ -3162,7 +3162,7 @@ ec_adaptive_thread(ec_read_thread_args *arg)
             times_over_threshold = 0;
             fprintf(stdout, "process %d: thread %d into straggler, offset: %lld\n", rank, id, pairCnt);
         }
-        if (times_below_threshold >= 5)
+        if (times_below_threshold >= 10)
         {
             isStraggler = 0;
             times_below_threshold = 0;
