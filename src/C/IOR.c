@@ -3129,7 +3129,8 @@ ec_adaptive_thread(ec_read_thread_args *arg)
     int isStraggler = 0;
     double times_over_threshold = 0;
     double times_below_threshold = 0;
-    //double threshold = 0.02;
+    double xfer_startTime;
+    double xfer_endTime;
     double upper_threshold = 0.02;
     double lower_threshold = 0.01;
     double duration = 0.00;
@@ -3181,13 +3182,16 @@ ec_adaptive_thread(ec_read_thread_args *arg)
         //XferStartTime = GetTimeStamp() - startTime;
         if (id < k)
         {
+            xfer_startTime = GetTimeStamp();
             transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], (arg->ec_data)[id], arg->test->ec_stripe_size, arg->test, offset);
         }
         else
         {
+
+            xfer_startTime = GetTimeStamp();
             transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], (arg->ec_coding)[id - k], arg->test->ec_stripe_size, arg->test, offset);
         }
-        //XferEndTime = GetTimeStamp() - startTime;
+        duration = GetTimeStamp() - xfer_startTime;
         //fprintf(stdout, "#Xferid=%d,startTime=%0.2lf,endTIme=%0.2lf,duration=%2lf\n",id, XferStartTime,XferEndTime,XferEndTime-XferStartTime);
         pairCnt++;
         dataLeft[id]--;
