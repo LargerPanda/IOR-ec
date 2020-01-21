@@ -26,7 +26,7 @@ def stress_generator(n, s, t):
         for each in range(n):
             #directory = choice(nodeList)
             directory = nodeList[(each+i)%len(nodeList)]
-            hdd = s
+            hdd = str(s)
             stressTime = t
             stressCmd = "nohup stress --hdd " + hdd + " --timeout " + str(
                 stressTime) + "&"
