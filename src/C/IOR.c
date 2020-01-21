@@ -3144,7 +3144,7 @@ ec_parity_thread1(ec_read_thread_args *arg)
 {
     double startTime = GetTimeStamp();
     int i;
-    for (i = 0; i < decode_num; i++)
+    for (i = 0; i < parity_number[1]; i++)
     {
         IOR_Xfer_ec(arg->access, (arg->fds)[6 + parity_target[1]], (arg->ec_coding)[parity_target[1]], arg->test->ec_stripe_size, arg->test, arg->offSetArray[parity_start[1] + i]);
     }
@@ -3269,10 +3269,10 @@ ec_adaptive_thread(ec_read_thread_args *arg)
             parity_start[1] = temp_pairCnt+should_readfrom0;
             parity_number[0] = should_readfrom0;
             parity_number[1] = should_readfrom1;
-           
             slow_target = id;
             slow_num = should_read;
             slow_start = temp_pairCnt+should_readfrom0+should_readfrom1;
+            decode_num = should_decode;
             pthread_create(&parity_threads[0], NULL, ec_parity_thread0, arg);
             pthread_create(&parity_threads[1], NULL, ec_parity_thread1, arg);
             pthread_create(&slow_read, NULL, ec_slowread_thread, arg);
