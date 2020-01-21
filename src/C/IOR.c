@@ -3120,7 +3120,7 @@ ec_slowread_thread(ec_read_thread_args *arg){
     double startTime = GetTimeStamp();
     int i;
     for(i=0;i<slow_num;i++){
-        IOR_Xfer_ec(arg->access, (arg->fds)[slow_target], (arg->ec_data)[slow_target], arg->test->ec_stripe_size, arg->test, arg->offSetArray(slow_start+i));
+        IOR_Xfer_ec(arg->access, (arg->fds)[slow_target], (arg->ec_data)[slow_target], arg->test->ec_stripe_size, arg->test, arg->offSetArray[slow_start+i]);
     }
     double endTime = GetTimeStamp();
     slow_time = endTime - startTime;
@@ -3131,7 +3131,7 @@ ec_parity_thread0(ec_read_thread_args *arg){
     double startTime = GetTimeStamp();
     int i;
     for(i=0;i<parity_number[0];i++){
-        IOR_Xfer_ec(arg->access, (arg->fds)[6+parity_target[0]], (arg->ec_coding)[parity_target[0]], arg->test->ec_stripe_size, arg->test, arg->offSetArray(parity_start[0]+i));
+        IOR_Xfer_ec(arg->access, (arg->fds)[6+parity_target[0]], (arg->ec_coding)[parity_target[0]], arg->test->ec_stripe_size, arg->test, arg->offSetArray[parity_start[0]+i]);
     }
     double endTime = GetTimeStamp();
     parity_time[parity_target[0]] = endTime - startTime;
@@ -3144,7 +3144,7 @@ ec_parity_thread1(ec_read_thread_args *arg)
     int i;
     for (i = 0; i < parity_number[1]; i++)
     {
-        IOR_Xfer_ec(arg->access, (arg->fds)[6 + parity_target[1]], (arg->ec_coding)[parity_target[1]], arg->test->ec_stripe_size, arg->test, arg->offSetArray(parity_start[1] + i));
+        IOR_Xfer_ec(arg->access, (arg->fds)[6 + parity_target[1]], (arg->ec_coding)[parity_target[1]], arg->test->ec_stripe_size, arg->test, arg->offSetArray[parity_start[1] + i]);
     }
     double endTime = GetTimeStamp();
     parity_time[parity_target[1]] = endTime - startTime;
