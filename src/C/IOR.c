@@ -4932,6 +4932,7 @@ WriteOrRead_ec(IOR_param_t *test,
 
     IOR_offset_t *ec_amtXferred = (IOR_offset_t *)malloc(sizeof(IOR_offset_t) * total_stripe_num);
     IOR_offset_t ec_blocksize = test->ec_stripe_size;
+    fprintf(stdout, "ec_blocksize = %ld\n",ec_blocksize);
     ec_read_thread_args *ec_read_args;
 
     Coding_Technique method = test->ec_method;      // coding technique (parameter)
