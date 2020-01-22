@@ -3159,8 +3159,8 @@ ec_adaptive_decode()
     int i;
     for (i = 0; i < decode_num; i++)
     {
-        //jerasure_schedule_decode_lazy(6, 2, 8, sample_matrix, sample_erasures, sample_data[0], sample_coding[0], 524288, 8, 1);
-        sleep(0.1);
+        jerasure_schedule_decode_lazy(6, 2, 8, sample_matrix, sample_erasures, sample_data, sample_coding, 524288, 8, 1);
+        //sleep(0.1);
     }
     double endTime = GetTimeStamp();
     decode_time = endTime - startTime;
