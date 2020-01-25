@@ -2253,12 +2253,12 @@ TestIoSys(IOR_param_t *test)
             }
             timer[2][rep] = GetTimeStamp();
             //dataMoved = WriteOrRead(test, fd, WRITE); //origin_mark
-            if(rank == (numTasksWorld-1)){
-                dataMoved = WriteOrRead_CL(test, ec_fds, WRITE);
-            }else{
-                dataMoved = WriteOrRead_ec(test, ec_fds, WRITE);//ec_version
-            }
-            //dataMoved = WriteOrRead_ec(test, ec_fds, WRITE);//ec_version
+            // if(rank == (numTasksWorld-1)){
+            //     dataMoved = WriteOrRead_CL(test, ec_fds, WRITE);
+            // }else{
+            //     dataMoved = WriteOrRead_ec(test, ec_fds, WRITE);//ec_version
+            // }
+            dataMoved = WriteOrRead_ec(test, ec_fds, WRITE);//ec_version
             //fprintf(stdout, "break at 2120\n");
             //fprintf(stdout, "datamoved=%lld\n", dataMoved);
             timer[3][rep] = GetTimeStamp();
