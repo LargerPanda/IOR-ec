@@ -5030,12 +5030,12 @@ WriteOrRead_ec(IOR_param_t *test,
             ec_data[i] = buffer + (i * ec_blocksize);
         }
 
-        char *sendBuffer = (char*)malloc(sizeof(char)*k*ec_blocksize);
-        for(i=0;i<k;i++){
-            memcpy(sendBuffer+i*ec_blocksize, ec_data[i], ec_blocksize);
-        }
-        fprintf(stdout,"process %d starts to sending...\n", rank);
-        MPI_Send(sendBuffer, ec_blocksize*k, MPI_CHAR, numTasksWorld-1, rank, testComm);
+        // char *sendBuffer = (char*)malloc(sizeof(char)*k*ec_blocksize);
+        // for(i=0;i<k;i++){
+        //     memcpy(sendBuffer+i*ec_blocksize, ec_data[i], ec_blocksize);
+        // }
+        // fprintf(stdout,"process %d starts to sending...\n", rank);
+        // MPI_Send(sendBuffer, ec_blocksize*k, MPI_CHAR, numTasksWorld-1, rank, testComm);
         
         switch (method)
         {
