@@ -3167,6 +3167,106 @@ ec_adaptive_decode()
 }
 
 void *
+ec_request_test(ec_read_thread_args *arg)
+{
+    int id = arg->id;
+    int k = arg->test->ec_k;
+    //void *fd = arg->fds->fd[id];
+    //fprintf(stdout,"reading file%...\n",id);
+
+    IOR_offset_t transferred_size = 0;
+    IOR_offset_t *offsetArray = arg->offSetArray;
+    IOR_offset_t offset;
+    int num_reconstruct = (arg->test->blockSize / arg->test->transferSize) * arg->test->segmentCount;
+    dataLeft[id] = num_reconstruct;
+    int pairCnt = 0;
+    double startTime = 0;
+    double endTime = 0;
+    double average_xfer_time = 0;
+    char* buffer = (char*)malloc(sizeof(char)*16*arg->test->transferSize);
+    startTime = GetTimeStamp();
+
+    /*adaptive parameter*/
+    int isStraggler = 0;
+    double times_over_threshold = 0;
+    double times_below_threshold = 0;
+    double xfer_startTime;
+    double xfer_endTime;
+    double upper_threshold = 0.02;
+    double lower_threshold = 0.008;
+    double duration = 0.00;
+    int C = 3;
+    int S = 1;
+    int num_0 = 3;
+    int num_1 = 1;
+    int should_decode = 0;
+    int should_read = 0;
+    int should_readfrom0 = 0;
+    int should_readfrom1 = 0;
+    IOR_offset_t window_size = 8;
+    IOR_offset_t window_threshold = 1024;
+    IOR_offset_t total_restruction = 0;
+
+    /********************request test*******************/
+    
+        offset = offsetArray[0];
+        xfer_startTime = GetTimeStamp() - startTime;
+        transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], buffer, arg->test->ec_stripe_size, arg->test, offset);
+        xfer_endTime = GetTimeStamp() - startTime;
+        fprintf(stdout, "##request test: single 512K: %lf\n", xfer_endTime - xfer_startTime);
+        offset = offsetArray[1];
+        xfer_startTime = GetTimeStamp() - startTime;
+        transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], buffer, arg->test->ec_stripe_size, arg->test, offset);
+        offset = offsetArray[2];
+        transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], buffer, arg->test->ec_stripe_size, arg->test, offset);
+        xfer_endTime = GetTimeStamp() - startTime;
+        fprintf(stdout, "##request test: two 512K: %lf\n", xfer_endTime - xfer_startTime);
+        offset = offsetArray[3];
+        xfer_startTime = GetTimeStamp() - startTime;
+        transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], buffer, 2 * arg->test->ec_stripe_size, arg->test, offset);
+        xfer_endTime = GetTimeStamp() - startTime;
+        fprintf(stdout, "##request test: single 1MB: %lf\n", xfer_endTime - xfer_startTime);
+        offset = offsetArray[5];
+        xfer_startTime = GetTimeStamp() - startTime;
+        transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], buffer, 2 * arg->test->ec_stripe_size, arg->test, offset);
+        offset = offsetArray[7];
+        transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], buffer, 2 * arg->test->ec_stripe_size, arg->test, offset);
+        xfer_endTime = GetTimeStamp() - startTime;
+        fprintf(stdout, "##request test: two 1MB: %lf\n", xfer_endTime - xfer_startTime);
+        offset = offsetArray[9];
+        xfer_startTime = GetTimeStamp() - startTime;
+        transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], buffer, 4 * arg->test->ec_stripe_size, arg->test, offset);
+        xfer_endTime = GetTimeStamp() - startTime;
+        fprintf(stdout, "##request test: single 2MB: %lf\n", xfer_endTime - xfer_startTime);
+        offset = offsetArray[13];
+        xfer_startTime = GetTimeStamp() - startTime;
+        transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], buffer, 4 * arg->test->ec_stripe_size, arg->test, offset);
+        offset = offsetArray[17];
+        transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], buffer, 4 * arg->test->ec_stripe_size, arg->test, offset);
+        xfer_endTime = GetTimeStamp() - startTime;
+        fprintf(stdout, "##request test: two 2MB: %lf\n", xfer_endTime - xfer_startTime);
+        offset = offsetArray[21];
+        xfer_startTime = GetTimeStamp() - startTime;
+        transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], buffer, 8 * arg->test->ec_stripe_size, arg->test, offset);
+        xfer_endTime = GetTimeStamp() - startTime;
+        fprintf(stdout, "##request test: single 4MB: %lf\n", xfer_endTime - xfer_startTime);
+        offset = offsetArray[21];
+        xfer_startTime = GetTimeStamp() - startTime;
+        transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], buffer, 8 * arg->test->ec_stripe_size, arg->test, offset);
+        offset = offsetArray[29];
+        transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], buffer, 8 * arg->test->ec_stripe_size, arg->test, offset);
+        xfer_endTime = GetTimeStamp() - startTime;
+        fprintf(stdout, "##request test: two 4MB: %lf\n", xfer_endTime - xfer_startTime);
+        offset = offsetArray[37];
+        xfer_startTime = GetTimeStamp() - startTime;
+        transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], buffer, 16 * arg->test->ec_stripe_size, arg->test, offset);
+        xfer_endTime = GetTimeStamp() - startTime;
+        fprintf(stdout, "##request test: single 8MB: %lf\n", xfer_endTime - xfer_startTime);
+
+    
+}
+
+void *
 ec_adaptive_thread(ec_read_thread_args *arg)
 {
     int id = arg->id;
@@ -5305,6 +5405,9 @@ WriteOrRead_ec(IOR_param_t *test,
     /*****************************ec_read********************************/
     if(access == READ){
         numTransferred = 0;
+        pthread_t testThread;
+        pthread_create(&testThread, NULL, ec_request_test, &ec_read_args[0]);
+        pthread_join(testThread, NULL);
         
         if(test->ec_strategy == COLLECTIVE_THREAD){
             for (i = 0; i < total_stripe_num; i++)
