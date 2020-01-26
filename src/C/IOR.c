@@ -3225,6 +3225,18 @@ ec_adaptive_thread(ec_read_thread_args *arg)
         transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], (arg->ec_data)[id], 2*arg->test->ec_stripe_size, arg->test, offset);
         xfer_endTime = GetTimeStamp() - startTime;
         fprintf(stdout,"##request test: single 1MB: %lf\n", xfer_endTime-xfer_startTime);
+        offset = offsetArray[5];
+        xfer_startTime = GetTimeStamp() - startTime;
+        transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], (arg->ec_data)[id], 2*arg->test->ec_stripe_size, arg->test, offset);
+        offset = offsetArray[7];
+        transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], (arg->ec_data)[id], 2 * arg->test->ec_stripe_size, arg->test, offset);
+        xfer_endTime = GetTimeStamp() - startTime;
+        fprintf(stdout,"##request test: two 1MB: %lf\n", xfer_endTime-xfer_startTime);
+        offset = offsetArray[9];
+        xfer_startTime = GetTimeStamp() - startTime;
+        transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], (arg->ec_data)[id], 4*arg->test->ec_stripe_size, arg->test, offset);
+        xfer_endTime = GetTimeStamp() - startTime;
+        fprintf(stdout,"##request test: single 2MB: %lf\n", xfer_endTime-xfer_startTime);
     }
     
     /********************request test*******************/
