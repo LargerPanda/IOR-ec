@@ -3250,14 +3250,14 @@ ec_request_test(ec_read_thread_args *arg)
         transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], buffer, 8 * arg->test->ec_stripe_size, arg->test, offset);
         xfer_endTime = GetTimeStamp() - startTime;
         fprintf(stdout, "##request test: single 4MB: %lf\n", xfer_endTime - xfer_startTime);
-        offset = offsetArray[21];
+        offset = offsetArray[29];
         xfer_startTime = GetTimeStamp() - startTime;
         transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], buffer, 8 * arg->test->ec_stripe_size, arg->test, offset);
-        offset = offsetArray[29];
+        offset = offsetArray[37];
         transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], buffer, 8 * arg->test->ec_stripe_size, arg->test, offset);
         xfer_endTime = GetTimeStamp() - startTime;
         fprintf(stdout, "##request test: two 4MB: %lf\n", xfer_endTime - xfer_startTime);
-        offset = offsetArray[37];
+        offset = offsetArray[45];
         xfer_startTime = GetTimeStamp() - startTime;
         transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], buffer, 16 * arg->test->ec_stripe_size, arg->test, offset);
         xfer_endTime = GetTimeStamp() - startTime;
