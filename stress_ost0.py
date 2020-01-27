@@ -23,7 +23,7 @@ def stress_generator():
     while True:
         sleepT = 0
         directory = nodeList[0]
-        hdd = choice([4,5,6,7,8])
+        hdd = str(choice([4,5,6,7,8]))
         stressTime = choice([3,4,5,6,7,8])
         stressCmd = "nohup stress --hdd " + hdd + " --timeout " + str(
             stressTime) + "&"
