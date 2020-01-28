@@ -3114,8 +3114,15 @@ int slow_start;
 int slow_num;
 double slow_time;
 int slow_target;
-double decode_time;
+double decode_time0;
+double decode_time1;
 double decode_num;
+
+
+pthread_mutex_t buffernum0 = PTHREAD_MUTEX_INITIALIZER;
+int bnum0;
+pthread_mutex_t buffernum1 = PTHREAD_MUTEX_INITIALIZER;
+int bnum1;
 
 void*
 ec_slowread_thread(ec_read_thread_args *arg){
@@ -3134,6 +3141,9 @@ ec_parity_thread0(ec_read_thread_args *arg){
     int i;
     for(i=0;i<parity_number[0];i++){
         IOR_Xfer_ec(arg->access, (arg->fds)[6+parity_target[0]], (arg->ec_coding)[parity_target[0]], arg->test->ec_stripe_size, arg->test, arg->offSetArray[parity_start[0]+i]);
+        pthread_mutex_lock(&buffernum0);
+        bnum0++;
+        pthread_mutex_unlock(&buffernum0);
     }
     double endTime = GetTimeStamp();
     parity_time[parity_target[0]] = endTime - startTime;
@@ -3147,23 +3157,64 @@ ec_parity_thread1(ec_read_thread_args *arg)
     for (i = 0; i < parity_number[1]; i++)
     {
         IOR_Xfer_ec(arg->access, (arg->fds)[6 + parity_target[1]], (arg->ec_coding)[parity_target[1]], arg->test->ec_stripe_size, arg->test, arg->offSetArray[parity_start[1] + i]);
+        pthread_mutex_lock(&buffernum1);
+        bnum1++;
+        pthread_mutex_unlock(&buffernum1);
     }
     double endTime = GetTimeStamp();
     parity_time[parity_target[1]] = endTime - startTime;
 }
 
 void *
-ec_adaptive_decode()
+ec_adaptive_decode0()
 {
     double startTime = GetTimeStamp();
     int i;
-    for (i = 0; i < decode_num; i++)
+    for (i = 0; i < parity_number[0]; i++)
     {
+        
+        while (1)
+        {
+            pthread_mutex_lock(&buffernum0);
+            if(bnum0>0){
+                bnum0--;
+                pthread_mutex_unlock(&buffernum0);
+                break;
+            }
+            pthread_mutex_unlock(&buffernum0);            
+        }
+        
         jerasure_schedule_decode_lazy(6, 2, 8, sample_matrix, sample_erasures, sample_data, sample_coding, 524288, 8, 1);
         //sleep(0.1);
     }
     double endTime = GetTimeStamp();
-    decode_time = endTime - startTime;
+    decode_time0 = endTime - startTime;
+}
+
+void *
+ec_adaptive_decode1()
+{
+    double startTime = GetTimeStamp();
+    int i;
+    for (i = 0; i < parity_number[1]; i++)
+    {
+        
+        while (1)
+        {
+            pthread_mutex_lock(&buffernum1);
+            if(bnum1>0){
+                bnum1--;
+                pthread_mutex_unlock(&buffernum1);
+                break;
+            }
+            pthread_mutex_unlock(&buffernum1);            
+        }
+        
+        jerasure_schedule_decode_lazy(6, 2, 8, sample_matrix, sample_erasures, sample_data, sample_coding, 524288, 8, 1);
+        //sleep(0.1);
+    }
+    double endTime = GetTimeStamp();
+    decode_time1 = endTime - startTime;
 }
 
 void *
@@ -3299,9 +3350,12 @@ ec_adaptive_thread(ec_read_thread_args *arg)
     double upper_threshold = 0.015;
     double lower_threshold = 0.012;
     double duration = 0.00;
-    int C = 3;
-    int S = 1;
-    int num_0 = 3;
+    double C_latency;
+    double S_latency;
+    double P_latency;
+    double C = 2.5;
+    double S = 2;
+    int num_0 = 1;
     int num_1 = 1;
     int should_decode = 0;
     int should_read = 0;
@@ -3358,27 +3412,39 @@ ec_adaptive_thread(ec_read_thread_args *arg)
         }
         /****************straggler_detector******************/
         int temp_pairCnt;
+        int batch_size;
         pthread_t parity_threads[2];
         pthread_t slow_read;
-        pthread_t decode_thread;
+        pthread_t decode_thread0;
+        pthread_t decode_thread1;
         /****************window_size******************/
         while(isStraggler){
             //window_size = 2*window_size;
-            window_size = 1;
+            //window_size = 16;
+            batch_size = 16;
             // if(window_size>=window_threshold){
             //     window_size/=2;
             // }
             // if(window_size >= (num_reconstruct-pairCnt)){
             //     window_size = num_reconstruct-pairCnt;
             // }
-            // should_decode = window_size/(C+S)*C;
-            // should_read = window_size - should_decode;
-            // should_readfrom0 = should_read/(num_0+num_1)*num_0;
-            // should_readfrom1 = should_read - should_readfrom0;
-            should_decode = 1;
-            should_read = 1;
-            should_readfrom0 = 1;
+            // if(window_size >= (num_reconstruct-pairCnt)){
+            //     window_size = num_reconstruct-pairCnt;
+            // }
+            should_decode = batch_size/(C+S)*C;
+            should_read = batch_size;
+            should_readfrom0 = should_decode;
             should_readfrom1 = 0;
+            //should_readfrom0 = should_read/(num_0+num_1)*num_0;
+            //should_readfrom1 = should_read - should_readfrom0;
+            // should_decode = 1;
+            // should_read = 1;
+            // should_readfrom0 = 1;
+            // should_readfrom1 = 0;
+            window_size = should_decode+should_read;
+            if(window_size >= (num_reconstruct-pairCnt)){
+                break;
+            }
             fprintf(stdout, "windowsize: %d, decode: %d, read: %d, read from 0: %d, read from 1: %d\n",window_size, should_decode,should_read,should_readfrom0,should_readfrom1);
             temp_pairCnt = pairCnt;
             parity_start[0] = temp_pairCnt;
@@ -3392,15 +3458,16 @@ ec_adaptive_thread(ec_read_thread_args *arg)
             pthread_create(&parity_threads[0], NULL, ec_parity_thread0, arg);
             //pthread_create(&parity_threads[1], NULL, ec_parity_thread1, arg);
             pthread_create(&slow_read, NULL, ec_slowread_thread, arg);
-            pthread_join(parity_threads[0], NULL);
-            pthread_create(&decode_thread, NULL ,ec_adaptive_decode, NULL);
+            //pthread_join(parity_threads[0], NULL);
+            pthread_create(&decode_thread0, NULL ,ec_adaptive_decode0, NULL);
             //pthread_join(parity_threads[0], NULL);
             //pthread_join(parity_threads[1], NULL);
+            pthread_join(parity_threads[0], NULL);
             pthread_join(slow_read, NULL);
-            pthread_join(decode_thread, NULL);
+            pthread_join(decode_thread0, NULL);
             fprintf(stdout, "parity time0: %lf, parity time1: %lf\n", parity_time[0],parity_time[1]);
             fprintf(stdout, "slow read time: %lf\n", slow_time);
-            fprintf(stdout, "decode time: %lf\n", decode_time);
+            fprintf(stdout, "decode time0: %lf\n", decode_time0);
             pairCnt += window_size;
             isStraggler = 0;
             times_over_threshold = 9;
