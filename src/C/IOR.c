@@ -3498,6 +3498,9 @@ ec_adaptive_thread(ec_read_thread_args *arg)
             pairCnt++;
             dataLeft[id]--;
         }
+
+        if(pairCnt>=num_reconstruct)
+            pairCnt = num_reconstruct;
     }
     //fprintf(stdout, "reading file%d complete, size: %lld\n", id, transferred_size);
 
