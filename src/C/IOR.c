@@ -3430,7 +3430,7 @@ ec_adaptive_thread(ec_read_thread_args *arg)
         while(isStraggler){
             //window_size = 2*window_size;
             //window_size = 16;
-            batch_size = 2;
+            batch_size = 4;
             // if(window_size>=window_threshold){
             //     window_size/=2;
             // }
