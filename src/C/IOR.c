@@ -3360,7 +3360,7 @@ ec_adaptive_thread(ec_read_thread_args *arg)
     batch_buffer0 = (char*)malloc(sizeof(char)*batch_size*524288);
     batch_buffer1 = (char*)malloc(sizeof(char)*batch_size*524288);
 
-    int isStraggler = 0;s
+    int isStraggler = 0;
     double times_over_threshold = 0;
     double times_below_threshold = 0;
     double xfer_startTime;
