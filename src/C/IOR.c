@@ -3440,7 +3440,7 @@ ec_adaptive_thread(ec_read_thread_args *arg)
             // if(window_size >= (num_reconstruct-pairCnt)){
             //     window_size = num_reconstruct-pairCnt;
             // }
-            should_decode = batch_size/(C+S)*C;
+            should_decode = batch_size/S*C;
             should_read = batch_size;
             should_readfrom0 = should_decode;
             should_readfrom1 = 0;
