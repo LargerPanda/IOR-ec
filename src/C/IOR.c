@@ -3141,12 +3141,7 @@ ec_parity_thread0(ec_read_thread_args *arg){
     int i;
     for(i=0;i<parity_number[0];i++){
         IOR_Xfer_ec(arg->access, (arg->fds)[6+parity_target[0]], (arg->ec_coding)[parity_target[0]], arg->test->ec_stripe_size, arg->test, arg->offSetArray[parity_start[0]+i]);
-        IOR_Xfer_ec(arg->access, (arg->fds)[6+parity_target[0]], (arg->ec_coding)[parity_target[0]], arg->test->ec_stripe_size, arg->test, arg->offSetArray[parity_start[0]+i]);
-        IOR_Xfer_ec(arg->access, (arg->fds)[6+parity_target[0]], (arg->ec_coding)[parity_target[0]], arg->test->ec_stripe_size, arg->test, arg->offSetArray[parity_start[0]+i]);
-        IOR_Xfer_ec(arg->access, (arg->fds)[6+parity_target[0]], (arg->ec_coding)[parity_target[0]], arg->test->ec_stripe_size, arg->test, arg->offSetArray[parity_start[0]+i]);
-        IOR_Xfer_ec(arg->access, (arg->fds)[6+parity_target[0]], (arg->ec_coding)[parity_target[0]], arg->test->ec_stripe_size, arg->test, arg->offSetArray[parity_start[0]+i]);
-        IOR_Xfer_ec(arg->access, (arg->fds)[6+parity_target[0]], (arg->ec_coding)[parity_target[0]], arg->test->ec_stripe_size, arg->test, arg->offSetArray[parity_start[0]+i]);
-        IOR_Xfer_ec(arg->access, (arg->fds)[6+parity_target[0]], (arg->ec_coding)[parity_target[0]], arg->test->ec_stripe_size, arg->test, arg->offSetArray[parity_start[0]+i]);
+        sleep(0.4);
         pthread_mutex_lock(&buffernum0);
         bnum0++;
         pthread_mutex_unlock(&buffernum0);
