@@ -3362,8 +3362,8 @@ ec_adaptive_thread(ec_read_thread_args *arg)
     double C_latency;
     double S_latency;
     double P_latency;
-    double C = 29;
-    double S = 18;
+    double C = 5;
+    double S = 1;
     int num_0 = 1;
     int num_1 = 1;
     int should_decode = 0;
@@ -3430,7 +3430,7 @@ ec_adaptive_thread(ec_read_thread_args *arg)
         while(isStraggler){
             //window_size = 2*window_size;
             //window_size = 16;
-            batch_size = 8;
+            batch_size = 2;
             // if(window_size>=window_threshold){
             //     window_size/=2;
             // }
