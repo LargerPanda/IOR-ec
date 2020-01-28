@@ -3479,7 +3479,7 @@ ec_adaptive_thread(ec_read_thread_args *arg)
             fprintf(stdout, "slow read time: %lf\n", slow_time);
             fprintf(stdout, "decode time0: %lf\n", decode_time0);
             pairCnt += window_size;
-            isStraggler = 0;
+            isStraggler = 1;
             times_over_threshold = 9;
             total_restruction += window_size;
             fprintf(stdout, "exit straggler in while\n");
