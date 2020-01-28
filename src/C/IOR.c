@@ -3119,7 +3119,7 @@ double decode_time1;
 double decode_num;
 
 
-int batch_size = 2;
+int batch_size = 4;
 char *batch_buffer0;
 char *batch_buffer1;
 
