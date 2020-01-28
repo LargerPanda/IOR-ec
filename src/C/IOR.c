@@ -3142,7 +3142,8 @@ ec_parity_thread0(ec_read_thread_args *arg){
     int nouse;
     for(i=0;i<parity_number[0];i++){
         IOR_Xfer_ec(arg->access, (arg->fds)[6+parity_target[0]], (arg->ec_coding)[parity_target[0]], arg->test->ec_stripe_size, arg->test, arg->offSetArray[parity_start[0]+i]);
-        nouse = 1400000;
+        nouse = 1400000; //parity = 4
+        //nouse = 1100000; //parity <= 3
         while(nouse--){
             ;
         }
@@ -3361,8 +3362,8 @@ ec_adaptive_thread(ec_read_thread_args *arg)
     double C_latency;
     double S_latency;
     double P_latency;
-    double C = 2.5;
-    double S = 2;
+    double C = 2;
+    double S = 1;
     int num_0 = 1;
     int num_1 = 1;
     int should_decode = 0;
@@ -3440,7 +3441,7 @@ ec_adaptive_thread(ec_read_thread_args *arg)
             //     window_size = num_reconstruct-pairCnt;
             // }
             should_decode = batch_size/(C+S)*C;
-            should_read = 0;
+            should_read = batch_size;
             should_readfrom0 = should_decode;
             should_readfrom1 = 0;
             //should_readfrom0 = should_read/(num_0+num_1)*num_0;
@@ -3467,13 +3468,13 @@ ec_adaptive_thread(ec_read_thread_args *arg)
             decode_num = should_decode;
             pthread_create(&parity_threads[0], NULL, ec_parity_thread0, arg);
             //pthread_create(&parity_threads[1], NULL, ec_parity_thread1, arg);
-            //pthread_create(&slow_read, NULL, ec_slowread_thread, arg);
+            pthread_create(&slow_read, NULL, ec_slowread_thread, arg);
             //pthread_join(parity_threads[0], NULL);
             pthread_create(&decode_thread0, NULL ,ec_adaptive_decode0, NULL);
             //pthread_join(parity_threads[0], NULL);
             //pthread_join(parity_threads[1], NULL);
             pthread_join(parity_threads[0], NULL);
-            //pthread_join(slow_read, NULL);
+            pthread_join(slow_read, NULL);
             pthread_join(decode_thread0, NULL);
             fprintf(stdout, "parity time0: %lf, parity time1: %lf\n", parity_time[0],parity_time[1]);
             fprintf(stdout, "slow read time: %lf\n", slow_time);
