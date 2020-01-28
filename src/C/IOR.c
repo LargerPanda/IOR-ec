@@ -3363,17 +3363,22 @@ ec_adaptive_thread(ec_read_thread_args *arg)
         pthread_t decode_thread;
         /****************window_size******************/
         while(isStraggler){
-            window_size = 2*window_size;
-            if(window_size>=window_threshold){
-                window_size/=2;
-            }
-            if(window_size >= (num_reconstruct-pairCnt)){
-                window_size = num_reconstruct-pairCnt;
-            }
-            should_decode = window_size/(C+S)*C;
-            should_read = window_size - should_decode;
-            should_readfrom0 = should_read/(num_0+num_1)*num_0;
-            should_readfrom1 = should_read - should_readfrom0;
+            //window_size = 2*window_size;
+            window_size = 1;
+            // if(window_size>=window_threshold){
+            //     window_size/=2;
+            // }
+            // if(window_size >= (num_reconstruct-pairCnt)){
+            //     window_size = num_reconstruct-pairCnt;
+            // }
+            // should_decode = window_size/(C+S)*C;
+            // should_read = window_size - should_decode;
+            // should_readfrom0 = should_read/(num_0+num_1)*num_0;
+            // should_readfrom1 = should_read - should_readfrom0;
+            should_decode = 1;
+            should_read = 1;
+            should_readfrom0 = 1;
+            should_readfrom1 = 0;
             fprintf(stdout, "windowsize: %d, decode: %d, read: %d, read from 0: %d, read from 1: %d\n",window_size, should_decode,should_read,should_readfrom0,should_readfrom1);
             temp_pairCnt = pairCnt;
             parity_start[0] = temp_pairCnt;
@@ -3385,11 +3390,12 @@ ec_adaptive_thread(ec_read_thread_args *arg)
             slow_start = temp_pairCnt+should_readfrom0+should_readfrom1;
             decode_num = should_decode;
             pthread_create(&parity_threads[0], NULL, ec_parity_thread0, arg);
-            pthread_create(&parity_threads[1], NULL, ec_parity_thread1, arg);
+            //pthread_create(&parity_threads[1], NULL, ec_parity_thread1, arg);
             pthread_create(&slow_read, NULL, ec_slowread_thread, arg);
-            pthread_create(&decode_thread, NULL ,ec_adaptive_decode, NULL);
             pthread_join(parity_threads[0], NULL);
-            pthread_join(parity_threads[1], NULL);
+            pthread_create(&decode_thread, NULL ,ec_adaptive_decode, NULL);
+            //pthread_join(parity_threads[0], NULL);
+            //pthread_join(parity_threads[1], NULL);
             pthread_join(slow_read, NULL);
             pthread_join(decode_thread, NULL);
             fprintf(stdout, "parity time0: %lf, parity time1: %lf\n", parity_time[0],parity_time[1]);
