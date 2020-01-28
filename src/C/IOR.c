@@ -3120,8 +3120,8 @@ double decode_num;
 
 
 int batch_size = 2;
-char *batch_buffer0 = (char*)malloc(sizeof(char)*batch_size*524288);
-char *batch_buffer1 = (char*)malloc(sizeof(char)*batch_size*524288);
+char *batch_buffer0;
+char *batch_buffer1;
 
 pthread_mutex_t buffernum0 = PTHREAD_MUTEX_INITIALIZER;
 int bnum0;
@@ -3357,7 +3357,10 @@ ec_adaptive_thread(ec_read_thread_args *arg)
     startTime = GetTimeStamp();
 
     /*adaptive parameter*/
-    int isStraggler = 0;
+    batch_buffer0 = (char*)malloc(sizeof(char)*batch_size*524288);
+    batch_buffer1 = (char*)malloc(sizeof(char)*batch_size*524288);
+
+    int isStraggler = 0;s
     double times_over_threshold = 0;
     double times_below_threshold = 0;
     double xfer_startTime;
