@@ -3347,8 +3347,8 @@ ec_adaptive_thread(ec_read_thread_args *arg)
     double times_below_threshold = 0;
     double xfer_startTime;
     double xfer_endTime;
-    double upper_threshold = 0.015;
-    double lower_threshold = 0.012;
+    double upper_threshold = 0.008;
+    double lower_threshold = 0.005;
     double duration = 0.00;
     double C_latency;
     double S_latency;
