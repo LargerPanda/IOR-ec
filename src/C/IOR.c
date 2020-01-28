@@ -3142,10 +3142,10 @@ ec_parity_thread0(ec_read_thread_args *arg){
     int nouse;
     for(i=0;i<parity_number[0];i++){
         IOR_Xfer_ec(arg->access, (arg->fds)[6+parity_target[0]], (arg->ec_coding)[parity_target[0]], arg->test->ec_stripe_size, arg->test, arg->offSetArray[parity_start[0]+i]);
-        // nouse = 1100000;
-        // while(nouse--){
-        //     ;
-        // }
+        nouse = 1100000;
+        while(nouse--){
+            ;
+        }
         pthread_mutex_lock(&buffernum0);
         bnum0++;
         pthread_mutex_unlock(&buffernum0);
@@ -3324,7 +3324,10 @@ ec_request_test(ec_read_thread_args *arg)
         xfer_endTime = GetTimeStamp() - startTime;
         fprintf(stdout, "##request test: single 8MB: %lf\n", xfer_endTime - xfer_startTime);
 
-    
+        double encode_test_start = GetTimeStamp();
+        jerasure_schedule_decode_lazy(6, 2, 8, sample_matrix, sample_erasures, sample_data, sample_coding, 524288, 8, 1);
+        double encode_test_end = GetTimeStamp();
+        fprintf(stdout, "##encode latency: %lf\n", encode_test_end- encode_test_start);
 }
 
 void *
