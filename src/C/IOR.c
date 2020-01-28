@@ -3154,7 +3154,7 @@ ec_parity_thread0(ec_read_thread_args *arg){
             ;
         }
         pthread_mutex_lock(&buffernum0);
-        bnum0++;
+        bnum0+=batch_size;
         pthread_mutex_unlock(&buffernum0);
     }
     double endTime = GetTimeStamp();
