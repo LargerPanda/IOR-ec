@@ -3119,6 +3119,10 @@ double decode_time1;
 double decode_num;
 
 
+int batch_size = 2;
+char *batch_buffer0 = (char*)malloc(sizeof(char)*batch_size*524288);
+char *batch_buffer1 = (char*)malloc(sizeof(char)*batch_size*524288);
+
 pthread_mutex_t buffernum0 = PTHREAD_MUTEX_INITIALIZER;
 int bnum0;
 pthread_mutex_t buffernum1 = PTHREAD_MUTEX_INITIALIZER;
@@ -3140,8 +3144,10 @@ ec_parity_thread0(ec_read_thread_args *arg){
     double startTime = GetTimeStamp();
     int i;
     int nouse;
-    for(i=0;i<parity_number[0];i++){
-        IOR_Xfer_ec(arg->access, (arg->fds)[6+parity_target[0]], (arg->ec_coding)[parity_target[0]], arg->test->ec_stripe_size, arg->test, arg->offSetArray[parity_start[0]+i]);
+    int it = parity_number[0]/batch_size;
+    for(i=0;i<it;i++){
+
+        IOR_Xfer_ec(arg->access, (arg->fds)[6+parity_target[0]], batch_buffer0, batch_size*arg->test->ec_stripe_size, arg->test, arg->offSetArray[parity_start[0]+i]);
         //nouse = 1400000; //parity = 4
         nouse = 1100000; //parity <= 3
         while(nouse--){
@@ -3162,7 +3168,7 @@ ec_parity_thread1(ec_read_thread_args *arg)
     int i;
     for (i = 0; i < parity_number[1]; i++)
     {
-        IOR_Xfer_ec(arg->access, (arg->fds)[6 + parity_target[1]], (arg->ec_coding)[parity_target[1]], arg->test->ec_stripe_size, arg->test, arg->offSetArray[parity_start[1] + i]);
+        IOR_Xfer_ec(arg->access, (arg->fds)[6 + parity_target[1]], batch_buffer1, arg->test->ec_stripe_size, arg->test, arg->offSetArray[parity_start[1] + i]);
         pthread_mutex_lock(&buffernum1);
         bnum1++;
         pthread_mutex_unlock(&buffernum1);
@@ -3421,7 +3427,7 @@ ec_adaptive_thread(ec_read_thread_args *arg)
         }
         /****************straggler_detector******************/
         int temp_pairCnt;
-        int batch_size;
+        
         pthread_t parity_threads[2];
         pthread_t slow_read;
         pthread_t decode_thread0;
@@ -3430,7 +3436,6 @@ ec_adaptive_thread(ec_read_thread_args *arg)
         while(isStraggler){
             //window_size = 2*window_size;
             //window_size = 16;
-            batch_size = 32;
             // if(window_size>=window_threshold){
             //     window_size/=2;
             // }
