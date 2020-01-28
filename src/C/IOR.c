@@ -3448,7 +3448,8 @@ ec_adaptive_thread(ec_read_thread_args *arg)
             // should_readfrom1 = 0;
             window_size = should_decode+should_read;
             if(window_size >= (num_reconstruct-pairCnt)){
-                break;
+                //break;
+                window_size = num_reconstruct-pairCnt;
             }
             fprintf(stdout, "windowsize: %d, decode: %d, read: %d, read from 0: %d, read from 1: %d\n",window_size, should_decode,should_read,should_readfrom0,should_readfrom1);
             temp_pairCnt = pairCnt;
@@ -3482,20 +3483,21 @@ ec_adaptive_thread(ec_read_thread_args *arg)
         }
 
         /****************window_size******************/
-
-        offset = offsetArray[pairCnt];
-        offset = offset / arg->test->ec_k;
-        //XferStartTime = GetTimeStamp() - startTime;
+        if(!isStraggler){
+            offset = offsetArray[pairCnt];
+            offset = offset / arg->test->ec_k;
+            //XferStartTime = GetTimeStamp() - startTime;
+            
+            xfer_startTime = GetTimeStamp() -startTime;
+            transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], (arg->ec_data)[id], arg->test->ec_stripe_size, arg->test, offset);
         
-        xfer_startTime = GetTimeStamp() -startTime;
-        transferred_size = IOR_Xfer_ec(arg->access, (arg->fds)[id], (arg->ec_data)[id], arg->test->ec_stripe_size, arg->test, offset);
-    
-        
-        xfer_endTime = GetTimeStamp() - startTime;
-        duration = xfer_endTime - xfer_startTime;
-        //fprintf(stdout, "#Xferid=%d,startTime=%0.2lf,endTIme=%0.2lf,duration=%2lf\n",id, XferStartTime,XferEndTime,XferEndTime-XferStartTime);
-        pairCnt++;
-        dataLeft[id]--;
+            
+            xfer_endTime = GetTimeStamp() - startTime;
+            duration = xfer_endTime - xfer_startTime;
+            //fprintf(stdout, "#Xferid=%d,startTime=%0.2lf,endTIme=%0.2lf,duration=%2lf\n",id, XferStartTime,XferEndTime,XferEndTime-XferStartTime);
+            pairCnt++;
+            dataLeft[id]--;
+        }
     }
     //fprintf(stdout, "reading file%d complete, size: %lld\n", id, transferred_size);
 
