@@ -3362,8 +3362,8 @@ ec_adaptive_thread(ec_read_thread_args *arg)
     double C_latency;
     double S_latency;
     double P_latency;
-    double C = 9;
-    double S = 4;
+    double C = 3;
+    double S = 2;
     int num_0 = 1;
     int num_1 = 1;
     int should_decode = 0;
