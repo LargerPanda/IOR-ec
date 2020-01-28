@@ -3118,7 +3118,7 @@ double decode_time0;
 double decode_time1;
 double decode_num;
 
-int batch_size = 16;
+int batch_size = 32;
 char *batch_buffer0;
 char *batch_buffer1;
 
