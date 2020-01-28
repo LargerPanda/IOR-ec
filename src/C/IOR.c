@@ -3296,8 +3296,8 @@ ec_adaptive_thread(ec_read_thread_args *arg)
     double times_below_threshold = 0;
     double xfer_startTime;
     double xfer_endTime;
-    double upper_threshold = 0.02;
-    double lower_threshold = 0.008;
+    double upper_threshold = 0.015;
+    double lower_threshold = 0.012;
     double duration = 0.00;
     int C = 3;
     int S = 1;
@@ -3336,14 +3336,14 @@ ec_adaptive_thread(ec_read_thread_args *arg)
             times_below_threshold = 0;
         }
 
-        if (times_over_threshold >= 10)
+        if (times_over_threshold >= 8)
         {
             isStraggler = 1;
             RC_id = id;
             times_over_threshold = 0;
             fprintf(stdout, "process %d: thread %d into straggler, offset: %lld\n", rank, id, pairCnt);
         }
-        if (times_below_threshold >= 10)
+        if (times_below_threshold >= 8)
         {
             isStraggler = 0;
             times_below_threshold = 0;
