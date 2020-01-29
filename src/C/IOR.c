@@ -3118,7 +3118,8 @@ double decode_time0;
 double decode_time1;
 double decode_num;
 
-int batch_size = 16;
+int batch_size = 32;
+int small_batch = 4;
 char *batch_buffer0;
 char *batch_buffer1;
 
@@ -3143,19 +3144,34 @@ ec_parity_thread0(ec_read_thread_args *arg){
     double startTime = GetTimeStamp();
     int i;
     int nouse;
-    int it = parity_number[0]/batch_size;
+    int it = parity_number[0]/small_batch;
+    int it2 = parity_number[0]%small_batch;
     for(i=0;i<it;i++){
 
-        IOR_Xfer_ec(arg->access, (arg->fds)[6+parity_target[0]], batch_buffer0, batch_size*arg->test->ec_stripe_size, arg->test, arg->offSetArray[parity_start[0]+i*batch_size]);
+        IOR_Xfer_ec(arg->access, (arg->fds)[6+parity_target[0]], batch_buffer0, small_batch*arg->test->ec_stripe_size, arg->test, arg->offSetArray[parity_start[0]+i*small_batch]);
         //nouse = 1400000; //parity = 4
         nouse = 1100000; //parity <= 3
         while(nouse--){
             ;
         }
         pthread_mutex_lock(&buffernum0);
-        bnum0+=batch_size;
+        bnum0+=small_batch;
         pthread_mutex_unlock(&buffernum0);
     }
+
+    for(i=0;i<it2;i++){
+
+        IOR_Xfer_ec(arg->access, (arg->fds)[6+parity_target[0]], batch_buffer0, arg->test->ec_stripe_size, arg->test, arg->offSetArray[parity_start[0]+i]);
+        //nouse = 1400000; //parity = 4
+        nouse = 1100000; //parity <= 3
+        while(nouse--){
+            ;
+        }
+        pthread_mutex_lock(&buffernum0);
+        bnum0+=1;
+        pthread_mutex_unlock(&buffernum0);
+    }
+
     double endTime = GetTimeStamp();
     parity_time[parity_target[0]] = endTime - startTime;
 }
@@ -3167,10 +3183,25 @@ ec_parity_thread1(ec_read_thread_args *arg)
     int i;
     int nouse;
     int it = parity_number[1] / batch_size;
+    int it2 = parity_number[1]%small_batch;
     for (i = 0; i < it; i++)
     {
 
-        IOR_Xfer_ec(arg->access, (arg->fds)[6 + parity_target[1]], batch_buffer1, batch_size * arg->test->ec_stripe_size, arg->test, arg->offSetArray[parity_start[1] + i * batch_size]);
+        IOR_Xfer_ec(arg->access, (arg->fds)[6 + parity_target[1]], batch_buffer1, small_batch * arg->test->ec_stripe_size, arg->test, arg->offSetArray[parity_start[1] + i * small_batch]);
+        //nouse = 1400000; //parity = 4
+        nouse = 1100000; //parity <= 3
+        while (nouse--)
+        {
+            ;                   
+        pthread_mutex_lock(&buffernum1);
+        bnum1 += small_batch;
+        pthread_mutex_unlock(&buffernum1);
+    }
+
+    for (i = 0; i < it2; i++)
+    {
+
+        IOR_Xfer_ec(arg->access, (arg->fds)[6 + parity_target[1]], batch_buffer1, arg->test->ec_stripe_size, arg->test, arg->offSetArray[parity_start[1] + i]);
         //nouse = 1400000; //parity = 4
         nouse = 1100000; //parity <= 3
         while (nouse--)
@@ -3178,7 +3209,7 @@ ec_parity_thread1(ec_read_thread_args *arg)
             ;
         }
         pthread_mutex_lock(&buffernum1);
-        bnum1 += batch_size;
+        bnum1 += 1;
         pthread_mutex_unlock(&buffernum1);
     }
     double endTime = GetTimeStamp();
@@ -3381,10 +3412,7 @@ ec_adaptive_thread(ec_read_thread_args *arg)
     double C_latency;
     double S_latency;
     double P_latency;
-    double C = 5;
-    double S = 1;
-    double num_0 = 1;
-    double num_1 = 4;
+    
     int should_decode = 0;
     int should_read = 0;
     int should_readfrom0 =0;
@@ -3458,14 +3486,16 @@ ec_adaptive_thread(ec_read_thread_args *arg)
             // if(window_size >= (num_reconstruct-pairCnt)){
             //     window_size = num_reconstruct-pairCnt;
             // }
-            // should_decode = batch_size/S*C;
+            // 
             // should_read = batch_size;
-            should_decode = batch_size;
+            double C = 1;
+            double S = 1;
+            double num_0 = 1;
+            double num_1 = 1;
             should_read = 0;
+            should_decode = batch_size/S*C;
             should_readfrom0 = should_decode/(num_0+num_1)*num_0;
-            should_readfrom1 = should_decode-should_readfrom0;
-            //should_readfrom0 = should_read/(num_0+num_1)*num_0;
-            //should_readfrom1 = should_read - should_readfrom0;
+            should_readfrom1 = should_decode - should_readfrom0;
             // should_decode = 1;
             // should_read = 1;
             // should_readfrom0 = 1;
