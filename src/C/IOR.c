@@ -3146,6 +3146,7 @@ ec_parity_thread0(ec_read_thread_args *arg){
     int nouse;
     int it = parity_number[0]/small_batch;
     int it2 = parity_number[0]%small_batch;
+    fprintf(stdout,"it1 = %d, it2 = %d\n", it,it2);
     for(i=0;i<it;i++){
 
         IOR_Xfer_ec(arg->access, (arg->fds)[6+parity_target[0]], batch_buffer0, small_batch*arg->test->ec_stripe_size, arg->test, arg->offSetArray[parity_start[0]+i*small_batch]);
@@ -3156,12 +3157,13 @@ ec_parity_thread0(ec_read_thread_args *arg){
         }
         pthread_mutex_lock(&buffernum0);
         bnum0+=small_batch;
+        fprintf(stdout,"parity 0 add small batch\n");
         pthread_mutex_unlock(&buffernum0);
     }
 
     for(i=0;i<it2;i++){
 
-        IOR_Xfer_ec(arg->access, (arg->fds)[6+parity_target[0]], batch_buffer0, arg->test->ec_stripe_size, arg->test, arg->offSetArray[parity_start[0]+i]);
+        IOR_Xfer_ec(arg->access, (arg->fds)[6+parity_target[0]], batch_buffer0, arg->test->ec_stripe_size, arg->test, arg->offSetArray[parity_start[0]+it*small_batch+i]);
         //nouse = 1400000; //parity = 4
         nouse = 1100000; //parity <= 3
         while(nouse--){
@@ -3169,6 +3171,7 @@ ec_parity_thread0(ec_read_thread_args *arg){
         }
         pthread_mutex_lock(&buffernum0);
         bnum0+=1;
+        fprintf(stdout,"parity 0 add 1\n");
         pthread_mutex_unlock(&buffernum0);
     }
 
@@ -3183,7 +3186,7 @@ ec_parity_thread1(ec_read_thread_args *arg)
     int i;
     int nouse;
     int it = parity_number[1] / batch_size;
-    int it2 = parity_number[1]%small_batch;
+    int it2 = parity_number[1] % small_batch;
     for (i = 0; i < it; i++)
     {
 
@@ -3201,7 +3204,7 @@ ec_parity_thread1(ec_read_thread_args *arg)
     for (i = 0; i < it2; i++)
     {
 
-        IOR_Xfer_ec(arg->access, (arg->fds)[6 + parity_target[1]], batch_buffer1, arg->test->ec_stripe_size, arg->test, arg->offSetArray[parity_start[1] + i]);
+        IOR_Xfer_ec(arg->access, (arg->fds)[6 + parity_target[1]], batch_buffer1, arg->test->ec_stripe_size, arg->test, arg->offSetArray[parity_start[1]+it*small_batch + i]);
         //nouse = 1400000; //parity = 4
         nouse = 1100000; //parity <= 3
         while (nouse--)
@@ -3250,8 +3253,7 @@ ec_adaptive_decode1()
     double startTime = GetTimeStamp();
     int i;
     for (i = 0; i < parity_number[1]; i++)
-    {
-        
+    {       
         while (1)
         {
             pthread_mutex_lock(&buffernum1);
