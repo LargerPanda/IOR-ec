@@ -3151,7 +3151,7 @@ ec_parity_thread0(ec_read_thread_args *arg){
 
         IOR_Xfer_ec(arg->access, (arg->fds)[6+parity_target[0]], batch_buffer0, small_batch*arg->test->ec_stripe_size, arg->test, arg->offSetArray[parity_start[0]+i*small_batch]);
         //nouse = 1400000; //parity = 4
-        nouse = 900000; //parity <= 3
+        nouse = 500000; //parity <= 3
         while(nouse--){
             ;
         }
@@ -3165,7 +3165,7 @@ ec_parity_thread0(ec_read_thread_args *arg){
 
         IOR_Xfer_ec(arg->access, (arg->fds)[6+parity_target[0]], batch_buffer0, arg->test->ec_stripe_size, arg->test, arg->offSetArray[parity_start[0]+it*small_batch+i]);
         //nouse = 1400000; //parity = 4
-        nouse = 900000; //parity <= 3
+        nouse = 500000; //parity <= 3
         while(nouse--){
             ;
         }
@@ -3194,7 +3194,7 @@ ec_parity_thread1(ec_read_thread_args *arg)
 
         IOR_Xfer_ec(arg->access, (arg->fds)[6 + parity_target[1]], batch_buffer1, small_batch * arg->test->ec_stripe_size, arg->test, arg->offSetArray[parity_start[1] + i * small_batch]);
         //nouse = 1400000; //parity = 4
-        nouse = 900000; //parity <= 3
+        nouse = 500000; //parity <= 3
         while (nouse--)
         {
             ;
@@ -3210,7 +3210,7 @@ ec_parity_thread1(ec_read_thread_args *arg)
 
         IOR_Xfer_ec(arg->access, (arg->fds)[6 + parity_target[1]], batch_buffer1, arg->test->ec_stripe_size, arg->test, arg->offSetArray[parity_start[1]+it*small_batch + i]);
         //nouse = 1400000; //parity = 4
-        nouse = 900000; //parity <= 3
+        nouse = 500000; //parity <= 3
         while (nouse--)
         {
             ;
