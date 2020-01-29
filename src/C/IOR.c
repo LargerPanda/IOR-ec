@@ -5513,7 +5513,7 @@ WriteOrRead_ec(IOR_param_t *test,
                 pthread_create(&threads[i], NULL, ec_collective_thread4, &ec_read_args[i]);
             }
         }else if(test->ec_strategy == ADAPTIVE_EC){
-            for (i = 0; i < k; i++)
+            for (i = 0; i < 1; i++)
             {
                 pthread_create(&threads[i], NULL, ec_adaptive_thread, &ec_read_args[i]);
             }
