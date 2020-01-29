@@ -3223,7 +3223,6 @@ ec_parity_thread1(ec_read_thread_args *arg)
     double endTime = GetTimeStamp();
     parity_time[parity_target[1]] = endTime - startTime;
 }
-}
 
 
 void *
