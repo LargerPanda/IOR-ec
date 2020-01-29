@@ -3498,8 +3498,8 @@ ec_adaptive_thread(ec_read_thread_args *arg)
             // should_read = batch_size;
             double C = 1;
             double S = 1;
-            double num_0 = 1;
-            double num_1 = 1;
+            double num_0 = 25;
+            double num_1 = 19;
             should_read = 0;
             should_decode = batch_size/S*C;
             should_readfrom0 = should_decode/(num_0+num_1)*num_0;
