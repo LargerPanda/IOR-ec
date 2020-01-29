@@ -3119,7 +3119,7 @@ double decode_time1;
 double decode_num;
 
 int batch_size = 32;
-int small_batch = 1;
+int small_batch = 8;
 char *batch_buffer0;
 char *batch_buffer1;
 
@@ -3500,7 +3500,7 @@ ec_adaptive_thread(ec_read_thread_args *arg)
             double S = 1;
             double num_0 = 1;
             double num_1 = 1;
-            should_read = 0;
+            should_read = batch_size;
             should_decode = batch_size/S*C;
             should_readfrom0 = should_decode/(num_0+num_1)*num_0;
             should_readfrom1 = should_decode - should_readfrom0;
@@ -3526,14 +3526,14 @@ ec_adaptive_thread(ec_read_thread_args *arg)
             decode_num = should_decode;
             pthread_create(&parity_threads[0], NULL, ec_parity_thread0, arg);
             pthread_create(&parity_threads[1], NULL, ec_parity_thread1, arg);
-            // pthread_create(&slow_read, NULL, ec_slowread_thread, arg);
+            pthread_create(&slow_read, NULL, ec_slowread_thread, arg);
             //pthread_join(parity_threads[0], NULL);
             pthread_create(&decode_thread0, NULL ,ec_adaptive_decode0, NULL);
             pthread_create(&decode_thread1, NULL ,ec_adaptive_decode1, NULL);
             //pthread_join(parity_threads[0], NULL);
             pthread_join(parity_threads[1], NULL);
             pthread_join(parity_threads[0], NULL);
-            // pthread_join(slow_read, NULL);
+            pthread_join(slow_read, NULL);
             pthread_join(decode_thread0, NULL);
             pthread_join(decode_thread1, NULL);
             fprintf(stdout, "parity time0: %lf, parity time1: %lf\n", parity_time[0],parity_time[1]);
