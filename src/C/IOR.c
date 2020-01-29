@@ -3496,8 +3496,8 @@ ec_adaptive_thread(ec_read_thread_args *arg)
             // }
             // 
             // should_read = batch_size;
-            double C = 5;
-            double S = 1;
+            double C = 8;
+            double S = 5;
             double num_0 = 1;
             double num_1 = 1;
             should_read = 0;
