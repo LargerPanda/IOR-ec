@@ -5962,7 +5962,7 @@ WriteOrRead_ec(IOR_param_t *test,
         //     }
         // }
 
-        for (i = 0; i < k; i++)
+        for (i = 0; i < 1; i++)
         {
             pthread_join(threads[i], NULL);
         }
