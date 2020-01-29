@@ -3384,7 +3384,7 @@ ec_adaptive_thread(ec_read_thread_args *arg)
     double C = 5;
     double S = 1;
     double num_0 = 1;
-    double num_1 = 1;
+    double num_1 = 4;
     int should_decode = 0;
     int should_read = 0;
     int should_readfrom0 =0;
