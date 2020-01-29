@@ -3187,6 +3187,7 @@ ec_parity_thread1(ec_read_thread_args *arg)
     int nouse;
     int it = parity_number[1] / batch_size;
     int it2 = parity_number[1] % small_batch;
+    fprintf(stdout, "it1 = %d, it2 = %d\n", it, it2);
     for (i = 0; i < it; i++)
     {
 
@@ -3198,6 +3199,7 @@ ec_parity_thread1(ec_read_thread_args *arg)
             ;                   
         pthread_mutex_lock(&buffernum1);
         bnum1 += small_batch;
+        fprintf(stdout,"parity 1 add small batch\n");
         pthread_mutex_unlock(&buffernum1);
     }
 
@@ -3212,6 +3214,7 @@ ec_parity_thread1(ec_read_thread_args *arg)
             ;
         }
         pthread_mutex_lock(&buffernum1);
+        fprintf(stdout,"parity 1 add 1\n");
         bnum1 += 1;
         pthread_mutex_unlock(&buffernum1);
     }
@@ -3260,6 +3263,7 @@ ec_adaptive_decode1()
             pthread_mutex_lock(&buffernum1);
             if(bnum1>0){
                 bnum1--;
+                fprintf(stdout, "decode1 consume 1\n");
                 pthread_mutex_unlock(&buffernum1);
                 break;
             }
