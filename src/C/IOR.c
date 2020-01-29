@@ -3119,7 +3119,7 @@ double decode_time1;
 double decode_num;
 
 int batch_size = 32;
-int small_batch = 8;
+int small_batch = 16;
 char *batch_buffer0;
 char *batch_buffer1;
 
@@ -3496,7 +3496,7 @@ ec_adaptive_thread(ec_read_thread_args *arg)
             // }
             // 
             // should_read = batch_size;
-            double C = 1;
+            double C = 5;
             double S = 1;
             double num_0 = 1;
             double num_1 = 1;
