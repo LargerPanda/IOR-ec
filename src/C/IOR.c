@@ -3197,7 +3197,8 @@ ec_parity_thread1(ec_read_thread_args *arg)
         nouse = 1100000; //parity <= 3
         while (nouse--)
         {
-            ;                   
+            ;
+        }                   
         pthread_mutex_lock(&buffernum1);
         bnum1 += small_batch;
         fprintf(stdout,"parity 1 add small batch\n");
