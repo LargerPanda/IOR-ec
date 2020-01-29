@@ -3234,6 +3234,7 @@ ec_adaptive_decode0()
             pthread_mutex_lock(&buffernum0);
             if(bnum0>0){
                 bnum0--;
+                fprintf(stdout, "decode0 consume 1\n");
                 pthread_mutex_unlock(&buffernum0);
                 break;
             }
