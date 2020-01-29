@@ -3146,7 +3146,7 @@ ec_parity_thread0(ec_read_thread_args *arg){
     int nouse;
     int it = parity_number[0]/small_batch;
     int it2 = parity_number[0]%small_batch;
-    fprintf(stdout,"it1 = %d, it2 = %d\n", it,it2);
+    //fprintf(stdout,"it1 = %d, it2 = %d\n", it,it2);
     for(i=0;i<it;i++){
 
         IOR_Xfer_ec(arg->access, (arg->fds)[6+parity_target[0]], batch_buffer0, small_batch*arg->test->ec_stripe_size, arg->test, arg->offSetArray[parity_start[0]+i*small_batch]);
@@ -3157,7 +3157,7 @@ ec_parity_thread0(ec_read_thread_args *arg){
         }
         pthread_mutex_lock(&buffernum0);
         bnum0+=small_batch;
-        fprintf(stdout,"parity 0 add small batch\n");
+        //fprintf(stdout,"parity 0 add small batch\n");
         pthread_mutex_unlock(&buffernum0);
     }
 
@@ -3171,7 +3171,7 @@ ec_parity_thread0(ec_read_thread_args *arg){
         }
         pthread_mutex_lock(&buffernum0);
         bnum0+=1;
-        fprintf(stdout,"parity 0 add 1\n");
+        //fprintf(stdout,"parity 0 add 1\n");
         pthread_mutex_unlock(&buffernum0);
     }
 
@@ -3185,9 +3185,10 @@ ec_parity_thread1(ec_read_thread_args *arg)
     double startTime = GetTimeStamp();
     int i;
     int nouse;
-    int it = parity_number[1] / batch_size;
+    //fprintf(stdout, "parity_number[1] = %d\n", it, it2);
+    int it = parity_number[1] / small_batch;
     int it2 = parity_number[1] % small_batch;
-    fprintf(stdout, "it1 = %d, it2 = %d\n", it, it2);
+    //fprintf(stdout, "it1 = %d, it2 = %d\n", it, it2);
     for (i = 0; i < it; i++)
     {
 
@@ -3199,7 +3200,7 @@ ec_parity_thread1(ec_read_thread_args *arg)
             ;                   
         pthread_mutex_lock(&buffernum1);
         bnum1 += small_batch;
-        fprintf(stdout,"parity 1 add small batch\n");
+        //fprintf(stdout,"parity 1 add small batch\n");
         pthread_mutex_unlock(&buffernum1);
     }
 
@@ -3214,7 +3215,7 @@ ec_parity_thread1(ec_read_thread_args *arg)
             ;
         }
         pthread_mutex_lock(&buffernum1);
-        fprintf(stdout,"parity 1 add 1\n");
+        //fprintf(stdout,"parity 1 add 1\n");
         bnum1 += 1;
         pthread_mutex_unlock(&buffernum1);
     }
@@ -3237,7 +3238,7 @@ ec_adaptive_decode0()
             pthread_mutex_lock(&buffernum0);
             if(bnum0>0){
                 bnum0--;
-                fprintf(stdout, "decode0 consume 1\n");
+                //fprintf(stdout, "decode0 consume 1\n");
                 pthread_mutex_unlock(&buffernum0);
                 break;
             }
@@ -3263,7 +3264,7 @@ ec_adaptive_decode1()
             pthread_mutex_lock(&buffernum1);
             if(bnum1>0){
                 bnum1--;
-                fprintf(stdout, "decode1 consume 1\n");
+                //fprintf(stdout, "decode1 consume 1\n");
                 pthread_mutex_unlock(&buffernum1);
                 break;
             }
