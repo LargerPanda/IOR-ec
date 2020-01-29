@@ -3185,7 +3185,7 @@ ec_parity_thread1(ec_read_thread_args *arg)
     double startTime = GetTimeStamp();
     int i;
     int nouse;
-    fprintf(stdout, "parity_number[1] = %d\n", it, it2);
+    fprintf(stdout, "parity_number[1] = %d\n", parity_number[1]);
     int it = parity_number[1] / small_batch;
     int it2 = parity_number[1] % small_batch;
     fprintf(stdout, "it1 = %d, it2 = %d\n", it, it2);
